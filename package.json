@@ -22,10 +22,10 @@
 	],
 	"repository": {
 		"type": "git",
-		"url": "http://git.code.oa.com/stuartwang/lua-vscode-debugger.git"
+		"url": "https://github.com/Tencent/LuaPanda.git"
 	},
 	"bugs": {
-		"url": "http://git.code.oa.com/stuartwang/lua-vscode-debugger.git"
+		"url": "https://github.com/Tencent/LuaPanda.git"
 	},
 	"scripts": {
 		"vscode:prepublish": "tsc -p ./src",
