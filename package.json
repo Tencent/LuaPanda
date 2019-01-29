@@ -1,0 +1,154 @@
+{
+	"name": "luapanda",
+	"displayName": "LuaPanda",
+	"version": "1.9.15",
+	"publisher": "stuartwang",
+	"description": "lua debug adapters for VS Code.",
+	"author": {
+		"name": "stuartwang",
+		"email": "3030078087@qq.com"
+	},
+	"license": "MIT",
+	"keywords": [
+		"luapanda"
+	],
+	"engines": {
+		"vscode": "^1.18.0",
+		"node": "^7.9.0"
+	},
+	"icon": "images/luapanda_logo.png",
+	"categories": [
+		"Debuggers"
+	],
+	"repository": {
+		"type": "git",
+		"url": "http://git.code.oa.com/stuartwang/lua-vscode-debugger.git"
+	},
+	"bugs": {
+		"url": "http://git.code.oa.com/stuartwang/lua-vscode-debugger.git"
+	},
+	"scripts": {
+		"vscode:prepublish": "tsc -p ./src",
+		"compile": "tsc -p ./src",
+		"package": "vsce package"
+		},
+	"dependencies": {
+		"await-notify": "1.0.1",
+		"vscode-debugadapter": "1.27.0",
+		"vscode-debugprotocol": "1.27.0"
+	},
+	"devDependencies": {
+		"@types/node": "7.0.55",
+		"@types/mocha": "2.2.48",
+		"typescript": "2.6.2",
+		"mocha": "5.0.1",
+		"vscode": "1.1.10",
+		"vscode-debugadapter-testsupport": "1.27.0",
+		"tslint": "5.9.1",
+		"vsce": "1.37.5"
+	},
+	"main": "./out/extension",
+	"activationEvents": [
+		"onDebug"
+	],
+	"contributes": {
+		"breakpoints": [
+			{
+				"language": "lua"
+			}
+		],
+		"commands": [{
+			"command": "luapanda.reloadLuaDebug",
+			"title": "reloadLuaDebug"
+		},
+		{
+			"command": "luapanda.LuaGarbageCollect",
+			"title": "LuaGarbageCollect"
+		}],
+		"debuggers": [
+			{
+				"type": "lua",
+				"label": "LuaPanda",
+				"program": "./out/debugAdapter.js",
+				"runtime": "node",
+				"configurationAttributes": {
+					"launch": {
+						"properties": {
+							"program": {
+								"type": "string",
+								"description": "Absolute path to a text file.",
+								"default": "${workspaceFolder}"
+							},
+							"trace": {
+								"type": "boolean",
+								"description": "Enable logging of the Debug Adapter Protocol.",
+								"default": false
+							},
+							"stopOnEntry": {
+								"type": "boolean",
+								"description": "调试器启动后自动停止在调用的第一行代码处",
+								"default": true
+							},
+							"cwd": {
+								"type": "string",
+								"description": "设置运行时的工程路径",
+								"default": "${workspaceFolder}"
+							},
+							"luaFileExtension": {
+								"type": "string",
+								"description": "Lua文件后缀",
+								"default": ""
+							},
+							"pathCaseSensitivity": {
+								"type": "boolean",
+								"description": "文件路径大小写敏感, 默认true",
+								"default": true
+							},
+							"connectionPort": {
+								"type": "number",
+								"description": "设置连接的端口号，默认8818",
+								"default": 8818
+							},
+							"autoReconnect": {
+								"type": "boolean",
+								"description": "当连接被lua端断开时，VSCode自动等待重连",
+								"default": true
+							},
+							"TempFilePath": {
+								"type": "string",
+								"description": "调试产生的临时文件存放路径，请确保文件夹存在",
+								"default": "${workspaceFolder}"
+							},
+							"logLevel": {
+								"type": "number",
+								"description": "日志等级. 0:all所有信息; 1:info仅必要信息(默认); 2:error仅错误",
+								"default": 1
+							},
+							"useHighSpeedModule": {
+								"type": "boolean",
+								"description": "隐藏属性，使用高速C模块。默认true",
+								"default": true
+							}
+						}
+					}
+				},
+				"initialConfigurations": [
+					{
+						"type": "lua",
+						"request": "launch",
+						"internalConsoleOptions": "openOnFirstSessionStart",
+						"name": "LuaPanda",
+						"program": "${workspaceFolder}",
+						"cwd": "${workspaceFolder}",
+						"TempFilePath":"${workspaceFolder}",
+						"luaFileExtension":"",
+						"pathCaseSensitivity": true,
+						"connectionPort": 8818,
+						"stopOnEntry": true,
+						"logLevel":1
+					}
+				]
+			}
+		]
+	}
+}
