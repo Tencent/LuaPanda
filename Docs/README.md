@@ -12,7 +12,7 @@ LuaPanda的文档全部集中在这个目录下，根据类型分为
 
   [快速试用](./Manual/quick-use.md)
 
-  [QA](./Manual/QA.md)
+  [FAQ](./Manual/FAQ.md)
 
   
 

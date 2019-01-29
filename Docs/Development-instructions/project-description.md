@@ -108,7 +108,7 @@ Note right of debugger :继续执行...
 
 ![run_build_task](../static/run_build_task.jpg)
 
-*每次运行前要先编译
+*每次修改代码后要先编译再运行
 
 3. 打包: 点击菜单 terminal -> Run Task. 选择package, 就会在工程目录下打出VSIX包
 
@@ -116,7 +116,7 @@ Note right of debugger :继续执行...
 
 4. 切换到 VSCode 的 debug 页卡，点击 run 按钮。会弹出 [扩展开发主机] 窗口。这个窗口中已经安装了编译好的插件，在[扩展开发主机]窗口中进行调试操作即可。
 
-*使用源码运行时必须要连外网，开发网要挂代理，否则扩展开发主机提示"扩展10秒内没有响应" 并无法调试。
+*使用源码运行时如果扩展开发主机提示"扩展10秒内没有响应" 并无法调试，说明无法连接 VSCode 服务器，请切换网络重试。
 
 
 
@@ -124,9 +124,9 @@ Note right of debugger :继续执行...
 
 我们在调试器中建立了日志系统，方便追踪调试器运行状态。
 
-分级：调试日志分为三级 `0:all所有信息; 1:info仅必要信息(默认); 2:error仅错误`。在被调试工程的launch.json中logLevel可以设置。
+**日志分级**：调试日志分为三级 `0:all所有信息; 1:info仅必要信息(默认); 2:error仅错误`。在被调试工程的launch.json中logLevel可以设置。
 
-查看：在VSCode的OUTPUT(输出)页卡中，分别展示Adapter和Debugger的日志。
+**查看日志**：在VSCode的OUTPUT(输出)页卡中，分别展示Adapter和Debugger的日志。
 
 ![debug_log](../static/debug_log.png)
 

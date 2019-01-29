@@ -1,8 +1,8 @@
-#项目介绍
+# 项目介绍
 
 [TOC]
 
-LuaPanda 是一个基于VSCode扩展的lua调试器，设计目标是高效易用，支持主流框架。因目前项目大量使用lua进行开发，但市面上没有找到适合的调试器，为了能够提升定位修复lua问题的效率，我们自己动手开发了这个工具。
+LuaPanda 是一个基于VSCode扩展的lua调试器，设计目标是高效易用，支持主流框架。因当前项目大量使用lua进行开发，为了能够提升定位修复lua问题的效率，我们自己动手开发了这个工具。
 
 LuaPanda 使用了lua + C 双架构。调试器主体使用lua开发（可独立运行），另外有一个高性能的C扩展库，兼顾了C的高效以及lua的灵活性。
 
@@ -20,11 +20,12 @@ C扩展适合的场景
 
 
 
-LuaPanda由两部分组成，分别是 Debugger Extension 和 debugger 调试器。架构可以参考下图（图片引自 https://code.visualstudio.com/api/extension-guides/debugger-extension）
+LuaPanda由两部分组成，分别是 Debugger Extension 和 debugger 调试器。架构可以参考下图
+（图片引自 https://code.visualstudio.com/api/extension-guides/debugger-extension）
 
 ![debug-arch2](../static/feature-introduction/debug-arch2.png)
 
-Debugger Extension 是一个 VScode 扩展。Debugger是 Lua 实现的调试器。另外LuaPanda还提供一个可选的C调试库，运行时会自动引用，使用者不必关心。
+Debugger Extension 是一个 VScode 扩展。Debugger是 Lua 实现的调试器。另外LuaPanda还提供一个可选的C调试库，运行时会自动引用，使用时不必关心。
 
 
 
@@ -61,10 +62,13 @@ Win  slua-unreal + lua5.3
 ### 表达式监控 和 调试控制台
 
 在变量监控区可以输入并监控表达式
+
 ![REPL-watch](../static/feature-introduction/REPL-watch.png)
 
 调试控制台，可以在断点处输入表达式
+
 ![debug-console](../static/feature-introduction/debug-console.png)
+
 在需要查看的变量或者是表达式前加p , 即可返回输出结果，如上图。
 
 ### 支持attach模式

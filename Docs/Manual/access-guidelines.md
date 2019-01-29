@@ -10,21 +10,16 @@ lua调试器依赖于 **luasocket** 和 **规范的路径**，需验证这两点
 
 调试器需要 luasocket 使 debugger 和 VSCode 建立起通信。**目前lua框架: slua, slua-unreal, xlua 都已集成 luasocket**。
 
-**测试方法：**
-在项目lua中加入`require("socket.core");`，如果运行不报错，工程已经包含luasocket，测试通过。
+**测试方法**：在项目lua中加入`require("socket.core");`，如果运行不报错，工程已经包含luasocket，测试通过。
 
 
 
 
 ### 第二步 路径规范
 
-调试器运行需要从lua虚拟机中获取当前文件信息。所以要求工程debug.getinfo或debug.traceback能输出较为规范的路径，就是**绝对路径**或者**对于固定位置的相对路径**。
+调试器运行需要从lua虚拟机中获取当前文件信息。所以要求工程debug.getinfo或debug.traceback能输出较为规范的路径，就是**绝对路径**或者**对于固定位置的相对路径**。目前的slua, xlua, slua-unreal框架都已经支持这个特性。但还是建议初期接入时做一下测试。
 
-目前的slua, xlua, slua-unreal框架都已经支持这个特性。但还是建议初期接入时做一下测试。
-
-**测试方法：**
-
-在代码中加入`print(debug.traceback("debug test"))`, 查看打印的堆栈。
+**测试方法**：在代码中加入`print(debug.traceback("debug test"))`, 查看打印的堆栈。
 
 如下打印出文件的绝对路径，测试通过。
 ![absolute_path](../static/access_introduction/absolute_path.png)
@@ -88,9 +83,11 @@ launch.json 配置项中要修改的主要是luaFileExtension, 改成lua文件�
 上面配置项中的`cwd`，其默认值`${workspaceFolder}`。${workspaceFolder}指的是VScode打开文件夹的路径。
 
 如果开始调试时弹出了如下错误
+
 ![cannot_find_file](../static/access_introduction/cannot_find_file.png)
 
 不要停止调试，直接在调试控制台中输入`LuaPanda.getCWD()`
+
 ![getcwd](../static/access_introduction/getcwd.png)
 
 输出结果中
@@ -166,9 +163,9 @@ c hook的源码放置在工程中`Debugger/debugger_lib`中。以供参考
 }
 ```
 
-**cwd：**工作路径，${workspaceFolder}表示VSCode加载目录的路径。
+**cwd**：工作路径，${workspaceFolder}表示VSCode加载目录的路径。
 
-**luaFileExtension：**lua文件后缀。不同框架中lua文件后缀可能不同, 比如
+**luaFileExtension**：lua文件后缀。不同框架中lua文件后缀可能不同, 比如
 
 ```
 slua:txt
@@ -190,7 +187,7 @@ sluaunreal:lua
 
 
 
-###2. LuaPanda.lua 文件头部
+### 2. LuaPanda.lua 文件头部
 
 ```lua
 local openAttachMode = true;            --是否开启attach模式。

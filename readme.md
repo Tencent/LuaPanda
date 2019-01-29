@@ -1,8 +1,6 @@
 # LuaPanda
 
-LuaPanda 是一个基于 VS Code 的 lua 代码调试器。设计目标是简单易用，支持主流框架。
-
-它由两部分组成:
+LuaPanda 是一个基于 VS Code 的 lua 代码调试器。设计目标是简单易用，支持主流框架。它由两部分组成:
 
 - VS Code Extension  调试器 VSCode 插件
 - Lua Debugger  调试器的 debugger 部分
@@ -25,13 +23,11 @@ LuaPanda 支持 lua5.1- 5.3，运行环境要包含 LuaSocket。
 
 # 项目介绍和接入文档
 
-[项目介绍](./Docs/Manual/feature-introduction.md)	| [快速开始](./Docs/Manual/quick-use.md) | [接入指引](./Docs/Manual/access-guidelines.md) | [Q&A](./Docs/Manual/QA.md) 
+[项目介绍](./Docs/Manual/feature-introduction.md)	| [快速开始](./Docs/Manual/quick-use.md) | [接入指引](./Docs/Manual/access-guidelines.md) | [FAQ](./Docs/Manual/FAQ.md) 
 
-我们正在补全文档，以方便大家加入开发。我们非常欢迎您可以帮助完善文档，无论是开发使用心得，接入中易疏忽的部分，修复失效的链接，亦或是修改错字。
+我们正在补全文档，以方便接入和开发，我们也非常欢迎您可以帮助完善文档。
 
 更多文档请看[这里](./Docs/README.md)
-
-
 
 
 
@@ -44,14 +40,20 @@ LuaPanda 支持 lua5.1- 5.3，运行环境要包含 LuaSocket。
 
 # 依赖和适用性
 
-调试器依赖 LuaSocket , 可运行于 slua，slua-unreal ，xlua 等已集成 LuaSocket 的 lua 环境，也可以在 console 中调试。lua 版本支持 5.1-5.3。
+调试器依赖 LuaSocket , 可运行于 slua，slua-unreal ，xlua 等已集成 LuaSocket 的 lua 环境，也可以在 console 中调试。lua 版本支持 5.1- 5.3。
 
 
 
 # 贡献
 
-我们非常期待您的贡献，无论是完善文档，提出或修复 Bug 还是增加新特性。
-如果您在使用过程中发现文档不够完善，或是有心得体会，欢迎把他们记下来并提交。
+我们非常期待您的贡献，无论是完善文档，提出、修复 Bug 或是增加新特性。
+如果您在使用过程中发现文档不够完善，欢迎记录下来并提交。
 如果发现 Bug，请通过 [issues](https://github.com/Tencent/LuaPanda/issues) 来提交并描述相关的问题，您也可以在这里查看其它的 issue，通过解决这些 issue 来贡献代码。
 
 请将merge request提交在 `dev` 分支上，经过测试后会在下一版本合并到 `master` 分支。
+
+# 技术支持
+
+如有问题先参阅 [FAQ](./Docs/Manual/FAQ.md) 
+
+QQ群：974257225
