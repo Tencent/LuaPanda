@@ -1,6 +1,6 @@
 # LuaPanda
 
-LuaPanda 是一个基于 VS Code 的 lua 代码调试器。设计目标是简单易用，支持主流框架。它由两部分组成:
+LuaPanda 是一个基于 VS Code 的 lua 代码调试器。设计目标是简单易用，支持多种开发框架。它由两部分组成:
 
 - VS Code Extension  调试器 VSCode 插件
 - Lua Debugger  调试器的 debugger 部分
