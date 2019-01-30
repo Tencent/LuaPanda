@@ -2,7 +2,7 @@
 
 注：VSCode的调试插件机制是: 当使用某个插件调试过一种语言时，会导致该语言的其他调试插件无法生效，请先禁用之前的调试插件并重新启动VSCode。
 
-以下是各框架下快速试用调试器的方法。
+以下是各框架下快速试用调试器的方法，开始之前请先到 VSCode 扩展商店下载安装 `LuaPanda` 调试插件。
 
 ### console
 
@@ -10,7 +10,7 @@
 
 验证luasocket方法：console下执行lua，并 `require "socket.core"` 不报错说明已安装luasocket。
 
-1. **安装VSCode插件**：VSCode搜索LuaPanda，安装插件。
+1. **安装VSCode插件**：VSCode 商店搜索 LuaPanda，安装插件。
 2. **添加被调试文件**：创建一个文件夹，名为`luaDebugTest`，  其中放入被调试lua文件。
 3. **在被调试工程中放入调试器文件**：从Git目录下`/Debugger/`文件夹中的获取 `LuaPanda.lua, DebugTools.lua` 两个文件，拷贝到`luaDebugTest`文件夹中，并在被调试lua文件中调用`require("LuaPanda").start("127.0.0.1",8818);`
 4. **配置**：使用VSCode 打开 `luaDebugTest` 文件夹，切换到调试页卡（shitf + cmd(ctrl) + D），点击页面内的齿轮符号，选择 LuaPanda，会自动生成一张配置表。配置表默认不用修改。
