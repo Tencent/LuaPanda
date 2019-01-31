@@ -173,7 +173,7 @@ function this.connectSuccess()
             end
         end
     end
-    if DebuggerToolsName == "" then 
+    if DebuggerToolsName == "" then
         DebuggerToolsName = tools.getFileSource();
         if hookLib ~= nil then
             hookLib.sync_tools_path(DebuggerToolsName);
@@ -359,7 +359,7 @@ function this.printToVSCode(str, printLevel, type)
     printLevel = printLevel or 0;
     if logLevel > printLevel then
         return;
-    end 
+    end
 
     local sendTab = {};
     sendTab["callbackId"] = "0";
@@ -403,7 +403,7 @@ function this.genUnifiedPath(path)
     local pathTab = this.stringSplit(path, '/');
     local newPathTab = {};
     for k, v in ipairs(pathTab) do
-        if v == '.'  then   
+        if v == '.'  then
             --continue
         elseif v == ".." and #newPathTab >= 1 and newPathTab[#newPathTab]:sub(2,2) ~= ':' then
             --newPathTab有元素，最后一项不是X:
@@ -414,7 +414,7 @@ function this.genUnifiedPath(path)
     end
     --重新拼合后如果是mac路径第一位是/
     local newpath = table.concat(newPathTab, '/');
-    if path:sub(1,1) == '/' then 
+    if path:sub(1,1) == '/' then
         newpath = '/'.. newpath;
     end
     return newpath;
@@ -470,7 +470,7 @@ function this.reConnect()
         if os.time() - stopConnectTime < attachInterval then
             this.printToConsole("Reconnect time less than 1s");
             this.printToConsole("os.time:".. os.time() .. " | stopConnectTime:" ..stopConnectTime);
-            return 1; 
+            return 1;
         end
 
         local sockSuccess = sock and sock:connect(connectHost, connectPort);
@@ -649,7 +649,7 @@ function this.dataProcess( dataStr )
             else clibExt = "/?.dll;"; platform = "win";   end
 
             local lua_ver;
-            if _VERSION == "Lua 5.1" then 
+            if _VERSION == "Lua 5.1" then
                 lua_ver = "501";
             else
                 lua_ver = "503";
@@ -808,17 +808,17 @@ function this.debugger_wait_msg(timeoutSec)
         return ret;
     end
 
-    if currentRunState == runState.STEPOVER or 
-    currentRunState == runState.STEPIN or 
-    currentRunState == runState.STEPOUT or 
+    if currentRunState == runState.STEPOVER or
+    currentRunState == runState.STEPIN or
+    currentRunState == runState.STEPOUT or
     currentRunState == runState.RUN then
         this.receiveMessage(0);
         return
     end
 
-    if currentRunState == runState.STEPOVER_STOP or 
-    currentRunState == runState.STEPIN_STOP or 
-    currentRunState == runState.STEPOUT_STOP or 
+    if currentRunState == runState.STEPOVER_STOP or
+    currentRunState == runState.STEPIN_STOP or
+    currentRunState == runState.STEPOUT_STOP or
     currentRunState == runState.HIT_BREAKPOINT or
     currentRunState == runState.STOP_ON_ENTRY
     then
@@ -1098,7 +1098,7 @@ end
 function this.debug_hook(event, line)
     if this.reConnect() == 1 then return; end
 
-    if logLevel == 0 then 
+    if logLevel == 0 then
         local logTable = {"-----enter debug_hook-----\n", "event:", event, "  line:", tostring(line), " currentHookState:",currentHookState," currentRunState:", currentRunState};
         local logString = table.concat(logTable);
         this.printToVSCode(logString);
@@ -1342,7 +1342,7 @@ function this.changeHookState( s )
         if hookLib then hookLib.lua_set_hookstate(hookState.ALL_HOOK); else debug.sethook(this.debug_hook, "lrc");end
     end
     --coroutine
-    if hookLib == nil then      
+    if hookLib == nil then
         this.changeCoroutineHookState();
     end
 end
@@ -1384,13 +1384,13 @@ function this.changeCoroutineHookState(s)
             table.remove(coroutinePool, k)
         else
             if s == hookState.DISCONNECT_HOOK then
-                if openAttachMode == true then 
+                if openAttachMode == true then
                     debug.sethook(co, this.debug_hook, "r", 1000000);
-                else 
-                    debug.sethook(co, this.debug_hook, ""); 
+                else
+                    debug.sethook(co, this.debug_hook, "");
                 end
             elseif s == hookState.LITE_HOOK then debug.sethook(co , this.debug_hook, "r");
-            elseif s == hookState.MID_HOOK then debug.sethook(co , this.debug_hook, "rc"); 
+            elseif s == hookState.MID_HOOK then debug.sethook(co , this.debug_hook, "rc");
             elseif s == hookState.ALL_HOOK then debug.sethook(co , this.debug_hook, "lrc");
             end
         end
