@@ -7,115 +7,115 @@ import { DebugLogger } from './LogManager';
 import { StatusBarManager } from './StatusBarManager';
 
 export function activate(context: vscode.ExtensionContext) {
-	//reloadWindow
-	let reloadWindow = vscode.commands.registerCommand('luapanda.reloadLuaDebug', function () {
-		vscode.commands.executeCommand("workbench.action.reloadWindow")
-	});
-	context.subscriptions.push(reloadWindow);
-	//force garbage collect
-	let LuaGarbageCollect = vscode.commands.registerCommand('luapanda.LuaGarbageCollect', function () {
-		LuaDebugSession.getInstance().LuaGarbageCollect();
-		vscode.window.showInformationMessage('Lua Garbage Collect!');
-	});
-	context.subscriptions.push(LuaGarbageCollect);
+    //reloadWindow
+    let reloadWindow = vscode.commands.registerCommand('luapanda.reloadLuaDebug', function () {
+        vscode.commands.executeCommand("workbench.action.reloadWindow")
+    });
+    context.subscriptions.push(reloadWindow);
+    //force garbage collect
+    let LuaGarbageCollect = vscode.commands.registerCommand('luapanda.LuaGarbageCollect', function () {
+        LuaDebugSession.getInstance().LuaGarbageCollect();
+        vscode.window.showInformationMessage('Lua Garbage Collect!');
+    });
+    context.subscriptions.push(LuaGarbageCollect);
 
-	const provider = new LuaConfigurationProvider()
-	context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('lua', provider));
-	context.subscriptions.push(provider);
-	//init log
-	DebugLogger.init();
-	StatusBarManager.init();
+    const provider = new LuaConfigurationProvider()
+    context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('lua', provider));
+    context.subscriptions.push(provider);
+    //init log
+    DebugLogger.init();
+    StatusBarManager.init();
 }
 
 export function deactivate() {
-	// nothing to do
+    // nothing to do
 }
 
 class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
-	private _server?: Net.Server;
-	resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration, token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration> {
-		// if launch.json is missing or empty
-		if (!config.type && !config.name) {
-			const editor = vscode.window.activeTextEditor;
-			if (editor && editor.document.languageId === 'lua' ) {
-				vscode.window.showInformationMessage('请先正确配置launch文件!');
-				config.type = 'lua';
-				config.name = 'LuaPanda';
-				config.request = 'launch';
-			}
-		}
+    private _server?: Net.Server;
+    resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration, token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration> {
+        // if launch.json is missing or empty
+        if (!config.type && !config.name) {
+            const editor = vscode.window.activeTextEditor;
+            if (editor && editor.document.languageId === 'lua') {
+                vscode.window.showInformationMessage('请先正确配置launch文件!');
+                config.type = 'lua';
+                config.name = 'LuaPanda';
+                config.request = 'launch';
+            }
+        }
 
-		if(!config.request){
-			vscode.window.showInformationMessage("请在launch中配置request方式!");
-			config.request = 'launch';
-		}
+        if (!config.request) {
+            vscode.window.showInformationMessage("请在launch中配置request方式!");
+            config.request = 'launch';
+        }
 
-		if(!config.cwd){
-			vscode.window.showInformationMessage("请在launch中配置cwd工作路径!");
-			config.cwd = '${workspaceFolder}';
-		}
+        if (!config.cwd) {
+            vscode.window.showInformationMessage("请在launch中配置cwd工作路径!");
+            config.cwd = '${workspaceFolder}';
+        }
 
-		if(!config.TempFilePath){
-			vscode.window.showInformationMessage("请在launch中配置TempFilePath路径!");
-			config.TempFilePath = '${workspaceFolder}';
-		}
+        if (!config.TempFilePath) {
+            vscode.window.showInformationMessage("请在launch中配置TempFilePath路径!");
+            config.TempFilePath = '${workspaceFolder}';
+        }
 
-		if(!config.luaFileExtension){
-			config.luaFileExtension = '';
-		}
+        if (!config.luaFileExtension) {
+            config.luaFileExtension = '';
+        }
 
-		if(config.stopOnEntry == undefined){
-			vscode.window.showInformationMessage("请在launch中配置是否stopOnEntry")
-			config.stopOnEntry = true;
-		}
+        if (config.stopOnEntry == undefined) {
+            vscode.window.showInformationMessage("请在launch中配置是否stopOnEntry")
+            config.stopOnEntry = true;
+        }
 
-		if(config.pathCaseSensitivity == undefined){
-			//vscode.window.showInformationMessage("请在launch中配置pathCaseSensitivity")
-			config.pathCaseSensitivity = true;
-		}
+        if (config.pathCaseSensitivity == undefined) {
+            //vscode.window.showInformationMessage("请在launch中配置pathCaseSensitivity")
+            config.pathCaseSensitivity = true;
+        }
 
-		if(config.trace == undefined){
-			config.trace = false;
-		}
+        if (config.trace == undefined) {
+            config.trace = false;
+        }
 
-		if(config.connectionPort == undefined){
-			LuaDebugSession.TCPPort = 8818;
-		}else{
-			LuaDebugSession.TCPPort = config.connectionPort;
-		}
+        if (config.connectionPort == undefined) {
+            LuaDebugSession.TCPPort = 8818;
+        } else {
+            LuaDebugSession.TCPPort = config.connectionPort;
+        }
 
-		if(config.logLevel == undefined){
-			config.logLevel= 1;
-		}
+        if (config.logLevel == undefined) {
+            config.logLevel = 1;
+        }
 
-		if(config.autoReconnect != true){
-			config.autoReconnect = false;
-		}
+        if (config.autoReconnect != true) {
+            config.autoReconnect = false;
+        }
 
-		//隐藏属性
-		if(config.DebugMode == undefined){
-			config.DebugMode = false;
-		}
+        //隐藏属性
+        if (config.DebugMode == undefined) {
+            config.DebugMode = false;
+        }
 
-		if(config.useHighSpeedModule == undefined){
-			config.useHighSpeedModule = true;
-		}
+        if (config.useHighSpeedModule == undefined) {
+            config.useHighSpeedModule = true;
+        }
 
-		if (!this._server) {
-			this._server = Net.createServer(socket => {
-				const session = new LuaDebugSession();
-				session.setRunAsServer(true);
-				session.start(<NodeJS.ReadableStream>socket, socket);
-			}).listen(0);
-		}
-		// make VS Code connect to debug server instead of launching debug adapter
-		config.debugServer = this._server.address().port;
-		return config;
-	}
+        if (!this._server) {
+            this._server = Net.createServer(socket => {
+                const session = new LuaDebugSession();
+                session.setRunAsServer(true);
+                session.start(<NodeJS.ReadableStream>socket, socket);
+            }).listen(0);
+        }
+        // make VS Code connect to debug server instead of launching debug adapter
+        config.debugServer = this._server.address().port;
+        return config;
+    }
 
-	dispose() {
-		if (this._server) {
-			this._server.close();
-		}
-	}
+    dispose() {
+        if (this._server) {
+            this._server.close();
+        }
+    }
 }
