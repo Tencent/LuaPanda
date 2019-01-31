@@ -50,7 +50,7 @@ LuaPanda 支持 lua5.1- 5.3，运行环境要包含 LuaSocket。
 如果您在使用过程中发现文档不够完善，欢迎记录下来并提交。
 如果发现 Bug，请通过 [issues](https://github.com/Tencent/LuaPanda/issues) 来提交并描述相关的问题，您也可以在这里查看其它的 issue，通过解决这些 issue 来贡献代码。
 
-请将pull request提交在 `dev` 分支上，经过测试后会在下一版本合并到 `master` 分支。
+请将pull request提交在 `dev` 分支上，经过测试后会在下一版本合并到 `master` 分支。更多规范请看[CONTRIBUTING](./CONTRIBUTING.md)
 
 [腾讯开源激励计划](https://opensource.tencent.com/contribution) 鼓励开发者的参与和贡献，期待你的加入。
 
