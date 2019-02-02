@@ -1004,11 +1004,41 @@ function this.isHitBreakpoint( info )
     if breaks[curPath] ~= nil then
         for k,v in ipairs(breaks[curPath]) do
             if tostring(v["line"]) == tostring(curLine) then
-                return true;
+                if v["condition"] ~= nil then
+                    -- condition breakpoint
+                    local conditionExp = {["varName"] = v["condition"]}
+                    return this.IsMeetCondition(conditionExp)
+                elseif v["logMessage"] ~= nil then
+                    -- log point
+                    this.printToVSCode(v["logMessage"], 1)
+                else
+                    -- line breakpoint
+                    return true;
+                end
             end
         end
     end
     return false;
+end
+
+-- 条件断点处理函数
+-- 返回true表示条件成立
+-- @conditionExp 条件表达式
+function this.IsMeetCondition(conditionExp)
+    -- 判断条件之前更新堆栈信息
+    currentCallStack = {};
+    variableRefTab = {};
+    variableRefIdx = 1;
+    this.getStackTable();
+    this.curStackId = 2;
+
+    local retTable = this.processWatchedExp(conditionExp)
+    tools.printTable(retTable, "retTable")
+    if retTable[1]["value"] == nil or retTable[1]["value"] == "nil" or retTable[1]["value"] == "false" then
+        return false
+    else
+        return true
+    end
 end
 
 --加入断点函数
