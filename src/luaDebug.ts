@@ -9,7 +9,7 @@ import {
     Logger, logger,
     LoggingDebugSession,
     InitializedEvent, TerminatedEvent, StoppedEvent, BreakpointEvent, OutputEvent,
-    Thread, StackFrame, Scope, Source, Breakpoint
+    Thread, StackFrame, Scope, Source
 } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { basename } from 'path';
@@ -19,6 +19,7 @@ import * as Net from 'net';
 import { dataProcesser } from './dataProcesser';
 import { DebugLogger } from './LogManager';
 import { StatusBarManager } from './StatusBarManager';
+import { LineBreakpoint, ConditionBreakpoint, LogPoint } from './BreakPoint';
 
 export class LuaDebugSession extends LoggingDebugSession {
     private static THREAD_ID = 1; 	  //调试器不支持多线程，硬编码THREAD_ID为1
@@ -211,15 +212,27 @@ export class LuaDebugSession extends LoggingDebugSession {
     protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
         DebugLogger.AdapterInfo('setBreakPointsRequest');
         const path = <string>args.source.path;
-        const clientLines = args.lines || [];//clientLines中包含了本文件所有的断点行号
         let vscodeBreakpoints = new Array(); //VScode UI识别的断点（起始行号1）
 
-        clientLines.map(l => {
+        args.breakpoints!.map(bp => {
             const id = this._runtime.getBreakPointId()
-            const bp = <DebugProtocol.Breakpoint>new Breakpoint(true, l);
-            bp.id = id;
-            vscodeBreakpoints.push(bp);
+
+            let breakpoint; // 取出args中的断点并判断类型。
+            if (bp.condition) {
+                breakpoint = new ConditionBreakpoint(true, bp.line, bp.condition, id);
+                breakpoint.condition = bp.condition;
+            }
+            else if (bp.logMessage) {
+                breakpoint = new LogPoint(true, bp.line, bp.logMessage, id);
+                breakpoint.logMessage = bp.logMessage;
+            }
+            else {
+                breakpoint = new LineBreakpoint(true, bp.line, id);
+            }
+
+            vscodeBreakpoints.push(breakpoint);
         });
+
         response.body = {
             breakpoints: vscodeBreakpoints
         };
