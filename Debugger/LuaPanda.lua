@@ -1033,7 +1033,6 @@ function this.IsMeetCondition(conditionExp)
     this.curStackId = 2;
 
     local retTable = this.processWatchedExp(conditionExp)
-    tools.printTable(retTable, "retTable")
     if retTable[1]["value"] == nil or retTable[1]["value"] == "nil" or retTable[1]["value"] == "false" then
         return false
     else

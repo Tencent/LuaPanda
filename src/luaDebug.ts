@@ -220,11 +220,9 @@ export class LuaDebugSession extends LoggingDebugSession {
             let breakpoint; // 取出args中的断点并判断类型。
             if (bp.condition) {
                 breakpoint = new ConditionBreakpoint(true, bp.line, bp.condition, id);
-                breakpoint.condition = bp.condition;
             }
             else if (bp.logMessage) {
                 breakpoint = new LogPoint(true, bp.line, bp.logMessage, id);
-                breakpoint.logMessage = bp.logMessage;
             }
             else {
                 breakpoint = new LineBreakpoint(true, bp.line, id);
