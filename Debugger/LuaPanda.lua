@@ -997,20 +997,28 @@ end
 -- 参数info是当前堆栈信息
 -- @info getInfo获取的当前调用信息
 function this.isHitBreakpoint( info )
-  --  tools.printTable(breaks,"breaks");
+    -- tools.printTable(breaks,"breaks");
 
     local curPath = info.source;
     local curLine = tostring(info.currentline);
     if breaks[curPath] ~= nil then
         for k,v in ipairs(breaks[curPath]) do
             if tostring(v["line"]) == tostring(curLine) then
-                if v["condition"] ~= nil then
+                -- type是TS中的枚举类型，其定义在BreakPoint.tx文件中
+                --[[
+                    enum BreakpointType {
+                        conditionBreakpoint = 0,
+                        logPoint,
+                        lineBreakpoint
+                    }
+                ]]
+                if v["type"] == "0" then
                     -- condition breakpoint
                     local conditionExp = {["varName"] = v["condition"]}
                     return this.IsMeetCondition(conditionExp)
-                elseif v["logMessage"] ~= nil then
+                elseif v["type"] == "1" then
                     -- log point
-                    this.printToVSCode(v["logMessage"], 1)
+                    this.printToVSCode("log message: " .. v["logMessage"], 1)
                 else
                     -- line breakpoint
                     return true;
