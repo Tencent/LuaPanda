@@ -1014,8 +1014,7 @@ function this.isHitBreakpoint( info )
                 ]]
                 if v["type"] == "0" then
                     -- condition breakpoint
-                    local conditionExp = {["varName"] = v["condition"]}
-                    return this.IsMeetCondition(conditionExp)
+                    return this.IsMeetCondition(v["condition"])
                 elseif v["type"] == "1" then
                     -- log point
                     this.printToVSCode("log message: " .. v["logMessage"], 1)
@@ -1040,7 +1039,8 @@ function this.IsMeetCondition(conditionExp)
     this.getStackTable();
     this.curStackId = 2;
 
-    local retTable = this.processWatchedExp(conditionExp)
+    local conditionExpTable = {["varName"] = conditionExp}
+    local retTable = this.processWatchedExp(conditionExpTable)
     if retTable[1]["value"] == nil or retTable[1]["value"] == "nil" or retTable[1]["value"] == "false" then
         return false
     else
