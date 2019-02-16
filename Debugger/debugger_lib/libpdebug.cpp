@@ -442,6 +442,28 @@ int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
     if (const_iter2 == const_iter1->second.end()) {
         return 0;
     }
+
+    // 条件断点
+    if (const_iter2->second.type == CONDITION_BREAKPOINT) {
+        std::string condition = const_iter2->second.info;
+        call_lua_function(L, "IsMeetCondition", 1, condition.c_str());
+        if (!lua_isboolean(L, -1)) {
+            print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk process condition expression result error!", 2);
+            return 0;
+        }
+        int is_meet_condition = lua_toboolean(L, -1);
+        lua_pop(L, 1);
+        return is_meet_condition;
+    }
+
+    // 记录点
+    if (const_iter2->second.type == LOG_POINT) {
+        std::string log_message = "log message: ";
+        log_message.append(const_iter2->second.info);
+        print_to_vscode(L, log_message.c_str() , 1);
+        return 0;
+    }
+
     return 1;
 }
 
