@@ -98,6 +98,26 @@ export class luaDebugRuntime extends EventEmitter {
     }
 
     /**
+     * 设置 某一变量的值
+     * @param callback: 收到请求返回后的回调函数
+     * @param callbackArgs：回调参数
+     * @param name: 变量名
+     * @param newValue: 用户设置的新值
+     * @param variableRef：变量id。首次获取时id填0，之后展开table时，id填table id
+     * @param frameId：当前栈层（变量的值会随切换栈层而改变）
+     * @param event：事件名
+     */
+    public setVariable(callback, callbackArgs, name, newValue ,variableRef = 0, frameId = 2, event = 'setVariable') {
+        DebugLogger.AdapterInfo("setVariable");
+        let arrSend = new Object();
+        arrSend["varRef"] = String(variableRef);
+        arrSend["stackId"] = String(frameId);
+        arrSend["newValue"] = String(newValue);
+        arrSend["varName"] = String(name);
+        dataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
+    }
+
+    /**
      * 从 Debugger 获取变量信息
      * @param callback: 收到请求返回后的回调函数
      * @param callbackArgs：回调参数
@@ -106,7 +126,7 @@ export class luaDebugRuntime extends EventEmitter {
      * @param frameId：当前栈层（变量的值会随切换栈层而改变）
      * @param event：事件名
      */
-    public getVariable(callback, callbackArgs, variableRef = 0, frameId = 2, event = 'getVariable') {
+    public getVariable(callback, callbackArgs ,  variableRef = 0, frameId = 2, event = 'getVariable') {
         DebugLogger.AdapterInfo("getVariable");
         let arrSend = new Object();
         arrSend["varRef"] = String(variableRef);

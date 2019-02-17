@@ -9,7 +9,7 @@ import {
     Logger, logger,
     LoggingDebugSession,
     InitializedEvent, TerminatedEvent, StoppedEvent, BreakpointEvent, OutputEvent,
-    Thread, StackFrame, Scope, Source, Breakpoint
+    Thread, StackFrame, Scope, Source, Breakpoint, Handles
 } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { basename } from 'path';
@@ -26,6 +26,8 @@ export class LuaDebugSession extends LoggingDebugSession {
     private static breakpointsArray; //在socket连接前临时保存断点的数组
     private static autoReconnect;
     private _configurationDone = new Subject();
+    private _variableHandles = new Handles<string>(50000);//Handle编号从50000开始
+
     //自身单例
     private static instance: LuaDebugSession;
     public static userConnectionFlag;      //这个标记位的作用是标记Adapter停止连接，因为Adapter是Server端，要等Client发来请求才能断开
@@ -39,7 +41,6 @@ export class LuaDebugSession extends LoggingDebugSession {
     //luaDebugRuntime实例
     private _runtime: luaDebugRuntime;
     private UseLoadstring: boolean = false;
-    private static currentframeId: number = 0;
 
     public getRuntime() {
         return this._runtime;
@@ -105,7 +106,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         //后面可以支持Hovers显示值
         response.body.supportsEvaluateForHovers = true;//悬停请求变量的值
         response.body.supportsStepBack = false;//back按钮
-        response.body.supportsSetVariable = false;//修改变量的值
+        response.body.supportsSetVariable = true;//修改变量的值
         this.sendResponse(response);
     }
 
@@ -337,16 +338,50 @@ export class LuaDebugSession extends LoggingDebugSession {
      * 在变量大栏目中列举出的种类
      */
     protected scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments): void {
-        LuaDebugSession.currentframeId = args.frameId; //frameId指示调用栈深度，从2开始
+        const frameReference = args.frameId;
         const scopes = new Array<Scope>();
-        //设置局部变量的reference是1w,  全局2w, upValue 3w
-        scopes.push(new Scope("Local", 10000, false));
-        scopes.push(new Scope("Global", 20000, true));
-        scopes.push(new Scope("UpValue", 30000, false));
+        //local 10000,  global 20000, upvalue 30000
+        scopes.push(new Scope("Local", this._variableHandles.create("10000_" + frameReference), false));
+        scopes.push(new Scope("Global", this._variableHandles.create("20000_" + frameReference), true));
+        scopes.push(new Scope("UpValue", this._variableHandles.create("30000_" + frameReference), false));
         response.body = {
             scopes: scopes
         };
         this.sendResponse(response);
+    }
+
+    /**
+     * 设置变量的值
+     */
+    protected setVariableRequest(response: DebugProtocol.SetVariableResponse, args: DebugProtocol.SetVariableArguments){
+        let callbackArgs = new Array();
+        callbackArgs.push(this);
+        callbackArgs.push(response);   
+    
+        let referenceString = this._variableHandles.get(args.variablesReference);
+        let referenceArray : string[] = [];
+        if(referenceString != null)  {
+            referenceArray = referenceString.split('_');
+            if (referenceArray.length < 2) {
+                DebugLogger.AdapterInfo("[variablesRequest Error] #referenceArray < 2 , #referenceArray = "+ referenceArray.length);
+                this.sendResponse(response);
+                return;
+            }
+        }else{
+            //_variableHandles 取不到的情况下 referenceString 即为真正的变量 ref
+            referenceArray[0] = String(args.variablesReference);
+        }
+
+        this._runtime.setVariable((arr, info) => {
+            if(info.success === "true"){
+                arr[1].body = {
+                    value: String(info.value),
+                    type: String(info.type)
+                };
+            }
+            let ins = arr[0];
+            ins.sendResponse(arr[1]);   
+        }, callbackArgs,  args.name,  args.value, parseInt(referenceArray[0]) , parseInt(referenceArray[1]));
     }
 
     /**
@@ -356,6 +391,20 @@ export class LuaDebugSession extends LoggingDebugSession {
         let callbackArgs = new Array();
         callbackArgs.push(this);
         callbackArgs.push(response);
+
+        let referenceString = this._variableHandles.get(args.variablesReference);
+        let referenceArray : string[] = [];
+        if(referenceString != null)  {
+            referenceArray = referenceString.split('_');
+            if (referenceArray.length < 2) {
+                DebugLogger.AdapterInfo("[variablesRequest Error] #referenceArray < 2 , #referenceArray = "+ referenceArray.length);
+                this.sendResponse(response);
+                return;
+            }
+        }else{
+            //_variableHandles 取不到的情况下 referenceString 即为真正的变量ref
+            referenceArray[0] = String(args.variablesReference);
+        }
 
         this._runtime.getVariable((arr, info) => {
             const variables = new Array<DebugProtocol.Variable>();
@@ -372,7 +421,7 @@ export class LuaDebugSession extends LoggingDebugSession {
             };
             let ins = arr[0];
             ins.sendResponse(arr[1]);
-        }, callbackArgs, args.variablesReference, LuaDebugSession.currentframeId);
+        }, callbackArgs, parseInt(referenceArray[0]) , parseInt(referenceArray[1]));
     }
 
     /**
