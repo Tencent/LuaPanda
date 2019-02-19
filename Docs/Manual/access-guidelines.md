@@ -157,7 +157,7 @@ c hook的源码放置在工程中`Debugger/debugger_lib`中。以供参考
             "stopOnEntry": true,//是否在开始调试时停止
             "connectionPort": 8818,//连接端口号，默认8818
             "logLevel": 1 //日志等级
-        	"useHighSpeedModule":true //是否使用C lib库
+        	"useCHook":true //是否使用C lib库
         }
     ]
 }
@@ -183,7 +183,7 @@ sluaunreal:lua
 
 **logLevel**：日志等级，默认1。0是在输出所有日志，但输出日志会降低执行效率，造成运行卡顿，仅在定位问题时修改。
 
-**useHighSpeedModule**：是否使用C lib库，此项默认不显示，默认值为true。需要时可手动添加修改。true是自动尝试查找c库提升执行效率，false是不使用c库。
+**useCHook**：是否使用C lib库，此项默认不显示，默认值为true。需要时可手动添加修改。true是自动尝试查找c库提升执行效率，false是不使用c库。
 
 
 

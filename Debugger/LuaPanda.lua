@@ -273,8 +273,14 @@ function this.tryRequireClib(libName , libPath)
     package.cpath = libPath;
     if pcall(function() hookLib = require(libName)  end) then
         package.cpath = save_cpath;
-        this.printToVSCode("tryRequireClib success : [" .. libName .. "] in "..libPath);
-        return true;
+        if type(hookLib) == "table" and this.getTableMemberNum(hookLib) > 0 then
+            this.printToVSCode("tryRequireClib success : [" .. libName .. "] in "..libPath);
+            return true;
+        else
+            this.printToVSCode("tryRequireClib fail : require success, but member function num <= 0; [" .. libName .. "] in "..libPath);
+            hookLib = nil;    
+            return false;
+        end
     end
     package.cpath = save_cpath;
     return false
@@ -703,7 +709,7 @@ function this.dataProcess( dataStr )
         end
 
         --查找c++的hook库是否存在
-        if tostring(dataTable.info.useHighSpeedModule) == "true" then
+        if tostring(dataTable.info.useCHook) == "true" then
             local clibExt, platform;
             if OSType == "Darwin" then clibExt = "/?.so;"; platform = "mac";
             else clibExt = "/?.dll;"; platform = "win";   end

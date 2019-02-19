@@ -97,8 +97,8 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             config.DebugMode = false;
         }
 
-        if (config.useHighSpeedModule == undefined) {
-            config.useHighSpeedModule = true;
+        if (config.useCHook == undefined) {
+            config.useCHook = true;
         }
 
         if (!this._server) {

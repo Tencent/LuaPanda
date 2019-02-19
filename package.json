@@ -128,9 +128,9 @@
 								"description": "日志等级. 0:all所有信息; 1:info仅必要信息(默认); 2:error仅错误",
 								"default": 1
 							},
-							"useHighSpeedModule": {
+							"useCHook": {
 								"type": "boolean",
-								"description": "隐藏属性，使用高速C模块。默认true",
+								"description": "使用C Hook模块, 提高运行效率。默认true。设置为false则使用 lua hook 调试",
 								"default": true
 							}
 						}
@@ -149,6 +149,7 @@
 						"pathCaseSensitivity": true,
 						"connectionPort": 8818,
 						"stopOnEntry": true,
+						"useCHook": true,
 						"logLevel": 1
 					}
 				]

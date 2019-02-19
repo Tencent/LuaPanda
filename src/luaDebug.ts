@@ -140,7 +140,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         sendArgs["pathCaseSensitivity"] = args.pathCaseSensitivity;
         sendArgs["OSType"] = os.type();
         sendArgs["clibPath"] = clibPath;
-        sendArgs["useHighSpeedModule"] = args.useHighSpeedModule;
+        sendArgs["useCHook"] = args.useCHook;
 
         LuaDebugSession.autoReconnect = args.autoReconnect;
         //2. 初始化内存分析状态栏

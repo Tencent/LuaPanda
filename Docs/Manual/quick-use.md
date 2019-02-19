@@ -6,7 +6,7 @@
 
 ### console
 
-使用console调试请先确认安装了luasocket。windows下调试console中lua进程, 请调整launch.json中useHighSpeedModule: false(见附录)
+使用console调试请先确认安装了luasocket。windows下调试console中lua进程, 请调整launch.json中useCHook: false(见附录)
 
 验证luasocket方法：console下执行lua，并 `require "socket.core"` 不报错说明已安装luasocket。
 
@@ -64,7 +64,7 @@
             "stopOnEntry": true,//是否在开始调试时停止
             "connectionPort": 8818,//连接端口号，默认8818
             "logLevel": 1, //日志等级
-            "useHighSpeedModule":true	//是否使用C lib库
+            "useCHook":true	//是否使用C lib库
         }
     ]
 }
