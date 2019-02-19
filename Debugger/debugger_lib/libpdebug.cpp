@@ -114,24 +114,24 @@ void print_all_breakpoint_map() {
     std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
     std::map<int, breakpoint>::iterator iter2;
     for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
-        cout << iter1->first << endl;
+        std::cout << iter1->first << std::endl;
         for (iter2 = iter1->second.begin(); iter2 != iter1->second.end(); ++iter2) {
-            cout << "   " << "line: " << iter2->first << "  type: ";
+            std::cout << "   " << "line: " << iter2->first << "  type: ";
             switch (iter2->second.type) {
                 case CONDITION_BREAKPOINT:
-                    cout << "condition breakpoint" << "  info: " << iter2->second.info << endl;
+                    std::cout << "condition breakpoint" << "  info: " << iter2->second.info << std::endl;
                     break;
 
                 case LOG_POINT:
-                    cout << "log point" << "  info: " << iter2->second.info << endl;
+                    std::cout << "log point" << "  info: " << iter2->second.info << std::endl;
                     break;
 
                 case LINE_BREAKPOINT:
-                    cout << "line breakpoint" << "  info: " << iter2->second.info << endl;
+                    std::cout << "line breakpoint" << "  info: " << iter2->second.info << std::endl;
                     break;
 
                 default:
-                    cout << "Invalid breakpoint type!" << iter2->second.type << endl;
+                    std::cout << "Invalid breakpoint type!" << iter2->second.type << std::endl;
                     break;
             }
         }
