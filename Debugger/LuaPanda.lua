@@ -1017,12 +1017,15 @@ function this.isHitBreakpoint( info )
                         lineBreakpoint
                     }
                 ]]
+
                 if v["type"] == "0" then
                     -- condition breakpoint
-                    return this.IsMeetCondition(v["condition"])
+                    -- 注意此处不要使用尾调用，否则会影响调用栈，导致Lua5.3和Lua5.1中调用栈层级不同
+                    local conditionRet = this.IsMeetCondition(v["condition"]);
+                    return conditionRet;
                 elseif v["type"] == "1" then
                     -- log point
-                    this.printToVSCode("log message: " .. v["logMessage"], 1)
+                    this.printToVSCode("log message: " .. v["logMessage"], 1);
                 else
                     -- line breakpoint
                     return true;
@@ -1042,14 +1045,14 @@ function this.IsMeetCondition(conditionExp)
     variableRefTab = {};
     variableRefIdx = 1;
     this.getStackTable();
-    this.curStackId = 2;
+    this.curStackId = 2; --在用户空间最上层执行
 
     local conditionExpTable = {["varName"] = conditionExp}
     local retTable = this.processWatchedExp(conditionExpTable)
     if retTable[1]["value"] == nil or retTable[1]["value"] == "nil" or retTable[1]["value"] == "false" then
-        return false
+        return false;
     else
-        return true
+        return true;
     end
 end
 
