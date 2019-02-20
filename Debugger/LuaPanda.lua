@@ -842,8 +842,6 @@ function this.getStackTable( level )
     else
         functionLevel = level or this.getSpecificFunctionStackLevel(lastRunFunction.func);
     end
-    tools.printTable(lastRunFunction, "lastRunFunction")
-    this.printToConsole("functionLevel:     " .. functionLevel)
     local stackTab = {};
     local userFuncSteakLevel = 0; --用户函数的steaklevel
     repeat
