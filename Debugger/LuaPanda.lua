@@ -241,8 +241,8 @@ function this.getCWD()
         ly = 2;
     end
     local runSource = lastRunFunction["source"];
-    if runSource == nil then
-        runSource = this.getPath(hookLib.get_last_source());
+    if runSource == nil and hookLib ~= nil then
+        runSource = this.getPath(tostring(hookLib.get_last_source()));
     end
     local info = debug.getinfo(ly, "S");
     return "cwd:      "..cwd .."\ngetinfo:  ".. info["source"] .. "\nformat:   " .. tostring(runSource) ;
@@ -587,10 +587,12 @@ function this.dataProcess( dataStr )
         --其他时机收到breaks消息
         local msgTab = this.getMsgTable("setBreakPoint", this.getCallbackId());
         this.sendMsg(msgTab);
+        -- 打印调试信息
+        this.printToVSCode("LuaPanda.getInfo()\n" .. LuaPanda.getInfo())
+        this.printToVSCode("LuaPanda.getCWD()\n" .. LuaPanda.getCWD())
+        this.printToVSCode("LuaPanda.getBreaks()\n" .. tools.serializeTable(LuaPanda.getBreaks()));
         this.debugger_wait_msg();
-
     elseif dataTable.cmd == "setVariable" then
-            --仅在停止时处理消息，其他时刻收到此消息，丢弃
             if currentRunState == runState.STOP_ON_ENTRY or
             currentRunState == runState.HIT_BREAKPOINT or
             currentRunState == runState.STEPOVER_STOP or
@@ -598,45 +600,43 @@ function this.dataProcess( dataStr )
             currentRunState == runState.STEPOUT_STOP then
                 local msgTab = this.getMsgTable("setVariable", this.getCallbackId());
                 local varRefNum = tonumber(dataTable.info.varRef);
-                print(dataTable.info.newValue)
                 local newValue = tostring(dataTable.info.newValue);
-                if newValue == "nil" then newValue = nil;
-                elseif newValue == "true" then newValue = true;
-                elseif newValue == "false" then newValue = false;
-                else
-                    newValue = tonumber(newValue) or newValue;
+                local isFindVariable = true;    --如果变量是基础类型，直接赋值，isFindVariable = false; 如果变量是引用类型，isFindVariable = true
+                local varName = tostring(dataTable.info.varName);
+                -- 根据首末含有" ' 判断 newValue 是否是字符串
+                local first_chr = string.sub(newValue, 1, 1);
+                local end_chr = string.sub(newValue, -1, -1);
+                if first_chr == end_chr then
+                    if first_chr == "'" or first_chr == '"' then
+                        newValue = string.sub(newValue, 2, -2);
+                        isFindVariable = false;
+                    end
+                end
+                --数字，nil，false，true的处理
+                if newValue == "nil" and isFindVariable == true  then newValue = nil; isFindVariable = false;
+                elseif newValue == "true" and isFindVariable == true then newValue = true; isFindVariable = false;
+                elseif newValue == "false" and isFindVariable == true then newValue = false; isFindVariable = false;
+                elseif tonumber(newValue) and isFindVariable == true then newValue = tonumber(newValue); isFindVariable = false;
                 end
 
-                local varName = tostring(dataTable.info.varName);
-                
-                if varRefNum < 10000 then
-                    -- ref 解析输入的名字，之后从variableRefTab中查找，并修改。
-                    variableRefTab[varRefNum][varName] = newValue;
-                    msgTab.info = { success = "true", type = type(newValue), value = newValue};
-                else    
-                    local setLimit
-                    if varRefNum >= 10000 and varRefNum < 20000 then
-                        --local
-                        setLimit = "local";
-                    elseif varRefNum >= 20000 and varRefNum < 30000 then
-                        --global
-                        setLimit = "global";
-                    elseif varRefNum >= 30000 then
-                        --upvalue
-                        setLimit = "upvalue";
-                    end
+                -- 如果新值是基础类型，则不需边历
+                if dataTable.info.stackId ~= nil and tonumber(dataTable.info.stackId) ~= nil and tonumber(dataTable.info.stackId) > 1 then
+                    this.curStackId = tonumber(dataTable.info.stackId);
+                else
+                    this.printToVSCode("未能获取到堆栈层级，默认使用 this.curStackId;")
+                end
 
-                    if dataTable.info.stackId ~= nil and tonumber(dataTable.info.stackId) > 1 then
-                        this.curStackId = tonumber(dataTable.info.stackId);
-                        print (varName, this.curStackId, newValue, setLimit );
-                        local ret = this.setVariableValue( varName, this.curStackId, newValue, setLimit );
-                        print(ret);
-                        if ret ~= false and ret ~= nil then 
-                            msgTab.info = { success = "true", type = type(newValue), value = newValue};
-                        else
-                            msgTab.info = { success = "false", type = type(newValue), value = newValue};
-                        end
+                if varRefNum < 10000 then
+                    -- 如果修改的是一个 引用变量，那么可直接赋值。但还是要走变量查询过程。查找和赋值过程都需要steakId。 目前给引用变量赋值Object，steak可能有问题
+                    msgTab.info = this.createSetValueRetTable(varName, newValue, isFindVariable, this.curStackId, variableRefTab[varRefNum][varName]);
+                else
+                    -- 如果修改的是一个基础类型    
+                    local setLimit; --设置检索变量的限定区域
+                    if varRefNum >= 10000 and varRefNum < 20000 then setLimit = "local";
+                    elseif varRefNum >= 20000 and varRefNum < 30000 then setLimit = "global";
+                    elseif varRefNum >= 30000 then setLimit = "upvalue";
                     end
+                    msgTab.info = this.createSetValueRetTable(varName, newValue, isFindVariable, this.curStackId, nil, setLimit);
                 end
 
                 this.sendMsg(msgTab);
@@ -803,8 +803,52 @@ function this.dataProcess( dataStr )
         this.sendMsg(msgTab);
         this.debugger_wait_msg();
     else
-
     end
+end
+
+-- 变量赋值的处理函数。基本逻辑是先从当前栈帧（curStackId）中取 newValue 代表的变量，找到之后再把找到的值通过setVariableValue写回。
+-- @varName             被设置值的变量名
+-- @newValue            新值的名字，它是一个string
+-- @isFindVariable      是否需要查找引用变量。（用户输入的是否是一个Object）
+-- @curStackId          当前栈帧（查找和变量赋值用）
+-- @assigndVar          被直接赋值（省去查找过程）
+-- @setLimit              赋值时的限制范围（local upvalue global）
+function this.createSetValueRetTable(varName, newValue, isFindVariable, curStackId,  assigndVar , setLimit)
+    local info;
+    -- 以上的处理没有命中，则使用getWatchedVariable处理（可选, 用来支持 a = b (b为变量的情况)）。
+    local getVarRet;
+    if isFindVariable == false then
+        getVarRet = {}; 
+        getVarRet[1] = {variablesReference = 0, value = newValue, name = varName, type = type(newValue)};
+    else
+        getVarRet =  this.getWatchedVariable( tostring(newValue), curStackId, true);
+    end
+    if getVarRet ~= nil then 
+        --如果找到, 用户输入的是一个变量名
+        newValue = getVarRet[1].value;
+        local setVarRet;
+        if assigndVar == nil then
+            setVarRet = this.setVariableValue( varName, curStackId, newValue, setLimit );
+        else
+            assigndVar = newValue;
+            setVarRet = true;
+        end
+
+        if getVarRet[1].type == "string" then
+            newValue = '"' .. newValue .. '"';
+        end
+
+        if setVarRet ~= false and setVarRet ~= nil then 
+            local retTip = "变量 ".. varName .." 赋值成功";
+            info = { success = "true", name = getVarRet[1].name , type = getVarRet[1].type , value = newValue, variablesReference = tostring(getVarRet[1].variablesReference), tip = retTip};
+        else
+            info = { success = "false", type = type(newValue), value = newValue, tip = "找不到要设置的变量"};
+        end
+
+    else
+        info = { success = "false", type = type(newValue), value = newValue, tip = "输入的值无意义"};    
+    end
+    return info
 end
 
 --接收消息
@@ -1527,6 +1571,8 @@ function this.createWatchedVariableInfo(variableName, variableIns)
             local memberNum = this.getTableMemberNum(variableIns);
             var.value = memberNum .." Members ".. var.value;
         end
+    elseif var.type == "string" then 
+        var.value = '"' ..variableIns.. '"';
     end
     return var;
 end
@@ -1767,6 +1813,8 @@ function this.getVariableRef( refStr )
                     local memberNum = this.getTableMemberNum(v);
                     var.value = memberNum .." Members ".. var.value
                 end
+            elseif var.type == "string" then 
+                var.value = '"' ..v.. '"';
             end
             table.insert(varTab, var);
         end
@@ -1821,7 +1869,8 @@ function this.getGlobalVariable( ... )
                 local memberNum = this.getTableMemberNum(v);
                 var.value = memberNum .." Members ".. var.value
             end
-
+        elseif var.type == "string" then 
+            var.value = '"' ..v.. '"';
         end
         table.insert(varTab, var);
     end
@@ -1863,6 +1912,8 @@ function this.getUpValueVariable( checkFunc , isFormatVariable)
                     local memberNum = this.getTableMemberNum(v);
                     var.value = memberNum .." Members ".. var.value
                 end
+            elseif var.type == "string" then 
+                var.value = '"' ..v.. '"';
             end
         else
             var.value = v;
@@ -1917,6 +1968,8 @@ function this.getVariable( checkLayer, isFormatVariable )
                         local memberNum = this.getTableMemberNum(v);
                         var.value = memberNum .." Members ".. var.value
                     end
+                elseif var.type == "string" then 
+                        var.value = '"' ..v.. '"';
                 end
             else
                 var.value = v;
@@ -1973,6 +2026,8 @@ function this.processExp(msgTable)
             local memberNum = this.getTableMemberNum(retString);
             var.value = memberNum .." Members ".. var.value;
         end
+    elseif var.type == "string" then 
+        var.value = '"' ..retString.. '"';
     end
     --string执行完毕后清空evn环境
     this.clearEnv();
@@ -2014,6 +2069,8 @@ function this.processWatchedExp(msgTable)
             local memberNum = this.getTableMemberNum(retString);
             var.value = memberNum .." Members ".. var.value;
         end
+    elseif var.type == "string" then 
+        var.value = '"' ..retString.. '"';
     end
 
     local retTab = {}
