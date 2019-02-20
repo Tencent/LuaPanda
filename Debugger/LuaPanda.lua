@@ -102,7 +102,7 @@ local coroutinePool = {};       --保存用户协程的队列
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
 local stepOutCounter = 0;       --STEPOVER out计数器
-local HOOK_LEVEL = 3+2;         --调用栈偏移量
+local HOOK_LEVEL = 3;           --调用栈偏移量，使用clib时为3，lua中不再使用此变量，而是通过函数getSpecificFunctionStackLevel获取
 local isUseLoadstring = 0;
 local debugger_loadString;
 --临时变量
@@ -660,10 +660,8 @@ function this.dataProcess( dataStr )
 
             if luapanda_chook ~= nil then
                 hookLib = luapanda_chook;
-                HOOK_LEVEL = 3;
             else
                 if this.tryRequireClib("libpdebug", x64Path) or this.tryRequireClib("libpdebug", x86Path) then
-                    HOOK_LEVEL = 3;
                 end
             end
         end
@@ -838,11 +836,18 @@ end
 --getStackTable需要建立stackTable，保存每层的lua函数实例(用来取upvalue)，保存函数展示层级和ly的关系(便于根据前端传来的stackId查局部变量)
 -- @level 要获取的层级
 function this.getStackTable( level )
-    local i = level or HOOK_LEVEL;
+    local functionLevel = 0
+    if hookLib ~= nil then
+        functionLevel = level or HOOK_LEVEL;
+    else
+        functionLevel = level or this.getSpecificFunctionStackLevel(lastRunFunction.func);
+    end
+    tools.printTable(lastRunFunction, "lastRunFunction")
+    this.printToConsole("functionLevel:     " .. functionLevel)
     local stackTab = {};
     local userFuncSteakLevel = 0; --用户函数的steaklevel
     repeat
-        local info = debug.getinfo(i, "SlLnf")
+        local info = debug.getinfo(functionLevel, "SlLnf")
         if info == nil then
             break;
         end
@@ -855,7 +860,7 @@ function this.getStackTable( level )
         ss.name = "文件名"; --这里要做截取
         ss.line = tostring(info.currentline);
         --使用hookLib时，堆栈有偏移量，这里统一调用栈顶编号2
-        local ssindex = i - 3;
+        local ssindex = functionLevel - 3;
         if hookLib ~= nil then
             ssindex = ssindex + 2;
         end
@@ -866,14 +871,14 @@ function this.getStackTable( level )
         callStackInfo.name = ss.file;
         callStackInfo.line = ss.line;
         callStackInfo.func = info.func;     --保存的function
-        callStackInfo.realLy = i;              --真实堆栈层i(仅debug时用)
+        callStackInfo.realLy = functionLevel;              --真实堆栈层functionLevel(仅debug时用)
         table.insert(currentCallStack, callStackInfo);
 
         --level赋值
         if userFuncSteakLevel == 0 then
-            userFuncSteakLevel = i;
+            userFuncSteakLevel = functionLevel;
         end
-        i = i + 1;
+        functionLevel = functionLevel + 1;
     until info == nil
     return stackTab, userFuncSteakLevel;
 end
