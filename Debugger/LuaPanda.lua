@@ -1047,11 +1047,22 @@ function this.IsMeetCondition(conditionExp)
 
     local conditionExpTable = {["varName"] = conditionExp}
     local retTable = this.processWatchedExp(conditionExpTable)
-    if retTable[1]["value"] == nil or retTable[1]["value"] == "nil" or retTable[1]["value"] == "false" then
-        return false;
-    else
-        return true;
+
+    local isMeetCondition = false;
+    local function HandleResult()
+        if retTable[1]["isSuccess"] == "true" then
+            if retTable[1]["value"] == "nil" or (retTable[1]["value"] == "false" and retTable[1]["type"] == "boolean") then
+                isMeetCondition = false;
+            else
+                isMeetCondition = true;
+            end
+        else
+            isMeetCondition = false;
+        end
     end
+
+    xpcall(HandleResult, function() isMeetCondition = false; end)
+    return isMeetCondition;
 end
 
 --加入断点函数
@@ -1785,6 +1796,8 @@ end
 -- 执行表达式
 function this.processExp(msgTable)
     local retString;
+    local var = {};
+    var.isSuccess = "true";
     if msgTable ~= nil then
         local expression = this.trim(tostring(msgTable.Expression));
         local isCmd = false;
@@ -1807,17 +1820,17 @@ function this.processExp(msgTable)
                     debug.setupvalue(f, 1, env);
                 end
                 --表达式要有错误处理
-                xpcall(function() retString = f() end , function() retString = "输入错误指令。\n + 请检查指令是否正确\n + 指令仅能在[暂停在断点时]输入, 请不要在程序持续运行时输入" end)
+                xpcall(function() retString = f() end , function() retString = "输入错误指令。\n + 请检查指令是否正确\n + 指令仅能在[暂停在断点时]输入, 请不要在程序持续运行时输入"; var.isSuccess = false; end)
             else
-                retString = "指令执行错误。\n + 请检查指令是否正确\n + 如果希望观察[变量的值]或[表达式的返回结果]，请在表达式前前面加\"p \"\n + 如果仅希望执行一段lua代码，直接输入即可"
+                retString = "指令执行错误。\n + 请检查指令是否正确\n + 如果希望观察[变量的值]或[表达式的返回结果]，请在表达式前前面加\"p \"\n + 如果仅希望执行一段lua代码，直接输入即可";
+                var.isSuccess = false;
             end
         end
     end
 
-    local var = {};
     var.name = "Exp";
     var.type = tostring(type(retString));
-    xpcall(function() var.value = tostring(retString) end , function(e) var.value = tostring(type(retString))  .. " [value can't trans to string] ".. e end );
+    xpcall(function() var.value = tostring(retString) end , function(e) var.value = tostring(type(retString))  .. " [value can't trans to string] ".. e; var.isSuccess = false; end);
     var.variablesReference = "0";
     if var.type == "table" or var.type == "function" then
         variableRefTab[variableRefIdx] = retString;
@@ -1841,6 +1854,8 @@ function this.processWatchedExp(msgTable)
     local expression = "return ".. tostring(msgTable.varName)
     this.printToConsole("processWatchedExp | expression: " .. expression);
     local f = debugger_loadString(expression);
+    local var = {};
+    var.isSuccess = "true";
     --判断结果，如果表达式错误会返回nil
     if type(f) == "function" then
         --表达式正确
@@ -1849,15 +1864,15 @@ function this.processWatchedExp(msgTable)
         else
             debug.setupvalue(f, 1, env);
         end
-        xpcall(function() retString = f() end , function() retString = "输入了错误的变量信息" end)
+        xpcall(function() retString = f() end , function() retString = "输入了错误的变量信息"; var.isSuccess = "false"; end)
     else
-        retString = "未能找到变量的值"
+        retString = "未能找到变量的值";
+        var.isSuccess = "false";
     end
 
-    local var = {};
     var.name = msgTable.varName;
     var.type = tostring(type(retString));
-    xpcall(function() var.value = tostring(retString) end , function() var.value = tostring(type(retString)) .. " [value can't trans to string]" end );
+    xpcall(function() var.value = tostring(retString) end , function() var.value = tostring(type(retString)) .. " [value can't trans to string]"; var.isSuccess = "false"; end );
     var.variablesReference = "0";
 
     if var.type == "table" or var.type == "function" then
