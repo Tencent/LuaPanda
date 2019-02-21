@@ -8,6 +8,7 @@
 
 #include <ctime>
 #include <list>
+#include <map>
 #include <string>
 
 using namespace std;
@@ -29,21 +30,21 @@ int ar_current_line = 0;
 int ar_def_line = 0;
 int ar_lastdef_line = 0;
 struct path_transfer_node;
-struct break_node;
+struct breakpoint;
 //路径缓存队列
 std::list<path_transfer_node*> path_cache_list;
-//断点根指针
-break_node* break_root_node;
+// 存放断点map，key为source
+std::map<std::string, std::map<int, breakpoint>> all_breakpoint_map;
 
 enum run_state
 {
     DISCONNECT = 0,
-	WAIT_CMD = 1,
-	STOP_ON_ENTRY = 2,
-	RUN = 3,
-	STEPOVER = 4,
-	STEPIN = 5,
-	STEPOUT = 6,
+    WAIT_CMD = 1,
+    STOP_ON_ENTRY = 2,
+    RUN = 3,
+    STEPOVER = 4,
+    STEPIN = 5,
+    STEPOUT = 6,
     STEPOVER_STOP = 7,
     STEPIN_STOP = 8,
     STEPOUT_STOP = 9,
@@ -60,10 +61,17 @@ enum hook_state
 
 enum hook_event
 {
-	CALL = 0,
-	RETURN =1,
-	LINE =2,
+    CALL = 0,
+    RETURN =1,
+    LINE =2,
     TAILRET=4
+};
+
+enum breakpoint_type
+{
+    CONDITION_BREAKPOINT = 0,
+    LOG_POINT,
+    LINE_BREAKPOINT
 };
 
 //用来缓存路径的结构体
@@ -76,12 +84,10 @@ struct path_transfer_node{
     }
 };
 
-//断点节点
-struct break_node{
-    const char* source; //路径
-    break_node* next_node;
-    int lines[128];
-    int count;          //line数组中的元素数量
+// 断点信息
+struct breakpoint {
+    breakpoint_type type;
+    std::string info;
 };
 
 struct debug_auto_stack {
@@ -102,39 +108,33 @@ void check_hook_state(lua_State *L, const char* source, int current_line, int de
 void print_to_vscode(lua_State *L, const char* msg, int level = 0);
 int load(lua_State* L);
 
-////链表相关操作
-//释放不用的节点
-void free_other_node(break_node *root){
-    if(root == nullptr) return;
-    break_node *next = root->next_node;
-    while (root != nullptr) {
-        free(root);
-        root = next;
-        if (next != nullptr) {
-            next = next->next_node;
+//打印断点信息
+void print_all_breakpoint_map() {
+    std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
+    std::map<int, breakpoint>::iterator iter2;
+    for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
+        std::cout << iter1->first << std::endl;
+        for (iter2 = iter1->second.begin(); iter2 != iter1->second.end(); ++iter2) {
+            std::cout << "   " << "line: " << iter2->first << "  type: ";
+            switch (iter2->second.type) {
+                case CONDITION_BREAKPOINT:
+                    std::cout << "condition breakpoint" << "  info: " << iter2->second.info << std::endl;
+                    break;
+
+                case LOG_POINT:
+                    std::cout << "log point" << "  info: " << iter2->second.info << std::endl;
+                    break;
+
+                case LINE_BREAKPOINT:
+                    std::cout << "line breakpoint" << "  info: " << iter2->second.info << std::endl;
+                    break;
+
+                default:
+                    std::cout << "Invalid breakpoint type!" << iter2->second.type << std::endl;
+                    break;
+            }
         }
     }
-}
-
-//申请并初始化节点
-break_node* alloc_node(){
-    break_node* newNode = (break_node*)malloc(sizeof(break_node));
-    newNode->count = 0;
-    newNode->next_node = nullptr;
-    return newNode;
-}
-
-//打印链表
-void print_link(break_node *root){
-    if(root == nullptr) return;
-    do{
-        printf("%s   ", root->source);
-        for (int i =0; i<root->count; i++) {
-            printf("  %d  ", root->lines[i]);
-        }
-        printf("\n");
-        root = root->next_node;
-    } while (root != nullptr);
 }
 
 //push_arg Template
@@ -179,14 +179,14 @@ void call_lua_function(lua_State *L, const char * lua_function_name, int retCoun
         exit(1001);
         return;
     }
-    
+
     lua_getfield(L, -1, lua_function_name);
     if (!lua_isfunction(L, -1)) {
         printf("[Debug Lib Error]:call_lua_function get lua function %s error\n", lua_function_name);
         exit(1002);
         return;
     }
-    
+
     push_args(L, args...);
     int run_result = lua_pcall(L, sizeof...(args), retCount, 0);
     if (run_result) {
@@ -215,7 +215,7 @@ extern "C" int get_last_source(lua_State *L)
 //同步断点命中标识
 extern "C" int sync_bp_hit(lua_State *L) {
     if(cur_hook_state == DISCONNECT_HOOK){
-		//返回参数个数
+        //返回参数个数
         return 0;
     }
 
@@ -238,21 +238,21 @@ extern "C" int sync_tempfile_path(lua_State *L) {
 
 //lua 获取版本号
 extern "C" int sync_getLibVersion(lua_State *L) {
-	lua_pushstring(L, HOOK_LIB_VERSION);
-	return 1;
+    lua_pushstring(L, HOOK_LIB_VERSION);
+    return 1;
 }
 
 //同步文件后缀
 extern "C" int sync_file_ext(lua_State *L) {
-	const char *ext = luaL_checkstring(L, 1);
+    const char *ext = luaL_checkstring(L, 1);
     snprintf(config_ext, sizeof(config_ext), ".%s", ext);
-	return 0;
+    return 0;
 }
 
 //debugger路径
 extern "C" int sync_debugger_path(lua_State *L) {
-	debug_file_path = luaL_checkstring(L, 1);
-	return 0;
+    debug_file_path = luaL_checkstring(L, 1);
+    return 0;
 }
 
 //tools路径
@@ -263,22 +263,22 @@ extern "C" int sync_tools_path(lua_State *L) {
 
 //cwd
 extern "C" int sync_cwd(lua_State *L) {
-	config_cwd = luaL_checkstring(L, 1);
-	return 0;
+    config_cwd = luaL_checkstring(L, 1);
+    return 0;
 }
 
 //同步运行状态给Lua C->lua
 void sync_runstate_toLua(lua_State *L, int state) {
-	debug_auto_stack _tt(L);
+    debug_auto_stack _tt(L);
     cur_run_state = state;
     call_lua_function(L, "changeRunState", 0, state, 1);
-	return;
+    return;
 }
 
 //这个接口给lua调用，用来同步状态 lua->C
 extern "C" int lua_set_runstate(lua_State *L) {
-	cur_run_state = static_cast<int>(luaL_checknumber(L, 1));
-	return 0;
+    cur_run_state = static_cast<int>(luaL_checknumber(L, 1));
+    return 0;
 }
 
 //根据运行状态修改hook状态
@@ -308,10 +308,10 @@ extern "C" int lua_set_hookstate(lua_State *L) {
 }
 
 void print_to_vscode(lua_State *L, const char* msg, int level) {
-	if (level >= logLevel) {
-		//打印
+    if (level >= logLevel) {
+        //打印
         call_lua_function(L, "printToVSCode", 0, msg,  level);
-	}
+    }
 }
 
 //获取路径(带缓存)
@@ -322,7 +322,7 @@ const char* getPath(lua_State *L,const char* source){
         //报错
         return nullptr;
     }
-    
+
     //检查缓存
     for(auto iter = path_cache_list.begin();iter != path_cache_list.end();iter++)
     {
@@ -330,14 +330,14 @@ const char* getPath(lua_State *L,const char* source){
             return (*iter)->dst.c_str();
         }
     }
-    
+
     //若缓存中没有，到lua中转换
     call_lua_function(L, "getPath", 1 , source);
     const char* retSource = lua_tostring(L, -1);
     //加入缓存,返回
     path_transfer_node *nd = new path_transfer_node(source, retSource );
     path_cache_list.push_back(nd);
-    
+
     return retSource;
 }
 
@@ -350,54 +350,79 @@ extern "C" int sync_breakpoints(lua_State *L) {
         print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk get LUA_DEBUGGER_NAME error", 2);
         return -1;
     }
-    
+
     lua_getfield(L, -1, "breaks");
     if (!lua_istable(L, -1)) {
         print_to_vscode(L, "[Debug Lib Error]debug_ishit_bk get breaks error", 2);
         return -1;
     }
-    
-    if(break_root_node == nullptr) { break_root_node = alloc_node();break_root_node->source = "root";break_root_node->count = 0; }
-    break_node* cur = break_root_node;
+
+    all_breakpoint_map.clear();
+
     //遍历breaks
     lua_pushnil(L);//breaks nil
     while (lua_next(L, -2)) {
-        
-        if(cur == nullptr)  cur = alloc_node();
-        if(cur->next_node == nullptr){
-            cur->next_node = alloc_node();
-        }
-        cur = cur->next_node;
-       
         //breaks   k（string）   v(table)
         const char* source = luaL_checkstring(L, -2);
-        //建立node
-        cur->source = source;
-        cur->count = 0;
-        
+
+        std::map<int, breakpoint> file_breakpoint_map;
         lua_pushnil(L);//k，v, nil
         while (lua_next(L, -2)) {
             //k,v,k,v
             lua_getfield(L, -1, "line");            //k,v,k,v,line
-            
-            cur->lines[cur->count] = (int)lua_tointeger(L, -1);
-            cur->count++;
-            
-            lua_pop(L, 1);//field
+            int line = (int)lua_tointeger(L, -1);
+            lua_pop(L, 1); // line
+
+            lua_getfield(L, -1, "type");
+            int type = (int)lua_tointeger(L, -1);
+            lua_pop(L, 1); // type
+
+            struct breakpoint bp;
+            switch (type) {
+                case CONDITION_BREAKPOINT: {
+                    bp.type = CONDITION_BREAKPOINT;
+
+                    lua_getfield(L, -1, "condition");
+                    const char* condition = luaL_checkstring(L, -1);
+                    lua_pop(L, 1); // condition
+                    bp.info = condition;
+                    break;
+                }
+
+                case LOG_POINT: {
+                    bp.type = LOG_POINT;
+
+                    lua_getfield(L, -1, "logMessage");
+                    const char* log_message = luaL_checkstring(L, -1);
+                    lua_pop(L, 1); // logMessage
+                    bp.info = log_message;
+                    break;
+                }
+
+                case LINE_BREAKPOINT:
+                    bp.type = LINE_BREAKPOINT;
+
+                    bp.info = std::to_string(line);
+                    break;
+
+                default:
+                    print_to_vscode(L, "[Debug Lib Error] Invalid breakpoint type!", 2);
+                    return -1;
+            }
+
+            file_breakpoint_map[line] = bp;
+
             lua_pop(L, 1);//value
             //k,v,k
         }
+        all_breakpoint_map[std::string(source)] = file_breakpoint_map;
         //k,v
         lua_pop(L, 1);//外部每次循环
         //k
     }
     lua_pop(L, 1);//外部每次循环
-    
-    //clear other node
-    free_other_node(cur->next_node);
-    cur->next_node = nullptr;
 
-//    print_link(root);
+    // print_all_breakpoint_map();
     check_hook_state(L, last_source, ar_current_line ,ar_def_line, ar_lastdef_line);
     return 0;
 }
@@ -405,31 +430,50 @@ extern "C" int sync_breakpoints(lua_State *L) {
 //断点命中判断
 int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
     print_to_vscode(L, "debug_ishit_bk\n");
-	debug_auto_stack _tt(L);
-    
-    break_node *travel;
-    travel = break_root_node;
-    if(travel == nullptr) return 0;
-    do{
-        for (int i =0; i< travel->count; i++) {
-            if(current_line == travel->lines[i] && !strcmp(getPath(L, curPath), travel->source)){
-                return 1;
-            }
-        }
-        travel = travel->next_node;
-    } while (travel != nullptr);
-    
-	return 0;
+    debug_auto_stack _tt(L);
+
+    std::map<std::string, std::map<int, struct breakpoint>>::const_iterator const_iter1 = all_breakpoint_map.find(std::string(getPath(L, curPath)));
+    if (const_iter1 == all_breakpoint_map.end()) {
+        return 0;
+    }
+
+    std::map<int, struct breakpoint>::const_iterator const_iter2 = const_iter1->second.find(current_line);
+    if (const_iter2 == const_iter1->second.end()) {
+        return 0;
+    }
+
+    // 条件断点
+    if (const_iter2->second.type == CONDITION_BREAKPOINT) {
+        std::string condition = const_iter2->second.info;
+        call_lua_function(L, "IsMeetCondition", 1, condition.c_str());
+        // if (!lua_isboolean(L, -1)) {
+        //     print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk process condition expression result error!", 2);
+        //     return 0;
+        // }
+        int is_meet_condition = lua_toboolean(L, -1);
+        lua_pop(L, 1);
+        return is_meet_condition;
+    }
+
+    // 记录点
+    if (const_iter2->second.type == LOG_POINT) {
+        std::string log_message = "log message: ";
+        log_message.append(const_iter2->second.info);
+        print_to_vscode(L, log_message.c_str() , 1);
+        return 0;
+    }
+
+    return 1;
 }
 
 //判断字符串是否匹配[string "
 int isCodeSection(char *str) {
-	if (strlen(str) > 9) {
-		if (str[0] == '[' && str[7] == ' ' && str[8] == '"') {
-			return 1;
-		}
-	}
-	return 0;
+    if (strlen(str) > 9) {
+        if (str[0] == '[' && str[7] == ' ' && str[8] == '"') {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 //断点命中判断 retuen : is_hit
@@ -441,7 +485,7 @@ int breakpoint_process(lua_State *L, lua_Debug *ar){
         if (is_hit == 1 || BPhit) {
             BPhit = 0;
             print_to_vscode(L, "bk HIT");
-            
+
             stackdeep_counter = 0;
             sync_runstate_toLua(L, HIT_BREAKPOINT);
             //c层掌握 STEPOVER 计数器，状态机放在lua层，c主要去读（毕竟C作为lua的扩展）
@@ -475,7 +519,7 @@ void step_process(lua_State *L, lua_Debug *ar){
             sync_runstate_toLua(L, STEPIN_STOP);
             call_lua_function(L, "SendMsgWithStack", 0,"stopOnStepIn");
         }
-        
+
     }
     else if (cur_run_state == STEPOUT) {
         if (ar->event == LINE) {
@@ -563,26 +607,26 @@ int checkHasBreakpoint(lua_State *L, const char * src1, int current_line, int sl
         return 3;
     }
 
-    if( break_root_node == nullptr || break_root_node -> next_node == nullptr ){
+    if (all_breakpoint_map.empty() == true) {
         //没有断点
         return 0;
     }
 
-    break_node* travel = break_root_node;
-    while(travel->next_node != nullptr){
-        travel = travel->next_node;
-        if(!strcmp(travel->source, src)){
+    std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
+    std::map<int, breakpoint>::iterator iter2;
+    for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
+        if (iter1->first == std::string(src)) {
             //文件名命中 eline > sline
             if(sline >= eline || sline <= 0 || eline <= 0){
                 return 3;
             }
             //current_line不在sline和eline直接拿
-			if (current_line > eline || current_line < sline) {
-				return 3;
-			}
-			//breakpoint 行号在sline和eline之间
-            for (int bk_idx = 0; bk_idx < travel->count; bk_idx++) {
-                int breakline = travel->lines[bk_idx];
+            if (current_line > eline || current_line < sline) {
+                return 3;
+            }
+            //breakpoint 行号在sline和eline之间
+            for (iter2 = iter1->second.begin(); iter2 != iter1->second.end(); ++iter2) {
+                int breakline = iter2->first;
                 if(breakline>sline && breakline<eline){
                     return 3;
                 }
@@ -590,6 +634,7 @@ int checkHasBreakpoint(lua_State *L, const char * src1, int current_line, int sl
             return 2;
         }
     }
+
     //文件没有断点
     return 1;
 }
@@ -605,7 +650,7 @@ void check_hook_state(lua_State *L, const char* source ,  int current_line, int 
             //文件中有断点的状态设置为ALL hook
             sethookstate(L, ALL_HOOK);
         }
-        
+
         if( (event == RETURN || event == TAILRET) && cur_hook_state == MID_HOOK){
             sethookstate(L, ALL_HOOK);
         }
@@ -614,16 +659,16 @@ void check_hook_state(lua_State *L, const char* source ,  int current_line, int 
 
 //这个函数要获取的消息  当前状态，断点列表
 void debug_hook_c(lua_State *L, lua_Debug *ar) {
-	debug_auto_stack _tt(L);
+    debug_auto_stack _tt(L);
     if(!hook_process_reconnect(L)) return;
     if(cur_hook_state == LITE_HOOK) {
         litehook_recv_message(L);
         return;
     }
-    
+
     hook_process_recv_message(L);
-    
-	if (lua_getinfo(L, "Slf", ar) != 0) {
+
+    if (lua_getinfo(L, "Slf", ar) != 0) {
         //if in c function , return
         if(!hook_process_cfunction(L, ar)) return;
         //if in debugger , return
@@ -642,7 +687,7 @@ void debug_hook_c(lua_State *L, lua_Debug *ar) {
         ar_def_line = ar->linedefined;
         ar_lastdef_line = ar->lastlinedefined;
         ar_current_line = ar->currentline;
-        
+
         int is_hit = breakpoint_process(L, ar);  //断点命中标记位 //line + 预判
 
         //STOP_ON_ENTRY
@@ -661,7 +706,7 @@ void debug_hook_c(lua_State *L, lua_Debug *ar) {
         }
         step_process(L, ar);
         check_hook_state(L, last_source, ar_current_line,  ar_def_line, ar_lastdef_line, ar->event);
-	}
+    }
 }
 
 //结束hook
@@ -675,34 +720,34 @@ extern "C" int endHook(lua_State *L)
 static luaL_Reg libpdebug[] = {
     { "sync_breakpoints", sync_breakpoints },     //lua同步断点给c，同步发生在新增、删除断点，连接开始时
     { "lua_set_hookstate", lua_set_hookstate },   //lua设置hook状态。lua中发生状态切换时，同步到C
-	{ "lua_set_runstate", lua_set_runstate },     //同步运行状态
-	{ "sync_debugger_path", sync_debugger_path }, //同步debugger文件路径
+    { "lua_set_runstate", lua_set_runstate },     //同步运行状态
+    { "sync_debugger_path", sync_debugger_path }, //同步debugger文件路径
     { "sync_tools_path", sync_tools_path }, //同步debugger文件路径
-	{ "sync_config", sync_config },               //同步日志等级
-	{ "sync_cwd", sync_cwd },                     //同步cwd
-	{ "sync_file_ext", sync_file_ext },           //同步文件后缀
-	{ "sync_getLibVersion", sync_getLibVersion },   //hook version
+    { "sync_config", sync_config },               //同步日志等级
+    { "sync_cwd", sync_cwd },                     //同步cwd
+    { "sync_file_ext", sync_file_ext },           //同步文件后缀
+    { "sync_getLibVersion", sync_getLibVersion },   //hook version
     { "sync_bp_hit", sync_bp_hit },                 //set BP lua向C同步状态
     { "sync_tempfile_path", sync_tempfile_path },   //sync_tempfile_path
     { "endHook", endHook },                       //结束hook，停止调试
     { "get_libhook_state", get_libhook_state },
     { "get_last_source", get_last_source },
-	{ NULL, NULL }
+    { NULL, NULL }
 };
 
 #ifdef USE_SOURCE_CODE
 extern "C" void pdebug_init(lua_State* L) {
-	debug_auto_stack _tt(L);
-	//把libhook压入_G，里面方法填上
-	lua_newtable(L);
-	for (size_t i = 0; i < sizeof(libpdebug) / sizeof(luaL_Reg); i++) {
-		if (libpdebug[i].name == NULL) {
-			break;
-		}
-		lua_pushcfunction(L, libpdebug[i].func);
-		lua_setfield(L, -2, libpdebug[i].name);
-	}
-	lua_setglobal(L, "luapanda_chook");
+    debug_auto_stack _tt(L);
+    //把libhook压入_G，里面方法填上
+    lua_newtable(L);
+    for (size_t i = 0; i < sizeof(libpdebug) / sizeof(luaL_Reg); i++) {
+        if (libpdebug[i].name == NULL) {
+            break;
+        }
+        lua_pushcfunction(L, libpdebug[i].func);
+        lua_setfield(L, -2, libpdebug[i].name);
+    }
+    lua_setglobal(L, "luapanda_chook");
 }
 #else
 
@@ -715,21 +760,21 @@ extern "C" void pdebug_init(lua_State* L) {
 DEBUG_API int luaopen_libpdebug(lua_State* L)
 {
 #ifdef _WIN32
-	load(L);
+    load(L);
 #endif
 
 #if LUA_VERSION_NUM == 501
     if(luaL_register != nullptr){
-        luaL_register(L, "libpdebug", libpdebug);
+	luaL_register(L, "libpdebug", libpdebug);
     }
 #elif LUA_VERSION_NUM > 501
     if(lua_newtable != nullptr && luaL_setfuncs != nullptr){
-        lua_newtable(L);
-        luaL_setfuncs(L, libpdebug, 0);
+	lua_newtable(L);
+	luaL_setfuncs(L, libpdebug, 0);
     }
 #endif
 
-	return 1;
+    return 1;
 }
 
 #endif // USE_SOURCE_CODE
@@ -737,9 +782,10 @@ DEBUG_API int luaopen_libpdebug(lua_State* L)
 //WIN32下函数处理方法
 #if !defined(USE_SOURCE_CODE) && defined(_WIN32)
 //slua-ue template function
+#if LUA_VERSION_NUM > 501
 template<typename T, typename RET>
 RET callLuaFunction(lua_State *L) {
-	return getInter()->T(L);
+    return getInter()->T(L);
 }
 
 template<typename T, T>
@@ -748,18 +794,18 @@ struct Invoker;
 template<typename T, typename RET, typename... ARGS, RET(T::*F)(ARGS...)>
 struct Invoker<RET(T::*)(ARGS...), F> {
 
-	static RET invoke(const ARGS&... args) {
-		return (getInter()->*F)(args...);
-	}
+    static RET invoke(const ARGS&... args) {
+        return (getInter()->*F)(args...);
+    }
 
 };
 
 template<typename T, typename... ARGS, void(T::*F)(ARGS...)>
 struct Invoker<void(T::*)(ARGS...), F> {
 
-	static void invoke(const ARGS&... args) {
-		return (getInter()->*F)(args...);
-	}
+    static void invoke(const ARGS&... args) {
+        return (getInter()->*F)(args...);
+    }
 
 };
 
@@ -768,115 +814,117 @@ struct LuaCppBinding;
 
 template<typename T, typename RET, typename... ARGS, RET(T::*F)(ARGS...)>
 struct LuaCppBinding<RET(T::*)(ARGS...), F> {
-	static RET luaCFunction(ARGS... args) {
-		return Invoker<decltype(F), F>::invoke(args...);
-	}
+    static RET luaCFunction(ARGS... args) {
+        return Invoker<decltype(F), F>::invoke(args...);
+    }
 };
 
 template<typename T, typename... ARGS, void(T::*F)(ARGS...)>
 struct LuaCppBinding<void(T::*)(ARGS...), F> {
 
-	static void luaCFunction(ARGS... args) {
-		return Invoker<decltype(F), F>::invoke(args...);
-	}
+    static void luaCFunction(ARGS... args) {
+        return Invoker<decltype(F), F>::invoke(args...);
+    }
 };
+#endif // LUA_VERSION_NUM > 501
 
 void Slua_UE_find_function()
 {		//slua - ue Lua 5.3
 #if LUA_VERSION_NUM > 501
 #define SLUABINDING(f) LuaCppBinding<decltype(f), f>::luaCFunction;
-	lua_version = SLUABINDING(&slua::LuaInterface::lua_version);
-	lua_pushstring = SLUABINDING(&slua::LuaInterface::lua_pushstring);
-	lua_gettop = (luaDLL_gettop)SLUABINDING(&slua::LuaInterface::lua_gettop);
-	lua_settop = (luaDLL_settop)SLUABINDING(&slua::LuaInterface::lua_settop);
-	lua_pcallk = SLUABINDING(&slua::LuaInterface::lua_pcallk);
-	lua_pushnumber = (luaDLL_pushnumber)SLUABINDING(&slua::LuaInterface::lua_pushnumber);
-	luaL_checklstring = SLUABINDING(&slua::LuaInterface::luaL_checklstring);
-	lua_tolstring = (luaDLL_tolstring)SLUABINDING(&slua::LuaInterface::lua_tolstring);
-	lua_type = (luaDLL_type)SLUABINDING(&slua::LuaInterface::lua_type);
-	lua_tointegerx = (luaDLL_tointegerx)SLUABINDING(&slua::LuaInterface::lua_tointegerx);
-	lua_pushnil = (luaDLL_pushnil)SLUABINDING(&slua::LuaInterface::lua_pushnil);
-	lua_getfield = (luaDLL_getfield)SLUABINDING(&slua::LuaInterface::lua_getfield);
-	lua_next = (luaDLL_next)SLUABINDING(&slua::LuaInterface::lua_next);
-	lua_getinfo = (luaDLL_getinfo)SLUABINDING(&slua::LuaInterface::lua_getinfo);
-	lua_sethook = (luaDLL_sethook)SLUABINDING(&slua::LuaInterface::lua_sethook);
-	luaL_checknumber = SLUABINDING(&slua::LuaInterface::luaL_checknumber);
-	lua_createtable = (luaDLL_createtable)SLUABINDING(&slua::LuaInterface::lua_createtable);
-	luaL_setfuncs = SLUABINDING(&slua::LuaInterface::luaL_setfuncs);
-	lua_getglobal = SLUABINDING(&slua::LuaInterface::lua_getglobal);
-
+    lua_version = SLUABINDING(&slua::LuaInterface::lua_version);
+    lua_pushstring = SLUABINDING(&slua::LuaInterface::lua_pushstring);
+    lua_gettop = (luaDLL_gettop)SLUABINDING(&slua::LuaInterface::lua_gettop);
+    lua_settop = (luaDLL_settop)SLUABINDING(&slua::LuaInterface::lua_settop);
+    lua_pcallk = SLUABINDING(&slua::LuaInterface::lua_pcallk);
+    lua_pushnumber = (luaDLL_pushnumber)SLUABINDING(&slua::LuaInterface::lua_pushnumber);
+    luaL_checklstring = SLUABINDING(&slua::LuaInterface::luaL_checklstring);
+    lua_tolstring = (luaDLL_tolstring)SLUABINDING(&slua::LuaInterface::lua_tolstring);
+    lua_type = (luaDLL_type)SLUABINDING(&slua::LuaInterface::lua_type);
+    lua_tointegerx = (luaDLL_tointegerx)SLUABINDING(&slua::LuaInterface::lua_tointegerx);
+    lua_pushnil = (luaDLL_pushnil)SLUABINDING(&slua::LuaInterface::lua_pushnil);
+    lua_getfield = (luaDLL_getfield)SLUABINDING(&slua::LuaInterface::lua_getfield);
+    lua_next = (luaDLL_next)SLUABINDING(&slua::LuaInterface::lua_next);
+    lua_getinfo = (luaDLL_getinfo)SLUABINDING(&slua::LuaInterface::lua_getinfo);
+    lua_sethook = (luaDLL_sethook)SLUABINDING(&slua::LuaInterface::lua_sethook);
+    luaL_checknumber = SLUABINDING(&slua::LuaInterface::luaL_checknumber);
+    lua_createtable = (luaDLL_createtable)SLUABINDING(&slua::LuaInterface::lua_createtable);
+    luaL_setfuncs = SLUABINDING(&slua::LuaInterface::luaL_setfuncs);
+    lua_getglobal = SLUABINDING(&slua::LuaInterface::lua_getglobal);
+    lua_toboolean = (luaDLL_toboolean)SLUABINDING(&slua::LuaInterface::lua_toboolean);
 #endif
 }
 
 void general_find_function() {
-	//slua, xlua
+    //slua, xlua
 #if LUA_VERSION_NUM == 501
-	luaL_register = (luaLDLL_register)GetProcAddress(hInstLibrary, "luaL_register");//501
-	lua_pcall = (luaDLL_pcall)GetProcAddress(hInstLibrary, "lua_pcall");//501
-	lua_tointeger = (luaDLL_tointeger)GetProcAddress(hInstLibrary, "lua_tointeger");//501
+    luaL_register = (luaLDLL_register)GetProcAddress(hInstLibrary, "luaL_register");//501
+    lua_pcall = (luaDLL_pcall)GetProcAddress(hInstLibrary, "lua_pcall");//501
+    lua_tointeger = (luaDLL_tointeger)GetProcAddress(hInstLibrary, "lua_tointeger");//501
 #endif
-	lua_version = (luaDLL_version)GetProcAddress(hInstLibrary, "lua_version");
-	lua_pushstring = (luaDLL_pushstring)GetProcAddress(hInstLibrary, "lua_pushstring");
-	lua_gettop = (luaDLL_gettop)GetProcAddress(hInstLibrary, "lua_gettop");
-	lua_settop = (luaDLL_settop)GetProcAddress(hInstLibrary, "lua_settop");
-	lua_pushnumber = (luaDLL_pushnumber)GetProcAddress(hInstLibrary, "lua_pushnumber");
-	luaL_checklstring = (luaDLL_checklstring)GetProcAddress(hInstLibrary, "luaL_checklstring");
-	lua_tolstring = (luaDLL_tolstring)GetProcAddress(hInstLibrary, "lua_tolstring");
-	lua_type = (luaDLL_type)GetProcAddress(hInstLibrary, "lua_type");
-	lua_pushnil = (luaDLL_pushnil)GetProcAddress(hInstLibrary, "lua_pushnil");
-	lua_getfield = (luaDLL_getfield)GetProcAddress(hInstLibrary, "lua_getfield");
-	lua_next = (luaDLL_next)GetProcAddress(hInstLibrary, "lua_next");
-	lua_getinfo = (luaDLL_getinfo)GetProcAddress(hInstLibrary, "lua_getinfo");
-	lua_sethook = (luaDLL_sethook)GetProcAddress(hInstLibrary, "lua_sethook");
-	luaL_checknumber = (luaDLL_checknumber)GetProcAddress(hInstLibrary, "luaL_checknumber");
-	lua_pushinteger = (luaDLL_pushinteger)GetProcAddress(hInstLibrary, "lua_pushinteger");
-	//5.3
+    lua_version = (luaDLL_version)GetProcAddress(hInstLibrary, "lua_version");
+    lua_pushstring = (luaDLL_pushstring)GetProcAddress(hInstLibrary, "lua_pushstring");
+    lua_gettop = (luaDLL_gettop)GetProcAddress(hInstLibrary, "lua_gettop");
+    lua_settop = (luaDLL_settop)GetProcAddress(hInstLibrary, "lua_settop");
+    lua_pushnumber = (luaDLL_pushnumber)GetProcAddress(hInstLibrary, "lua_pushnumber");
+    luaL_checklstring = (luaDLL_checklstring)GetProcAddress(hInstLibrary, "luaL_checklstring");
+    lua_tolstring = (luaDLL_tolstring)GetProcAddress(hInstLibrary, "lua_tolstring");
+    lua_type = (luaDLL_type)GetProcAddress(hInstLibrary, "lua_type");
+    lua_pushnil = (luaDLL_pushnil)GetProcAddress(hInstLibrary, "lua_pushnil");
+    lua_getfield = (luaDLL_getfield)GetProcAddress(hInstLibrary, "lua_getfield");
+    lua_next = (luaDLL_next)GetProcAddress(hInstLibrary, "lua_next");
+    lua_getinfo = (luaDLL_getinfo)GetProcAddress(hInstLibrary, "lua_getinfo");
+    lua_sethook = (luaDLL_sethook)GetProcAddress(hInstLibrary, "lua_sethook");
+    luaL_checknumber = (luaDLL_checknumber)GetProcAddress(hInstLibrary, "luaL_checknumber");
+    lua_pushinteger = (luaDLL_pushinteger)GetProcAddress(hInstLibrary, "lua_pushinteger");
+    lua_toboolean = (luaDLL_toboolean)GetProcAddres(hInstLibrary, "lua_toboolean");
+    //5.3
 #if LUA_VERSION_NUM > 501
-	lua_pcallk = (luaDLL_pcallk)GetProcAddress(hInstLibrary, "lua_pcallk");
-	lua_tointegerx = (luaDLL_tointegerx)GetProcAddress(hInstLibrary, "lua_tointegerx");
-	lua_createtable = (luaDLL_createtable)GetProcAddress(hInstLibrary, "lua_createtable");
-	luaL_setfuncs = (luaDLL_setfuncs)GetProcAddress(hInstLibrary, "luaL_setfuncs");
-	lua_getglobal = (luaDLL_getglobal)GetProcAddress(hInstLibrary, "lua_getglobal");
+    lua_pcallk = (luaDLL_pcallk)GetProcAddress(hInstLibrary, "lua_pcallk");
+    lua_tointegerx = (luaDLL_tointegerx)GetProcAddress(hInstLibrary, "lua_tointegerx");
+    lua_createtable = (luaDLL_createtable)GetProcAddress(hInstLibrary, "lua_createtable");
+    luaL_setfuncs = (luaDLL_setfuncs)GetProcAddress(hInstLibrary, "luaL_setfuncs");
+    lua_getglobal = (luaDLL_getglobal)GetProcAddress(hInstLibrary, "lua_getglobal");
 #endif
 }
 
 int load(lua_State* L) {
 
-	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
-	if (INVALID_HANDLE_VALUE == hSnapshot)
-	{
-		//load fail
-		return 0;
-	}
-	MODULEENTRY32 mi;
-	mi.dwSize = sizeof(MODULEENTRY32);
-	BOOL bRet = Module32First(hSnapshot, &mi);
-	while (bRet)
-	{
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
+    if (INVALID_HANDLE_VALUE == hSnapshot)
+    {
+        //load fail
+        return 0;
+    }
+    MODULEENTRY32 mi;
+    mi.dwSize = sizeof(MODULEENTRY32);
+    BOOL bRet = Module32First(hSnapshot, &mi);
+    while (bRet)
+    {
 #if LUA_VERSION_NUM > 501
-		//find lua dll
-		void* interPtr = (luaDLL_version)GetProcAddress(mi.hModule, "GetLuaInterface");
-		if (interPtr == NULL) {
-		}
-		else {
-			hInstLibrary = mi.hModule;
-			getInter = (dll_GetLuaInterface)GetProcAddress(hInstLibrary, "GetLuaInterface");
-			Slua_UE_find_function();
-			break;
-		}
+        //find lua dll
+        void* interPtr = (luaDLL_version)GetProcAddress(mi.hModule, "GetLuaInterface");
+        if (interPtr == NULL) {
+        }
+        else {
+            hInstLibrary = mi.hModule;
+            getInter = (dll_GetLuaInterface)GetProcAddress(hInstLibrary, "GetLuaInterface");
+            Slua_UE_find_function();
+            break;
+        }
 #endif
 
-		void* versionPtr = (luaDLL_version)GetProcAddress(mi.hModule, "lua_version");
-		if (versionPtr == NULL) {
-		}
-		else {
-			hInstLibrary = mi.hModule;
-			general_find_function();
-			break;
-		}
+        void* versionPtr = (luaDLL_version)GetProcAddress(mi.hModule, "lua_version");
+        if (versionPtr == NULL) {
+        }
+        else {
+            hInstLibrary = mi.hModule;
+            general_find_function();
+            break;
+        }
 
-		//travel next dll
-		bRet = Module32Next(hSnapshot, &mi);
-	}
+        //travel next dll
+        bRet = Module32Next(hSnapshot, &mi);
+    }
 }
 #endif

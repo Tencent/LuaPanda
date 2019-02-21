@@ -102,7 +102,7 @@ local coroutinePool = {};       --保存用户协程的队列
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
 local stepOutCounter = 0;       --STEPOVER out计数器
-local HOOK_LEVEL = 3+2;         --调用栈偏移量
+local HOOK_LEVEL = 3;           --调用栈偏移量，使用clib时为3，lua中不再使用此变量，而是通过函数getSpecificFunctionStackLevel获取
 local isUseLoadstring = 0;
 local debugger_loadString;
 --临时变量
@@ -726,10 +726,8 @@ function this.dataProcess( dataStr )
 
             if luapanda_chook ~= nil then
                 hookLib = luapanda_chook;
-                HOOK_LEVEL = 3;
             else
                 if this.tryRequireClib("libpdebug", x64Path) or this.tryRequireClib("libpdebug", x86Path) then
-                    HOOK_LEVEL = 3;
                 end
             end
         end
@@ -948,11 +946,16 @@ end
 --getStackTable需要建立stackTable，保存每层的lua函数实例(用来取upvalue)，保存函数展示层级和ly的关系(便于根据前端传来的stackId查局部变量)
 -- @level 要获取的层级
 function this.getStackTable( level )
-    local i = level or HOOK_LEVEL;
+    local functionLevel = 0
+    if hookLib ~= nil then
+        functionLevel = level or HOOK_LEVEL;
+    else
+        functionLevel = level or this.getSpecificFunctionStackLevel(lastRunFunction.func);
+    end
     local stackTab = {};
     local userFuncSteakLevel = 0; --用户函数的steaklevel
     repeat
-        local info = debug.getinfo(i, "SlLnf")
+        local info = debug.getinfo(functionLevel, "SlLnf")
         if info == nil then
             break;
         end
@@ -965,7 +968,7 @@ function this.getStackTable( level )
         ss.name = "文件名"; --这里要做截取
         ss.line = tostring(info.currentline);
         --使用hookLib时，堆栈有偏移量，这里统一调用栈顶编号2
-        local ssindex = i - 3;
+        local ssindex = functionLevel - 3;
         if hookLib ~= nil then
             ssindex = ssindex + 2;
         end
@@ -976,14 +979,14 @@ function this.getStackTable( level )
         callStackInfo.name = ss.file;
         callStackInfo.line = ss.line;
         callStackInfo.func = info.func;     --保存的function
-        callStackInfo.realLy = i;              --真实堆栈层i(仅debug时用)
+        callStackInfo.realLy = functionLevel;              --真实堆栈层functionLevel(仅debug时用)
         table.insert(currentCallStack, callStackInfo);
 
         --level赋值
         if userFuncSteakLevel == 0 then
-            userFuncSteakLevel = i;
+            userFuncSteakLevel = functionLevel;
         end
-        i = i + 1;
+        functionLevel = functionLevel + 1;
     until info == nil
     return stackTab, userFuncSteakLevel;
 end
@@ -1111,11 +1114,62 @@ function this.isHitBreakpoint( info )
     if breaks[curPath] ~= nil then
         for k,v in ipairs(breaks[curPath]) do
             if tostring(v["line"]) == tostring(curLine) then
-                return true;
+                -- type是TS中的枚举类型，其定义在BreakPoint.tx文件中
+                --[[
+                    enum BreakpointType {
+                        conditionBreakpoint = 0,
+                        logPoint,
+                        lineBreakpoint
+                    }
+                ]]
+
+                if v["type"] == "0" then
+                    -- condition breakpoint
+                    -- 注意此处不要使用尾调用，否则会影响调用栈，导致Lua5.3和Lua5.1中调用栈层级不同
+                    local conditionRet = this.IsMeetCondition(v["condition"]);
+                    return conditionRet;
+                elseif v["type"] == "1" then
+                    -- log point
+                    this.printToVSCode("log message: " .. v["logMessage"], 1);
+                else
+                    -- line breakpoint
+                    return true;
+                end
             end
         end
     end
     return false;
+end
+
+-- 条件断点处理函数
+-- 返回true表示条件成立
+-- @conditionExp 条件表达式
+function this.IsMeetCondition(conditionExp)
+    -- 判断条件之前更新堆栈信息
+    currentCallStack = {};
+    variableRefTab = {};
+    variableRefIdx = 1;
+    this.getStackTable();
+    this.curStackId = 2; --在用户空间最上层执行
+
+    local conditionExpTable = {["varName"] = conditionExp}
+    local retTable = this.processWatchedExp(conditionExpTable)
+
+    local isMeetCondition = false;
+    local function HandleResult()
+        if retTable[1]["isSuccess"] == "true" then
+            if retTable[1]["value"] == "nil" or (retTable[1]["value"] == "false" and retTable[1]["type"] == "boolean") then
+                isMeetCondition = false;
+            else
+                isMeetCondition = true;
+            end
+        else
+            isMeetCondition = false;
+        end
+    end
+
+    xpcall(HandleResult, function() isMeetCondition = false; end)
+    return isMeetCondition;
 end
 
 --加入断点函数
@@ -1984,6 +2038,8 @@ end
 -- 执行表达式
 function this.processExp(msgTable)
     local retString;
+    local var = {};
+    var.isSuccess = "true";
     if msgTable ~= nil then
         local expression = this.trim(tostring(msgTable.Expression));
         local isCmd = false;
@@ -2006,17 +2062,17 @@ function this.processExp(msgTable)
                     debug.setupvalue(f, 1, env);
                 end
                 --表达式要有错误处理
-                xpcall(function() retString = f() end , function() retString = "输入错误指令。\n + 请检查指令是否正确\n + 指令仅能在[暂停在断点时]输入, 请不要在程序持续运行时输入" end)
+                xpcall(function() retString = f() end , function() retString = "输入错误指令。\n + 请检查指令是否正确\n + 指令仅能在[暂停在断点时]输入, 请不要在程序持续运行时输入"; var.isSuccess = false; end)
             else
-                retString = "指令执行错误。\n + 请检查指令是否正确\n + 如果希望观察[变量的值]或[表达式的返回结果]，请在表达式前前面加\"p \"\n + 如果仅希望执行一段lua代码，直接输入即可"
+                retString = "指令执行错误。\n + 请检查指令是否正确\n + 如果希望观察[变量的值]或[表达式的返回结果]，请在表达式前前面加\"p \"\n + 如果仅希望执行一段lua代码，直接输入即可";
+                var.isSuccess = false;
             end
         end
     end
 
-    local var = {};
     var.name = "Exp";
     var.type = tostring(type(retString));
-    xpcall(function() var.value = tostring(retString) end , function(e) var.value = tostring(type(retString))  .. " [value can't trans to string] ".. e end );
+    xpcall(function() var.value = tostring(retString) end , function(e) var.value = tostring(type(retString))  .. " [value can't trans to string] ".. e; var.isSuccess = false; end);
     var.variablesReference = "0";
     if var.type == "table" or var.type == "function" then
         variableRefTab[variableRefIdx] = retString;
@@ -2042,6 +2098,8 @@ function this.processWatchedExp(msgTable)
     local expression = "return ".. tostring(msgTable.varName)
     this.printToConsole("processWatchedExp | expression: " .. expression);
     local f = debugger_loadString(expression);
+    local var = {};
+    var.isSuccess = "true";
     --判断结果，如果表达式错误会返回nil
     if type(f) == "function" then
         --表达式正确
@@ -2050,15 +2108,15 @@ function this.processWatchedExp(msgTable)
         else
             debug.setupvalue(f, 1, env);
         end
-        xpcall(function() retString = f() end , function() retString = "输入了错误的变量信息" end)
+        xpcall(function() retString = f() end , function() retString = "输入了错误的变量信息"; var.isSuccess = "false"; end)
     else
-        retString = "未能找到变量的值"
+        retString = "未能找到变量的值";
+        var.isSuccess = "false";
     end
 
-    local var = {};
     var.name = msgTable.varName;
     var.type = tostring(type(retString));
-    xpcall(function() var.value = tostring(retString) end , function() var.value = tostring(type(retString)) .. " [value can't trans to string]" end );
+    xpcall(function() var.value = tostring(retString) end , function() var.value = tostring(type(retString)) .. " [value can't trans to string]"; var.isSuccess = "false"; end );
     var.variablesReference = "0";
 
     if var.type == "table" or var.type == "function" then
