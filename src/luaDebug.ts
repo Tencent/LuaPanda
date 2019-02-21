@@ -376,8 +376,12 @@ export class LuaDebugSession extends LoggingDebugSession {
             if(info.success === "true"){
                 arr[1].body = {
                     value: String(info.value),
-                    type: String(info.type)
+                    type: String(info.type),
+                    variablesReference: parseInt(info.variablesReference)
                 };
+                this._runtime.showTip( info.tip );
+            }else{
+                this._runtime.showTip("变量赋值失败 [" + info.tip + "]" );
             }
             let ins = arr[0];
             ins.sendResponse(arr[1]);   
