@@ -11,7 +11,7 @@
 #endif
 //setting end
 
-#ifdef _WIN32
+#if !defined(USE_SOURCE_CODE) && defined(_WIN32)
 #include <Windows.h>
 #include <Tlhelp32.h>
 #else
@@ -31,7 +31,7 @@ extern "C"{
 extern "C" void pdebug_init(lua_State* L);
 #endif
 
-#ifdef _WIN32
+#if !defined(USE_SOURCE_CODE) && defined(_WIN32)
 /*
 ** Lua - An Extensible Extension Language
 ** Lua.org, PUC-Rio, Brazil (http://www.lua.org)

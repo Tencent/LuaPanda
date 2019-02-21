@@ -4,13 +4,12 @@
 // https://opensource.org/licenses/BSD-3-Clause
 // Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-#include <stdio.h>
-#include <string.h>
-#include <iostream>
+#include "libpdebug.h"
+
+#include <ctime>
 #include <list>
 #include <map>
-#include <time.h>
-#include "libpdebug.h"
+#include <string>
 
 using namespace std;
 static int cur_run_state = 0;       //当前运行状态， c 和 lua 都可能改变这个状态，要保持同步
@@ -598,7 +597,7 @@ int hook_process_code_section(lua_State *L, lua_Debug *ar){
     return 1;
 }
 
-//检查函数中是否有断点。int check_has_breakpoint  0nobp  , 1gbp , 2filebp 3funchasbk
+//检查函数中是否有断点。int check_has_breakpoint  0:全局无断点  , 1:全局有断点但本文件中无断点 , 2:本文件中有断点 , 3:函数中有断点
 int checkHasBreakpoint(lua_State *L, const char * src1, int current_line, int sline , int eline){
     debug_auto_stack tt(L);
     //先检查行号，再置换路径
@@ -645,9 +644,10 @@ void check_hook_state(lua_State *L, const char* source ,  int current_line, int 
         int stats = checkHasBreakpoint(L, source, current_line, def_line, last_line);
         if(stats == 0){
             sethookstate(L, LITE_HOOK);
-        }else if(stats == 1 || stats == 2){
+        }else if(stats == 1){
             sethookstate(L, MID_HOOK);
-        }else if (stats == 3){
+        }else if (stats == 3 || stats == 2){
+            //文件中有断点的状态设置为ALL hook
             sethookstate(L, ALL_HOOK);
         }
 
@@ -764,10 +764,14 @@ DEBUG_API int luaopen_libpdebug(lua_State* L)
 #endif
 
 #if LUA_VERSION_NUM == 501
-    luaL_register(L, "libpdebug", libpdebug);
+    if(luaL_register != nullptr){
+	luaL_register(L, "libpdebug", libpdebug);
+    }
 #elif LUA_VERSION_NUM > 501
-    lua_newtable(L);
-    luaL_setfuncs(L, libpdebug, 0);
+    if(lua_newtable != nullptr && luaL_setfuncs != nullptr){
+	lua_newtable(L);
+	luaL_setfuncs(L, libpdebug, 0);
+    }
 #endif
 
     return 1;
@@ -776,7 +780,7 @@ DEBUG_API int luaopen_libpdebug(lua_State* L)
 #endif // USE_SOURCE_CODE
 
 //WIN32下函数处理方法
-#ifdef _WIN32
+#if !defined(USE_SOURCE_CODE) && defined(_WIN32)
 //slua-ue template function
 #if LUA_VERSION_NUM > 501
 template<typename T, typename RET>

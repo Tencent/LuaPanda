@@ -119,10 +119,16 @@ else
 end
 
 --用户在控制台输入信息的环境变量
-local env = setmetatable({ }, { __index = function(tab1, varName)
-    local ret =  this.getWatchedVariable( varName, _G.LuaPanda.curStackId , false);
-    return ret;
-end});
+env = setmetatable({ }, { 
+    __index = function( _ , varName )
+        local ret =  this.getWatchedVariable( varName, _G.LuaPanda.curStackId , false);
+        return ret;
+    end,
+
+    __newindex = function( _ , varName, newValue )
+        this.setVariableValue( varName, _G.LuaPanda.curStackId, newValue);
+    end
+});
 
 -----------------------------------------------------------------------------
 -- 流程
@@ -235,8 +241,8 @@ function this.getCWD()
         ly = 2;
     end
     local runSource = lastRunFunction["source"];
-    if runSource == nil then
-        runSource = this.getPath(hookLib.get_last_source());
+    if runSource == nil and hookLib ~= nil then
+        runSource = this.getPath(tostring(hookLib.get_last_source()));
     end
     local info = debug.getinfo(ly, "S");
     return "cwd:      "..cwd .."\ngetinfo:  ".. info["source"] .. "\nformat:   " .. tostring(runSource) ;
@@ -267,8 +273,14 @@ function this.tryRequireClib(libName , libPath)
     package.cpath = libPath;
     if pcall(function() hookLib = require(libName)  end) then
         package.cpath = save_cpath;
-        this.printToVSCode("tryRequireClib success : [" .. libName .. "] in "..libPath);
-        return true;
+        if type(hookLib) == "table" and this.getTableMemberNum(hookLib) > 0 then
+            this.printToVSCode("tryRequireClib success : [" .. libName .. "] in "..libPath);
+            return true;
+        else
+            this.printToVSCode("tryRequireClib fail : require success, but member function num <= 0; [" .. libName .. "] in "..libPath);
+            hookLib = nil;    
+            return false;
+        end
     end
     package.cpath = save_cpath;
     return false
@@ -575,7 +587,61 @@ function this.dataProcess( dataStr )
         --其他时机收到breaks消息
         local msgTab = this.getMsgTable("setBreakPoint", this.getCallbackId());
         this.sendMsg(msgTab);
+        -- 打印调试信息
+        this.printToVSCode("LuaPanda.getInfo()\n" .. LuaPanda.getInfo())
+        this.printToVSCode("LuaPanda.getCWD()\n" .. LuaPanda.getCWD())
+        this.printToVSCode("LuaPanda.getBreaks()\n" .. tools.serializeTable(LuaPanda.getBreaks()));
         this.debugger_wait_msg();
+    elseif dataTable.cmd == "setVariable" then
+            if currentRunState == runState.STOP_ON_ENTRY or
+            currentRunState == runState.HIT_BREAKPOINT or
+            currentRunState == runState.STEPOVER_STOP or
+            currentRunState == runState.STEPIN_STOP or
+            currentRunState == runState.STEPOUT_STOP then
+                local msgTab = this.getMsgTable("setVariable", this.getCallbackId());
+                local varRefNum = tonumber(dataTable.info.varRef);
+                local newValue = tostring(dataTable.info.newValue);
+                local isFindVariable = true;    --如果变量是基础类型，直接赋值，isFindVariable = false; 如果变量是引用类型，isFindVariable = true
+                local varName = tostring(dataTable.info.varName);
+                -- 根据首末含有" ' 判断 newValue 是否是字符串
+                local first_chr = string.sub(newValue, 1, 1);
+                local end_chr = string.sub(newValue, -1, -1);
+                if first_chr == end_chr then
+                    if first_chr == "'" or first_chr == '"' then
+                        newValue = string.sub(newValue, 2, -2);
+                        isFindVariable = false;
+                    end
+                end
+                --数字，nil，false，true的处理
+                if newValue == "nil" and isFindVariable == true  then newValue = nil; isFindVariable = false;
+                elseif newValue == "true" and isFindVariable == true then newValue = true; isFindVariable = false;
+                elseif newValue == "false" and isFindVariable == true then newValue = false; isFindVariable = false;
+                elseif tonumber(newValue) and isFindVariable == true then newValue = tonumber(newValue); isFindVariable = false;
+                end
+
+                -- 如果新值是基础类型，则不需边历
+                if dataTable.info.stackId ~= nil and tonumber(dataTable.info.stackId) ~= nil and tonumber(dataTable.info.stackId) > 1 then
+                    this.curStackId = tonumber(dataTable.info.stackId);
+                else
+                    this.printToVSCode("未能获取到堆栈层级，默认使用 this.curStackId;")
+                end
+
+                if varRefNum < 10000 then
+                    -- 如果修改的是一个 引用变量，那么可直接赋值。但还是要走变量查询过程。查找和赋值过程都需要steakId。 目前给引用变量赋值Object，steak可能有问题
+                    msgTab.info = this.createSetValueRetTable(varName, newValue, isFindVariable, this.curStackId, variableRefTab[varRefNum][varName]);
+                else
+                    -- 如果修改的是一个基础类型    
+                    local setLimit; --设置检索变量的限定区域
+                    if varRefNum >= 10000 and varRefNum < 20000 then setLimit = "local";
+                    elseif varRefNum >= 20000 and varRefNum < 30000 then setLimit = "global";
+                    elseif varRefNum >= 30000 then setLimit = "upvalue";
+                    end
+                    msgTab.info = this.createSetValueRetTable(varName, newValue, isFindVariable, this.curStackId, nil, setLimit);
+                end
+
+                this.sendMsg(msgTab);
+                this.debugger_wait_msg();
+            end
 
     elseif dataTable.cmd == "getVariable" then
         --仅在停止时处理消息，其他时刻收到此消息，丢弃
@@ -592,15 +658,14 @@ function this.dataProcess( dataStr )
             local msgTab = this.getMsgTable("getVariable", this.getCallbackId());
             local varRefNum = tonumber(dataTable.info.varRef);
             if varRefNum < 10000 then
-                --查询变量
+                --查询变量, 此时忽略 stackId
                 local varTable = this.getVariableRef(dataTable.info.varRef, true);
                 msgTab.info = varTable;
             elseif varRefNum >= 10000 and varRefNum < 20000 then
                 --局部变量
                 if dataTable.info.stackId ~= nil and tonumber(dataTable.info.stackId) > 1 then
                     this.curStackId = tonumber(dataTable.info.stackId);
-                    -- local stackId = this.getCurrentFunctionStackLevel() + this.curStackId - 1; --去除偏移量
-                    local stackId = this.getSpecificFunctionStackLevel(currentCallStack[this.curStackId - 1].func) + 1; --去除偏移量
+                    local stackId = this.getSpecificFunctionStackLevel(currentCallStack[this.curStackId - 1].func); --去除偏移量
                     local varTable = this.getVariable(stackId, true);
                     msgTab.info = varTable;
                 end
@@ -612,6 +677,7 @@ function this.dataProcess( dataStr )
             elseif varRefNum >= 30000 then
                 --upValue
                 if dataTable.info.stackId ~= nil and tonumber(dataTable.info.stackId) > 1 then
+                    this.curStackId = tonumber(dataTable.info.stackId);
                     local stackId = tonumber(dataTable.info.stackId);
                     local varTable = this.getUpValueVariable(currentCallStack[stackId - 1 ].func, true);
                     msgTab.info = varTable;
@@ -643,7 +709,7 @@ function this.dataProcess( dataStr )
         end
 
         --查找c++的hook库是否存在
-        if tostring(dataTable.info.useHighSpeedModule) == "true" then
+        if tostring(dataTable.info.useCHook) == "true" then
             local clibExt, platform;
             if OSType == "Darwin" then clibExt = "/?.so;"; platform = "mac";
             else clibExt = "/?.dll;"; platform = "win";   end
@@ -735,8 +801,52 @@ function this.dataProcess( dataStr )
         this.sendMsg(msgTab);
         this.debugger_wait_msg();
     else
-
     end
+end
+
+-- 变量赋值的处理函数。基本逻辑是先从当前栈帧（curStackId）中取 newValue 代表的变量，找到之后再把找到的值通过setVariableValue写回。
+-- @varName             被设置值的变量名
+-- @newValue            新值的名字，它是一个string
+-- @isFindVariable      是否需要查找引用变量。（用户输入的是否是一个Object）
+-- @curStackId          当前栈帧（查找和变量赋值用）
+-- @assigndVar          被直接赋值（省去查找过程）
+-- @setLimit              赋值时的限制范围（local upvalue global）
+function this.createSetValueRetTable(varName, newValue, isFindVariable, curStackId,  assigndVar , setLimit)
+    local info;
+    -- 以上的处理没有命中，则使用getWatchedVariable处理（可选, 用来支持 a = b (b为变量的情况)）。
+    local getVarRet;
+    if isFindVariable == false then
+        getVarRet = {}; 
+        getVarRet[1] = {variablesReference = 0, value = newValue, name = varName, type = type(newValue)};
+    else
+        getVarRet =  this.getWatchedVariable( tostring(newValue), curStackId, true);
+    end
+    if getVarRet ~= nil then 
+        --如果找到, 用户输入的是一个变量名
+        newValue = getVarRet[1].value;
+        local setVarRet;
+        if assigndVar == nil then
+            setVarRet = this.setVariableValue( varName, curStackId, newValue, setLimit );
+        else
+            assigndVar = newValue;
+            setVarRet = true;
+        end
+
+        if getVarRet[1].type == "string" then
+            newValue = '"' .. newValue .. '"';
+        end
+
+        if setVarRet ~= false and setVarRet ~= nil then 
+            local retTip = "变量 ".. varName .." 赋值成功";
+            info = { success = "true", name = getVarRet[1].name , type = getVarRet[1].type , value = newValue, variablesReference = tostring(getVarRet[1].variablesReference), tip = retTip};
+        else
+            info = { success = "false", type = type(newValue), value = newValue, tip = "找不到要设置的变量"};
+        end
+
+    else
+        info = { success = "false", type = type(newValue), value = newValue, tip = "输入的值无意义"};    
+    end
+    return info
 end
 
 --接收消息
@@ -981,7 +1091,6 @@ function this.checkCurrentLayerisLua( checkLayer )
         return nil;
     end
     info.source = this.genUnifiedPath(info.source);
-    -- print("info.source  " ..info.source )
     if info ~= nil then
         for k,v in pairs(info) do
             if k == "what" then
@@ -1000,8 +1109,6 @@ end
 -- 参数info是当前堆栈信息
 -- @info getInfo获取的当前调用信息
 function this.isHitBreakpoint( info )
-    -- tools.printTable(breaks,"breaks");
-
     local curPath = info.source;
     local curLine = tostring(info.currentline);
     if breaks[curPath] ~= nil then
@@ -1518,8 +1625,137 @@ function this.createWatchedVariableInfo(variableName, variableIns)
             local memberNum = this.getTableMemberNum(variableIns);
             var.value = memberNum .." Members ".. var.value;
         end
+    elseif var.type == "string" then 
+        var.value = '"' ..variableIns.. '"';
     end
     return var;
+end
+
+-- 设置 global 变量
+-- @varName 被修改的变量名
+-- @newValue 新的值
+function this.setGlobal(varName, newValue)
+    _G.varName = newValue;
+    this.printToVSCode("[setVariable success] 已设置  _G.".. varName .. " = " .. tostring(newValue) );
+    return true;
+end
+
+-- 设置 upvalue 变量
+-- @varName 被修改的变量名
+-- @newValue 新的值
+-- @stackId 变量所在stack栈层
+-- @tableVarName 变量名拆分成的数组
+function this.setUpvalue(varName, newValue, stackId, tableVarName)
+    local ret = false;
+    local upTable = this.getUpValueVariable(currentCallStack[stackId - 1 ].func, isFormatVariable);
+    for i, realVar in ipairs(upTable) do
+        if realVar.name == varName then
+            if #tableVarName > 0 and type(realVar) == "table" then
+                --处理a.b.c的table类型
+                local findRes = this.findTableVar(tableVarName,  variableRefTab[realVar.variablesReference]);
+                if findRes ~= nil then
+                    --命中
+                        local setVarRet = debug.setupvalue (currentCallStack[stackId - 1 ].func, i, newValue);
+                        if setVarRet == varName then 
+                            this.printToConsole("[setVariable success1] 已设置 upvalue ".. varName .. " = " .. tostring(newValue) );
+                            ret = true;
+                        else
+                            this.printToConsole("[setVariable error1] 未能设置 upvalue ".. varName .. " = " .. tostring(newValue) " , 返回结果: ".. tostring(setVarRet));
+                        end
+                        return ret;
+                end
+            else
+                --命中
+                local setVarRet = debug.setupvalue (currentCallStack[stackId - 1 ].func, i, newValue);
+                if setVarRet == varName then 
+                    this.printToConsole("[setVariable success] 已设置 upvalue ".. varName .. " = " .. tostring(newValue) );
+                    ret = true;
+                else
+                    this.printToConsole("[setVariable error] 未能设置 upvalue ".. varName .. " = " .. tostring(newValue) " , 返回结果: ".. tostring(setVarRet));
+                end
+                return ret;
+            end
+        end
+    end
+    return ret;
+end
+
+-- 设置local 变量
+-- @varName 被修改的变量名
+-- @newValue 新的值
+-- @tableVarName 变量名拆分成的数组
+function this.setLocal( varName, newValue, tableVarName )
+    local layerVarTab, ly = this.getVariable(nil , true);
+    local ret = false;
+    for i, realVar in ipairs(layerVarTab) do
+        if realVar.name == varName then
+            if #tableVarName > 0 and type(realVar) == "table" then
+                --处理a.b.c的table类型
+                local findRes = this.findTableVar(tableVarName,  variableRefTab[realVar.variablesReference]);
+                if findRes ~= nil then
+                        --命中
+                        local setVarRet = debug.setlocal(ly , i, newValue);
+                        if setVarRet == varName then 
+                            this.printToConsole("[setVariable success1] 已设置 local ".. varName .. " = " .. tostring(newValue) );
+                            ret = true;
+                        else
+                            this.printToConsole("[setVariable error1] 未能设置 local ".. varName .. " = " .. tostring(newValue) " , 返回结果: ".. tostring(setVarRet));
+                        end
+                        return ret;
+                end
+            else
+
+                local setVarRet = debug.setlocal(ly , i, newValue);
+
+                if setVarRet == varName then 
+                    this.printToConsole("[setVariable success] 已设置 local ".. varName .. " = " .. tostring(newValue) );
+                    ret = true;
+                else
+                    this.printToConsole("[setVariable error] 未能设置 local ".. varName .. " = " .. tostring(newValue) " , 返回结果: ".. tostring(setVarRet));
+                end
+                return ret;
+            end
+        end
+    end
+    return ret;
+end
+
+
+-- 设置变量的值
+-- @varName 被修改的变量名
+-- @curStackId 调用栈层级(仅在固定栈层查找)
+-- @newValue 新的值
+-- @limit 限制符， 10000表示仅在局部变量查找 ，20000 global, 30000 upvalue
+function this.setVariableValue (varName, stackId, newValue , limit)
+    this.printToConsole("setVariableValue | varName:" .. varName .. " stackId:".. stackId .." newValue:" .. tostring(newValue) )
+    if tostring(varName) == nil or tostring(varName) == "" then
+        --赋值错误
+        this.printToConsole("[setVariable Error] 被赋值的变量名为空" );
+        this.printToVSCode("[setVariable Error] 被赋值的变量名为空" );
+        return false;
+    end
+
+    --支持a.b.c形式。切割varName
+    local tableVarName = {};
+    if varName:match('%.') then
+        tableVarName = this.stringSplit(varName , '%.');
+        if type(tableVarName) ~= "table" or #tableVarName < 1 then
+            return false;
+        end
+        varName = tableVarName[1];
+    end
+
+    if limit == "local" then     
+        return this.setLocal( varName, newValue, tableVarName);
+    elseif limit == "upvalue" then
+        return this.setUpvalue(varName, newValue, stackId, tableVarName);
+    elseif limit == "global" then
+        return this.setGlobal(varName, newValue);
+    else
+        local ret = this.setLocal( varName, newValue, tableVarName) or this.setUpvalue(varName, newValue, stackId, tableVarName) or this.setGlobal(varName, newValue);
+        this.printToConsole("set Value res :".. tostring(ret));
+        return ret;
+    end
 end
 
 -- 按照local -> upvalue -> _G 顺序查找观察变量
@@ -1545,7 +1781,7 @@ function this.getWatchedVariable( varName , stackId , isFormatVariable )
     end
     --用来返回，带有查到变量的table
     local varTab = {};
-    local ly = this.getSpecificFunctionStackLevel(currentCallStack[stackId - 1].func) + 1;
+    local ly = this.getSpecificFunctionStackLevel(currentCallStack[stackId - 1].func);
 
     local layerVarTab = this.getVariable(ly, isFormatVariable);
     local upTable = this.getUpValueVariable(currentCallStack[stackId - 1 ].func, isFormatVariable);
@@ -1631,6 +1867,8 @@ function this.getVariableRef( refStr )
                     local memberNum = this.getTableMemberNum(v);
                     var.value = memberNum .." Members ".. var.value
                 end
+            elseif var.type == "string" then 
+                var.value = '"' ..v.. '"';
             end
             table.insert(varTab, var);
         end
@@ -1685,7 +1923,8 @@ function this.getGlobalVariable( ... )
                 local memberNum = this.getTableMemberNum(v);
                 var.value = memberNum .." Members ".. var.value
             end
-
+        elseif var.type == "string" then 
+            var.value = '"' ..v.. '"';
         end
         table.insert(varTab, var);
     end
@@ -1727,6 +1966,8 @@ function this.getUpValueVariable( checkFunc , isFormatVariable)
                     local memberNum = this.getTableMemberNum(v);
                     var.value = memberNum .." Members ".. var.value
                 end
+            elseif var.type == "string" then 
+                var.value = '"' ..v.. '"';
             end
         else
             var.value = v;
@@ -1747,25 +1988,24 @@ function this.getVariable( checkLayer, isFormatVariable )
         isGetValue = false;
     end
 
-    --local ly = checkLayer or this.getCurrentFunctionStackLevel();
-    local ly = checkLayer or this.getSpecificFunctionStackLevel(lastRunFunction.func);
-    -- print(debug.traceback("1"));
-    -- print("getVariable ly"..ly);
+    local ly = 0;
+    if checkLayer ~= nil and type(checkLayer) == "number" then ly = checkLayer + 1;
+    else  ly = this.getSpecificFunctionStackLevel(lastRunFunction.func); end
+
     if ly == 0 then
         this.printToVSCode("[error]获取层次失败！", 2);
         return;
     end
     local varTab = {};
     local stacklayer = ly;
-    --print("stacklayer"..stacklayer);
     local k = 1;
     repeat
         local n, v = debug.getlocal(stacklayer, k)
         if n == nil then
             break;
         end
-        --print(n, v);
-        --(*temporary)是系统变量，过滤掉
+
+        --(*temporary)是系统变量，过滤掉。这里假设(*temporary)仅出现在最后
         if "(*temporary)" ~= tostring(n) then
             local var = {};
             var.name = n;
@@ -1782,6 +2022,8 @@ function this.getVariable( checkLayer, isFormatVariable )
                         local memberNum = this.getTableMemberNum(v);
                         var.value = memberNum .." Members ".. var.value
                     end
+                elseif var.type == "string" then 
+                        var.value = '"' ..v.. '"';
                 end
             else
                 var.value = v;
@@ -1790,7 +2032,7 @@ function this.getVariable( checkLayer, isFormatVariable )
         end
         k = k + 1
     until n == nil
-    return varTab;
+    return varTab, ly - 1;
 end
 
 -- 执行表达式
@@ -1840,6 +2082,8 @@ function this.processExp(msgTable)
             local memberNum = this.getTableMemberNum(retString);
             var.value = memberNum .." Members ".. var.value;
         end
+    elseif var.type == "string" then 
+        var.value = '"' ..retString.. '"';
     end
     --string执行完毕后清空evn环境
     this.clearEnv();
@@ -1883,6 +2127,8 @@ function this.processWatchedExp(msgTable)
             local memberNum = this.getTableMemberNum(retString);
             var.value = memberNum .." Members ".. var.value;
         end
+    elseif var.type == "string" then 
+        var.value = '"' ..retString.. '"';
     end
 
     local retTab = {}

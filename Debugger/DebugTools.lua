@@ -18,7 +18,7 @@ function this.printTable(t, name ,indent)
 end
 
 --序列化并返回table
-function this.record(t, name, indent)
+function this.serializeTable(t, name, indent)
   local str = (this.show(t, name, indent))
   return str
 end
