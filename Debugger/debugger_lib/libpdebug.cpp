@@ -4,12 +4,11 @@
 // https://opensource.org/licenses/BSD-3-Clause
 // Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-#include <stdio.h>
-#include <string.h>
-#include <iostream>
-#include <list>
-#include <time.h>
 #include "libpdebug.h"
+
+#include <ctime>
+#include <list>
+#include <string>
 
 using namespace std;
 static int cur_run_state = 0;       //当前运行状态， c 和 lua 都可能改变这个状态，要保持同步
@@ -736,7 +735,7 @@ DEBUG_API int luaopen_libpdebug(lua_State* L)
 #endif // USE_SOURCE_CODE
 
 //WIN32下函数处理方法
-#ifdef _WIN32
+#if !defined(USE_SOURCE_CODE) && defined(_WIN32)
 //slua-ue template function
 template<typename T, typename RET>
 RET callLuaFunction(lua_State *L) {
