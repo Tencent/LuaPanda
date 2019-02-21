@@ -628,7 +628,7 @@ function this.dataProcess( dataStr )
 
                 if varRefNum < 10000 then
                     -- 如果修改的是一个 引用变量，那么可直接赋值。但还是要走变量查询过程。查找和赋值过程都需要steakId。 目前给引用变量赋值Object，steak可能有问题
-                    msgTab.info = this.createSetValueRetTable(varName, newValue, isFindVariable, this.curStackId, variableRefTab[varRefNum][varName]);
+                    msgTab.info = this.createSetValueRetTable(varName, newValue, isFindVariable, this.curStackId, variableRefTab[varRefNum]);
                 else
                     -- 如果修改的是一个基础类型    
                     local setLimit; --设置检索变量的限定区域
@@ -828,7 +828,7 @@ function this.createSetValueRetTable(varName, newValue, isFindVariable, curStack
         if assigndVar == nil then
             setVarRet = this.setVariableValue( varName, curStackId, newValue, setLimit );
         else
-            assigndVar = newValue;
+            assigndVar[varName] = newValue;
             setVarRet = true;
         end
 
