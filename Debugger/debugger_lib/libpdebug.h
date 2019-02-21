@@ -131,6 +131,7 @@ typedef void (*luaDLL_setfuncs)(lua_State *L, const luaL_Reg *l, int nup);
 typedef lua_Integer(*luaDLL_tointegerx)(lua_State *L, int idx, int *pisnum);
 typedef int (*luaDLL_getglobal)(lua_State *L, const char *name);
 typedef int (*luaDLL_pcallk)(lua_State *L, int nargs, int nresults, int msgh, lua_KContext ctx, lua_KFunction k);
+typedef int (*luaDLL_toboolean)(lua_State *L, int index);
 
 luaDLL_version lua_version;
 luaDLL_gettop lua_gettop;
@@ -150,6 +151,7 @@ luaDLL_checknumber luaL_checknumber;
 luaDLL_type lua_type;
 luaDLL_tolstring lua_tolstring;
 luaDLL_pushinteger lua_pushinteger;
+luaDLL_toboolean lua_toboolean;
 //
 HMODULE hInstLibrary;
 
@@ -186,6 +188,7 @@ namespace slua {
 		virtual void lua_createtable(lua_State *L, int narr, int nrec) PURE_API;
 		virtual void luaL_setfuncs(lua_State *L, const luaL_Reg *l, int nup) PURE_API;
 		virtual int lua_getglobal(lua_State *L, const char *name) PURE_API;
+		virtual int lua_toboolean(lua_State *L, int index) PURE_API;
 	};
 }
 typedef  slua::LuaInterface* (*dll_GetLuaInterface)();

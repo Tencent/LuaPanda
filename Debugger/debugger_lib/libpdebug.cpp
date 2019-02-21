@@ -447,10 +447,10 @@ int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
     if (const_iter2->second.type == CONDITION_BREAKPOINT) {
         std::string condition = const_iter2->second.info;
         call_lua_function(L, "IsMeetCondition", 1, condition.c_str());
-        if (!lua_isboolean(L, -1)) {
-            print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk process condition expression result error!", 2);
-            return 0;
-        }
+        // if (!lua_isboolean(L, -1)) {
+        //     print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk process condition expression result error!", 2);
+        //     return 0;
+        // }
         int is_meet_condition = lua_toboolean(L, -1);
         lua_pop(L, 1);
         return is_meet_condition;
@@ -778,6 +778,7 @@ DEBUG_API int luaopen_libpdebug(lua_State* L)
 //WIN32下函数处理方法
 #ifdef _WIN32
 //slua-ue template function
+#if LUA_VERSION_NUM > 501
 template<typename T, typename RET>
 RET callLuaFunction(lua_State *L) {
     return getInter()->T(L);
@@ -821,6 +822,7 @@ struct LuaCppBinding<void(T::*)(ARGS...), F> {
         return Invoker<decltype(F), F>::invoke(args...);
     }
 };
+#endif // LUA_VERSION_NUM > 501
 
 void Slua_UE_find_function()
 {		//slua - ue Lua 5.3
@@ -845,7 +847,7 @@ void Slua_UE_find_function()
     lua_createtable = (luaDLL_createtable)SLUABINDING(&slua::LuaInterface::lua_createtable);
     luaL_setfuncs = SLUABINDING(&slua::LuaInterface::luaL_setfuncs);
     lua_getglobal = SLUABINDING(&slua::LuaInterface::lua_getglobal);
-
+    lua_toboolean = (luaDLL_toboolean)SLUABINDING(&slua::LuaInterface::lua_toboolean);
 #endif
 }
 
@@ -871,6 +873,7 @@ void general_find_function() {
     lua_sethook = (luaDLL_sethook)GetProcAddress(hInstLibrary, "lua_sethook");
     luaL_checknumber = (luaDLL_checknumber)GetProcAddress(hInstLibrary, "luaL_checknumber");
     lua_pushinteger = (luaDLL_pushinteger)GetProcAddress(hInstLibrary, "lua_pushinteger");
+    lua_toboolean = (luaDLL_toboolean)GetProcAddres(hInstLibrary, "lua_toboolean");
     //5.3
 #if LUA_VERSION_NUM > 501
     lua_pcallk = (luaDLL_pcallk)GetProcAddress(hInstLibrary, "lua_pcallk");
