@@ -357,8 +357,6 @@ extern "C" int sync_breakpoints(lua_State *L) {
         return -1;
     }
 
-    all_breakpoint_map.clear();
-
     //遍历breaks
     lua_pushnil(L);//breaks nil
     while (lua_next(L, -2)) {
@@ -714,6 +712,7 @@ extern "C" int endHook(lua_State *L)
 {
     cur_hook_state = DISCONNECT_HOOK;
     lua_sethook(L, NULL, 0, 0);
+    all_breakpoint_map.clear();
     return 0;
 }
 
