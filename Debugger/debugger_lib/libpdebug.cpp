@@ -876,7 +876,7 @@ void general_find_function() {
     lua_sethook = (luaDLL_sethook)GetProcAddress(hInstLibrary, "lua_sethook");
     luaL_checknumber = (luaDLL_checknumber)GetProcAddress(hInstLibrary, "luaL_checknumber");
     lua_pushinteger = (luaDLL_pushinteger)GetProcAddress(hInstLibrary, "lua_pushinteger");
-    lua_toboolean = (luaDLL_toboolean)GetProcAddres(hInstLibrary, "lua_toboolean");
+    lua_toboolean = (luaDLL_toboolean)GetProcAddress(hInstLibrary, "lua_toboolean");
     //5.3
 #if LUA_VERSION_NUM > 501
     lua_pcallk = (luaDLL_pcallk)GetProcAddress(hInstLibrary, "lua_pcallk");
