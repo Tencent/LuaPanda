@@ -109,30 +109,36 @@ void print_to_vscode(lua_State *L, const char* msg, int level = 0);
 int load(lua_State* L);
 
 //打印断点信息
-void print_all_breakpoint_map() {
+void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
+    if (print_level < logLevel) {
+        return;
+    }
     std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
     std::map<int, breakpoint>::iterator iter2;
+    print_to_vscode(L, "[breakpoints in chook:]", print_level);
+    std::string log_message;
     for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
-        std::cout << iter1->first << std::endl;
+        print_to_vscode(L, iter1->first.c_str(), print_level);
         for (iter2 = iter1->second.begin(); iter2 != iter1->second.end(); ++iter2) {
-            std::cout << "   " << "line: " << iter2->first << "  type: ";
+            log_message = std::string("    line: ") + to_string(iter2->first) + std::string("  type: ");
             switch (iter2->second.type) {
                 case CONDITION_BREAKPOINT:
-                    std::cout << "condition breakpoint" << "  info: " << iter2->second.info << std::endl;
+                    log_message += std::string("condition breakpoint  info: ") + iter2->second.info;
                     break;
 
                 case LOG_POINT:
-                    std::cout << "log point" << "  info: " << iter2->second.info << std::endl;
+                    log_message += std::string("log point  info: ") + iter2->second.info;
                     break;
 
                 case LINE_BREAKPOINT:
-                    std::cout << "line breakpoint" << "  info: " << iter2->second.info << std::endl;
+                    log_message += std::string("line breakpoint  info: ") + iter2->second.info;
                     break;
 
                 default:
-                    std::cout << "Invalid breakpoint type!" << iter2->second.type << std::endl;
+                    log_message += std::string("Invalid breakpoint type!") + to_string(iter2->second.type);
                     break;
             }
+            print_to_vscode(L, log_message.c_str(), print_level);
         }
     }
 }
@@ -420,7 +426,7 @@ extern "C" int sync_breakpoints(lua_State *L) {
     }
     lua_pop(L, 1);//外部每次循环
 
-    // print_all_breakpoint_map();
+    print_all_breakpoint_map(L);
     check_hook_state(L, last_source, ar_current_line ,ar_def_line, ar_lastdef_line);
     return 0;
 }
