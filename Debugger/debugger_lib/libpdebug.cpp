@@ -115,32 +115,39 @@ void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
     }
     std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
     std::map<int, breakpoint>::iterator iter2;
-    print_to_vscode(L, "[breakpoints in chook:]", print_level);
-    std::string log_message;
+    std::string log_message = "[breakpoints in chook:]\n";
     for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
-        print_to_vscode(L, iter1->first.c_str(), print_level);
+        log_message += iter1->first;
+        log_message += '\n';
         for (iter2 = iter1->second.begin(); iter2 != iter1->second.end(); ++iter2) {
-            log_message = std::string("    line: ") + to_string(iter2->first) + std::string("  type: ");
+            log_message += std::string("    line: ");
+            log_message += to_string(iter2->first);
+            log_message += std::string("  type: ");
             switch (iter2->second.type) {
                 case CONDITION_BREAKPOINT:
-                    log_message += std::string("condition breakpoint  info: ") + iter2->second.info;
+                    log_message += std::string("condition breakpoint  info: ");
+                    log_message += iter2->second.info;
                     break;
 
                 case LOG_POINT:
-                    log_message += std::string("log point  info: ") + iter2->second.info;
+                    log_message += std::string("log point  info: ");
+                    log_message += iter2->second.info;
                     break;
 
                 case LINE_BREAKPOINT:
-                    log_message += std::string("line breakpoint  info: ") + iter2->second.info;
+                    log_message += std::string("line breakpoint  info: ");
+                    log_message += iter2->second.info;
                     break;
 
                 default:
-                    log_message += std::string("Invalid breakpoint type!") + to_string(iter2->second.type);
+                    log_message += std::string("Invalid breakpoint type!");
+                    log_message += to_string(iter2->second.type);
                     break;
             }
-            print_to_vscode(L, log_message.c_str(), print_level);
+            log_message += '\n';
         }
     }
+    print_to_vscode(L, log_message.c_str(), print_level);
 }
 
 //push_arg Template
