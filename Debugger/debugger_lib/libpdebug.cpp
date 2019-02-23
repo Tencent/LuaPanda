@@ -371,6 +371,7 @@ extern "C" int sync_breakpoints(lua_State *L) {
     }
 
     //遍历breaks
+    all_breakpoint_map.clear();
     lua_pushnil(L);//breaks nil
     while (lua_next(L, -2)) {
         //breaks   k（string）   v(table)
