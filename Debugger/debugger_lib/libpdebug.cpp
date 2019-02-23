@@ -461,7 +461,7 @@ int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
 
     // 记录点
     if (const_iter2->second.type == LOG_POINT) {
-        std::string log_message = "log message: ";
+        std::string log_message = "[log point output]: ";
         log_message.append(const_iter2->second.info);
         print_to_vscode(L, log_message.c_str() , 1);
         return 0;
