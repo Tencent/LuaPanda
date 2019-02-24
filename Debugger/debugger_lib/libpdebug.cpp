@@ -106,7 +106,7 @@ struct debug_auto_stack {
 void debug_hook_c(lua_State *L, lua_Debug *ar);
 void check_hook_state(lua_State *L, const char* source, int current_line, int def_line, int last_line, int event = -1);
 void print_to_vscode(lua_State *L, const char* msg, int level = 0);
-int load(lua_State* L);
+void load(lua_State* L);
 
 //打印断点信息
 void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
@@ -916,13 +916,13 @@ void general_find_function() {
 #endif
 }
 
-int load(lua_State* L) {
+void load(lua_State* L) {
 
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
     if (INVALID_HANDLE_VALUE == hSnapshot)
     {
         //load fail
-        return 0;
+        return;
     }
     MODULEENTRY32 mi;
     mi.dwSize = sizeof(MODULEENTRY32);
