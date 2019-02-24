@@ -762,7 +762,7 @@ extern "C" void pdebug_init(lua_State* L) {
     }
     lua_setglobal(L, "luapanda_chook");
 }
-#else
+#else // !USE_SOURCE_CODE
 
 #ifdef _WIN32
 #define DEBUG_API extern "C" __declspec(dllexport)
@@ -776,16 +776,31 @@ DEBUG_API int luaopen_libpdebug(lua_State* L)
     load(L);
 #endif
 
+#if !defined(USE_SOURCE_CODE) && defined(_WIN32)
+
 #if LUA_VERSION_NUM == 501
-    if(luaL_register != nullptr){
-	luaL_register(L, "libpdebug", libpdebug);
+    // 在windows平台编译时，luaL_register等是函数指针，运行时查找。
+    if(luaL_register != NULL){
+        luaL_register(L, "libpdebug", libpdebug);
     }
 #elif LUA_VERSION_NUM > 501
-    if(lua_newtable != nullptr && luaL_setfuncs != nullptr){
-	lua_newtable(L);
-	luaL_setfuncs(L, libpdebug, 0);
+    if(lua_createtable != NULL && luaL_setfuncs != NULL){
+        lua_newtable(L);
+        luaL_setfuncs(L, libpdebug, 0);
     }
-#endif
+#endif // LUA_VERSION_NUM
+
+#else // !(!defined(USE_SOURCE_CODE) && defined(_WIN32))
+
+#if LUA_VERSION_NUM == 501
+    // 在macOS编译时，luaL_register等是函数，定义在lua.h中。
+    luaL_register(L, "libpdebug", libpdebug);
+#elif LUA_VERSION_NUM > 501
+    lua_newtable(L);
+    luaL_setfuncs(L, libpdebug, 0);
+#endif // LUA_VERSION_NUM
+
+#endif // !defined(USE_SOURCE_CODE) && defined(_WIN32)
 
     return 1;
 }
