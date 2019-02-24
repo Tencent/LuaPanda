@@ -11,7 +11,7 @@
 #include <map>
 #include <string>
 
-using namespace std;
+//using namespace std;
 static int cur_run_state = 0;       //当前运行状态， c 和 lua 都可能改变这个状态，要保持同步
 static int cur_hook_state = 0;      //当前hook状态， c 和 lua 都可能改变这个状态
 static lua_Number logLevel = 1;            //日志等级（从lua同步）
@@ -121,7 +121,7 @@ void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
         log_message += '\n';
         for (iter2 = iter1->second.begin(); iter2 != iter1->second.end(); ++iter2) {
             log_message += std::string("    line: ");
-            log_message += to_string(iter2->first);
+            log_message += std::to_string(iter2->first);
             log_message += std::string("  type: ");
             switch (iter2->second.type) {
                 case CONDITION_BREAKPOINT:
@@ -141,7 +141,7 @@ void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
 
                 default:
                     log_message += std::string("Invalid breakpoint type!");
-                    log_message += to_string(iter2->second.type);
+                    log_message += std::to_string(iter2->second.type);
                     break;
             }
             log_message += '\n';
