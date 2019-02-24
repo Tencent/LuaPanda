@@ -23,7 +23,7 @@
 1. **下载 slua 工程** 下载 slua 工程源码 https://github.com/pangweiwei/slua
 2. **slua 工程设置** 使用 Unity 打开 slua 工程，切换工程平台到 Android/iOS ， 点击菜单 Slua -> All -> Make，选择 `Slua/Editor/example/Circle` 场景。
 3. **放入调试文件** 把`/Debugger`中的 `LuaPanda.lua, DebugTools.lua` 两个文件拷贝到slua工程 `Slua/Resources/` 目录下, 并修改文件后缀为 `.txt`
-4. **配置工程** VSCode 打开 `Slua/Resources/` 目录，点击 VSCode 调试选项卡下的齿轮图标，选择 LuaPanda。生成的配置表不必修改。
+4. **配置工程** VSCode 打开 `Slua/Resources/` 目录，点击 VSCode 调试选项卡下的齿轮图标，选择 LuaPanda。把配置项 luaFileExtension 值修改为 "txt"。
 5. **开始调试** 在 `Slua/Resources/circle/circle.txt` 中加入代码 `require("LuaPanda").start("127.0.0.1",8818)`. 点击 VSCode 调试的绿色箭头，再运行Unity，在加入 require 的位置后会自动停止。也可以打断点调试
 
 
