@@ -776,7 +776,7 @@ DEBUG_API int luaopen_libpdebug(lua_State* L)
     load(L);
 #endif
 
-#if !defined(USE_SOURCE_CODE) && defined(_WIN32)
+#ifdef _WIN32
 
 #if LUA_VERSION_NUM == 501
     // 在windows平台编译时，luaL_register等是函数指针，运行时查找。
@@ -790,7 +790,7 @@ DEBUG_API int luaopen_libpdebug(lua_State* L)
     }
 #endif // LUA_VERSION_NUM
 
-#else // !(!defined(USE_SOURCE_CODE) && defined(_WIN32))
+#else // !defined(_WIN32))
 
 #if LUA_VERSION_NUM == 501
     // 在macOS编译时，luaL_register等是函数，定义在lua.h中。
@@ -800,7 +800,7 @@ DEBUG_API int luaopen_libpdebug(lua_State* L)
     luaL_setfuncs(L, libpdebug, 0);
 #endif // LUA_VERSION_NUM
 
-#endif // !defined(USE_SOURCE_CODE) && defined(_WIN32)
+#endif // ifdef _WIN32
 
     return 1;
 }
