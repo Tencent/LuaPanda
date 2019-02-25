@@ -271,7 +271,8 @@ function this.tryRequireClib(libName , libPath)
 
     local save_cpath = package.cpath;
     package.cpath = libPath;
-    if pcall(function() hookLib = require(libName)  end) then
+    local status, err = pcall(function() hookLib = require(libName) end);
+    if status then
         package.cpath = save_cpath;
         if type(hookLib) == "table" and this.getTableMemberNum(hookLib) > 0 then
             this.printToVSCode("tryRequireClib success : [" .. libName .. "] in "..libPath);
@@ -281,6 +282,9 @@ function this.tryRequireClib(libName , libPath)
             hookLib = nil;
             return false;
         end
+    else
+        -- 此处考虑到tryRequireClib会被调用两次，日志级别设置为0，防止输出不必要的信息。
+        this.printToVSCode("[Require clib error]: " .. err, 0);
     end
     package.cpath = save_cpath;
     return false
@@ -727,7 +731,8 @@ function this.dataProcess( dataStr )
             if luapanda_chook ~= nil then
                 hookLib = luapanda_chook;
             else
-                if this.tryRequireClib("libpdebug", x64Path) or this.tryRequireClib("libpdebug", x86Path) then
+                if not(this.tryRequireClib("libpdebug", x64Path) or this.tryRequireClib("libpdebug", x86Path)) then
+                    this.printToVSCode("Require clib failed, use Lua to continue debug. Set logLevel to 1 and view the debugger log for more information.", 1);
                 end
             end
         end
