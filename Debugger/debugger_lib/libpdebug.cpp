@@ -11,7 +11,7 @@
 #include <map>
 #include <string>
 
-using namespace std;
+//using namespace std;
 static int cur_run_state = 0;       //当前运行状态， c 和 lua 都可能改变这个状态，要保持同步
 static int cur_hook_state = 0;      //当前hook状态， c 和 lua 都可能改变这个状态
 static lua_Number logLevel = 1;            //日志等级（从lua同步）
@@ -106,35 +106,48 @@ struct debug_auto_stack {
 void debug_hook_c(lua_State *L, lua_Debug *ar);
 void check_hook_state(lua_State *L, const char* source, int current_line, int def_line, int last_line, int event = -1);
 void print_to_vscode(lua_State *L, const char* msg, int level = 0);
-int load(lua_State* L);
+void load(lua_State* L);
 
 //打印断点信息
-void print_all_breakpoint_map() {
+void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
+    if (print_level < logLevel) {
+        return;
+    }
     std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
     std::map<int, breakpoint>::iterator iter2;
+    std::string log_message = "[breakpoints in chook:]\n";
     for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
-        std::cout << iter1->first << std::endl;
+        log_message += iter1->first;
+        log_message += '\n';
         for (iter2 = iter1->second.begin(); iter2 != iter1->second.end(); ++iter2) {
-            std::cout << "   " << "line: " << iter2->first << "  type: ";
+            log_message += std::string("    line: ");
+            log_message += std::to_string(iter2->first);
+            log_message += std::string("  type: ");
             switch (iter2->second.type) {
                 case CONDITION_BREAKPOINT:
-                    std::cout << "condition breakpoint" << "  info: " << iter2->second.info << std::endl;
+                    log_message += std::string("condition breakpoint  info: ");
+                    log_message += iter2->second.info;
                     break;
 
                 case LOG_POINT:
-                    std::cout << "log point" << "  info: " << iter2->second.info << std::endl;
+                    log_message += std::string("log point  info: ");
+                    log_message += iter2->second.info;
                     break;
 
                 case LINE_BREAKPOINT:
-                    std::cout << "line breakpoint" << "  info: " << iter2->second.info << std::endl;
+                    log_message += std::string("line breakpoint  info: ");
+                    log_message += iter2->second.info;
                     break;
 
                 default:
-                    std::cout << "Invalid breakpoint type!" << iter2->second.type << std::endl;
+                    log_message += std::string("Invalid breakpoint type!");
+                    log_message += std::to_string(iter2->second.type);
                     break;
             }
+            log_message += '\n';
         }
     }
+    print_to_vscode(L, log_message.c_str(), print_level);
 }
 
 //push_arg Template
@@ -358,6 +371,7 @@ extern "C" int sync_breakpoints(lua_State *L) {
     }
 
     //遍历breaks
+    all_breakpoint_map.clear();
     lua_pushnil(L);//breaks nil
     while (lua_next(L, -2)) {
         //breaks   k（string）   v(table)
@@ -420,7 +434,7 @@ extern "C" int sync_breakpoints(lua_State *L) {
     }
     lua_pop(L, 1);//外部每次循环
 
-    // print_all_breakpoint_map();
+    print_all_breakpoint_map(L);
     check_hook_state(L, last_source, ar_current_line ,ar_def_line, ar_lastdef_line);
     return 0;
 }
@@ -455,7 +469,7 @@ int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
 
     // 记录点
     if (const_iter2->second.type == LOG_POINT) {
-        std::string log_message = "log message: ";
+        std::string log_message = "[log point output]: ";
         log_message.append(const_iter2->second.info);
         print_to_vscode(L, log_message.c_str() , 1);
         return 0;
@@ -748,7 +762,7 @@ extern "C" void pdebug_init(lua_State* L) {
     }
     lua_setglobal(L, "luapanda_chook");
 }
-#else
+#else // !USE_SOURCE_CODE
 
 #ifdef _WIN32
 #define DEBUG_API extern "C" __declspec(dllexport)
@@ -762,16 +776,31 @@ DEBUG_API int luaopen_libpdebug(lua_State* L)
     load(L);
 #endif
 
+#ifdef _WIN32
+
 #if LUA_VERSION_NUM == 501
-    if(luaL_register != nullptr){
-	luaL_register(L, "libpdebug", libpdebug);
+    // 在windows平台编译时，luaL_register等是函数指针，运行时查找。
+    if(luaL_register != NULL){
+        luaL_register(L, "libpdebug", libpdebug);
     }
 #elif LUA_VERSION_NUM > 501
-    if(lua_newtable != nullptr && luaL_setfuncs != nullptr){
-	lua_newtable(L);
-	luaL_setfuncs(L, libpdebug, 0);
+    if(lua_createtable != NULL && luaL_setfuncs != NULL){
+        lua_newtable(L);
+        luaL_setfuncs(L, libpdebug, 0);
     }
-#endif
+#endif // LUA_VERSION_NUM
+
+#else // !defined(_WIN32))
+
+#if LUA_VERSION_NUM == 501
+    // 在macOS编译时，luaL_register等是函数，定义在lua.h中。
+    luaL_register(L, "libpdebug", libpdebug);
+#elif LUA_VERSION_NUM > 501
+    lua_newtable(L);
+    luaL_setfuncs(L, libpdebug, 0);
+#endif // LUA_VERSION_NUM
+
+#endif // ifdef _WIN32
 
     return 1;
 }
@@ -876,7 +905,7 @@ void general_find_function() {
     lua_sethook = (luaDLL_sethook)GetProcAddress(hInstLibrary, "lua_sethook");
     luaL_checknumber = (luaDLL_checknumber)GetProcAddress(hInstLibrary, "luaL_checknumber");
     lua_pushinteger = (luaDLL_pushinteger)GetProcAddress(hInstLibrary, "lua_pushinteger");
-    lua_toboolean = (luaDLL_toboolean)GetProcAddres(hInstLibrary, "lua_toboolean");
+    lua_toboolean = (luaDLL_toboolean)GetProcAddress(hInstLibrary, "lua_toboolean");
     //5.3
 #if LUA_VERSION_NUM > 501
     lua_pcallk = (luaDLL_pcallk)GetProcAddress(hInstLibrary, "lua_pcallk");
@@ -887,13 +916,13 @@ void general_find_function() {
 #endif
 }
 
-int load(lua_State* L) {
+void load(lua_State* L) {
 
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
     if (INVALID_HANDLE_VALUE == hSnapshot)
     {
         //load fail
-        return 0;
+        return;
     }
     MODULEENTRY32 mi;
     mi.dwSize = sizeof(MODULEENTRY32);
