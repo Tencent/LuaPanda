@@ -827,29 +827,36 @@ function this.createSetValueRetTable(varName, newValue, needFindVariable, curSta
         getVarRet =  this.getWatchedVariable( tostring(newValue), curStackId, true);
     end
     if getVarRet ~= nil then
-        --如果找到, 用户输入的是一个变量名
-        newValue = getVarRet[1].value;
+        -- newValue赋变量真实值
+        local realVarValue;
+        local displayVarValue = getVarRet[1].value;
+        if needFindVariable == true then 
+            realVarValue = variableRefTab[tonumber(getVarRet[1].variablesReference)];
+        else
+            realVarValue = getVarRet[1].value;
+        end
+
         local setVarRet;
         if assigndVar == nil then
-            setVarRet = this.setVariableValue( varName, curStackId, newValue, setLimit );
+            setVarRet = this.setVariableValue( varName, curStackId, realVarValue, setLimit );
         else
-            assigndVar[varName] = newValue;
+            assigndVar[varName] = realVarValue;
             setVarRet = true;
         end
 
         if getVarRet[1].type == "string" then
-            newValue = '"' .. newValue .. '"';
+            displayVarValue = '"' .. displayVarValue .. '"';
         end
 
         if setVarRet ~= false and setVarRet ~= nil then
             local retTip = "变量 ".. varName .." 赋值成功";
-            info = { success = "true", name = getVarRet[1].name , type = getVarRet[1].type , value = newValue, variablesReference = tostring(getVarRet[1].variablesReference), tip = retTip};
+            info = { success = "true", name = getVarRet[1].name , type = getVarRet[1].type , value = displayVarValue, variablesReference = tostring(getVarRet[1].variablesReference), tip = retTip};
         else
-            info = { success = "false", type = type(newValue), value = newValue, tip = "找不到要设置的变量"};
+            info = { success = "false", type = type(realVarValue), value = displayVarValue, tip = "找不到要设置的变量"};
         end
 
     else
-        info = { success = "false", type = type(newValue), value = newValue, tip = "输入的值无意义"};
+        info = { success = "false", type = type(realVarValue), value = displayVarValue, tip = "输入的值无意义"};
     end
     return info
 end
