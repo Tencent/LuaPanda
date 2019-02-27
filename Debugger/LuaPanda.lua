@@ -830,7 +830,7 @@ function this.createSetValueRetTable(varName, newValue, needFindVariable, curSta
         -- newValue赋变量真实值
         local realVarValue;
         local displayVarValue = getVarRet[1].value;
-        if needFindVariable == true then 
+        if needFindVariable == true then
             realVarValue = variableRefTab[tonumber(getVarRet[1].variablesReference)];
         else
             realVarValue = getVarRet[1].value;
@@ -1706,7 +1706,7 @@ function this.setLocal( varName, newValue, tableVarName )
                 local findRes = this.findTableVar(tableVarName,  variableRefTab[realVar.variablesReference]);
                 if findRes ~= nil then
                         --命中
-                        local setVarRet = debug.setlocal(ly , i, newValue);
+                        local setVarRet = debug.setlocal(ly , layerVarTab[i].index, newValue);
                         if setVarRet == varName then
                             this.printToConsole("[setVariable success1] 已设置 local ".. varName .. " = " .. tostring(newValue) );
                             ret = true;
@@ -1717,7 +1717,7 @@ function this.setLocal( varName, newValue, tableVarName )
                 end
             else
 
-                local setVarRet = debug.setlocal(ly , i, newValue);
+                local setVarRet = debug.setlocal(ly , layerVarTab[i].index, newValue);
 
                 if setVarRet == varName then
                     this.printToConsole("[setVariable success] 已设置 local ".. varName .. " = " .. tostring(newValue) );
@@ -2023,6 +2023,7 @@ function this.getVariable( checkLayer, isFormatVariable )
             var.name = n;
             var.type = tostring(type(v));
             var.variablesReference = "0";
+            var.index = k;
 
             if isGetValue == false then
                 xpcall(function() var.value = tostring(v) end , function() var.value = tostring(type(v)) .. " [value can't trans to string]" end );
