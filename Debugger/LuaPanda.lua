@@ -2040,11 +2040,27 @@ function this.getVariable( checkLayer, isFormatVariable )
             else
                 var.value = v;
             end
-            table.insert(varTab, var);
+
+            local sameIdx = this.checkSameNameVar(varTab, var);
+            if sameIdx ~= 0 then
+                varTab[sameIdx] = var;
+            else
+                table.insert(varTab, var);
+            end
         end
         k = k + 1
     until n == nil
     return varTab, ly - 1;
+end
+
+--检查变量列表中的同名变量
+function this.checkSameNameVar(varTab, var)
+    for k , v in pairs(varTab) do
+        if v.name == var.name then
+            return k;
+        end
+    end
+    return 0;
 end
 
 -- 执行表达式
