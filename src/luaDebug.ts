@@ -108,6 +108,10 @@ export class LuaDebugSession extends LoggingDebugSession {
         response.body.supportsEvaluateForHovers = true;//悬停请求变量的值
         response.body.supportsStepBack = false;//back按钮
         response.body.supportsSetVariable = true;//修改变量的值
+        response.body.supportsFunctionBreakpoints = false;
+        response.body.supportsConditionalBreakpoints = true;
+        response.body.supportsHitConditionalBreakpoints = false;
+        response.body.supportsLogPoints = true;
         this.sendResponse(response);
     }
 

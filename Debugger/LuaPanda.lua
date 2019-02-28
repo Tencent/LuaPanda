@@ -1719,8 +1719,9 @@ end
 -- @varName 被修改的变量名
 -- @newValue 新的值
 -- @tableVarName 变量名拆分成的数组
-function this.setLocal( varName, newValue, tableVarName , stackId)
-    local offset = (stackId and stackId - 2) or 0;
+function this.setLocal( varName, newValue, tableVarName, stackId)
+    local istackId = tonumber(stackId);
+    local offset = (istackId and istackId - 2) or 0;
     local layerVarTab, ly = this.getVariable(nil , true, offset);
     local ret = false;
     for i, realVar in ipairs(layerVarTab) do
