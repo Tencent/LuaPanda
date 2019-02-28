@@ -831,7 +831,30 @@ function this.createSetValueRetTable(varName, newValue, needFindVariable, curSta
         local realVarValue;
         local displayVarValue = getVarRet[1].value;
         if needFindVariable == true then
-            realVarValue = variableRefTab[tonumber(getVarRet[1].variablesReference)];
+            if tonumber(getVarRet[1].variablesReference) > 0 then
+                realVarValue = variableRefTab[tonumber(getVarRet[1].variablesReference)];
+            else
+                if getVarRet[1].type == 'number' then realVarValue = tonumber(getVarRet[1].value) end
+                if getVarRet[1].type == 'string' then
+                    realVarValue = tostring(getVarRet[1].value);
+                    local first_chr = string.sub(realVarValue, 1, 1);
+                    local end_chr = string.sub(realVarValue, -1, -1);
+                    if first_chr == end_chr then
+                        if first_chr == "'" or first_chr == '"' then
+                            realVarValue = string.sub(realVarValue, 2, -2);
+                            displayVarValue  = realVarValue;
+                        end
+                    end
+                end
+                if getVarRet[1].type == 'boolean' then
+                    if getVarRet[1].value == "true" then
+                        realVarValue = true;
+                    else
+                        realVarValue = false;
+                    end
+                end
+                if getVarRet[1].type == 'nil' then realVarValue = nil end
+            end
         else
             realVarValue = getVarRet[1].value;
         end
@@ -1647,7 +1670,7 @@ end
 -- @varName 被修改的变量名
 -- @newValue 新的值
 function this.setGlobal(varName, newValue)
-    _G.varName = newValue;
+    _G[varName] = newValue;
     this.printToVSCode("[setVariable success] 已设置  _G.".. varName .. " = " .. tostring(newValue) );
     return true;
 end
@@ -1696,8 +1719,8 @@ end
 -- @varName 被修改的变量名
 -- @newValue 新的值
 -- @tableVarName 变量名拆分成的数组
-function this.setLocal( varName, newValue, tableVarName )
-    local layerVarTab, ly = this.getVariable(nil , true);
+function this.setLocal( varName, newValue, tableVarName , stackId)
+    local layerVarTab, ly = this.getVariable(nil , true, stackId - 2);
     local ret = false;
     for i, realVar in ipairs(layerVarTab) do
         if realVar.name == varName then
@@ -1723,7 +1746,7 @@ function this.setLocal( varName, newValue, tableVarName )
                     this.printToConsole("[setVariable success] 已设置 local ".. varName .. " = " .. tostring(newValue) );
                     ret = true;
                 else
-                    this.printToConsole("[setVariable error] 未能设置 local ".. varName .. " = " .. tostring(newValue) " , 返回结果: ".. tostring(setVarRet));
+                    this.printToConsole("[setVariable error] 未能设置 local ".. varName .. " = " .. tostring(newValue) .." , 返回结果: ".. tostring(setVarRet));
                 end
                 return ret;
             end
@@ -1739,7 +1762,7 @@ end
 -- @newValue 新的值
 -- @limit 限制符， 10000表示仅在局部变量查找 ，20000 global, 30000 upvalue
 function this.setVariableValue (varName, stackId, newValue , limit)
-    this.printToConsole("setVariableValue | varName:" .. varName .. " stackId:".. stackId .." newValue:" .. tostring(newValue) )
+    this.printToConsole("setVariableValue | varName:" .. varName .. " stackId:".. stackId .." newValue:" .. tostring(newValue) .." limit:"..tostring(limit) )
     if tostring(varName) == nil or tostring(varName) == "" then
         --赋值错误
         this.printToConsole("[setVariable Error] 被赋值的变量名为空" );
@@ -1758,11 +1781,14 @@ function this.setVariableValue (varName, stackId, newValue , limit)
     end
 
     if limit == "local" then
-        return this.setLocal( varName, newValue, tableVarName);
+        local ret = this.setLocal( varName, newValue, tableVarName, stackId);
+        return ret;
     elseif limit == "upvalue" then
-        return this.setUpvalue(varName, newValue, stackId, tableVarName);
+        local ret = this.setUpvalue(varName, newValue, stackId, tableVarName);
+        return ret
     elseif limit == "global" then
-        return this.setGlobal(varName, newValue);
+        local ret = this.setGlobal(varName, newValue);
+        return ret;
     else
         local ret = this.setLocal( varName, newValue, tableVarName) or this.setUpvalue(varName, newValue, stackId, tableVarName) or this.setGlobal(varName, newValue);
         this.printToConsole("set Value res :".. tostring(ret));
@@ -1994,7 +2020,7 @@ end
 
 -- 获取局部变量 checkLayer是要查询的层级，如果不设置则查询当前层级
 -- @isFormatVariable 是否取值，true:取值的tostring
-function this.getVariable( checkLayer, isFormatVariable )
+function this.getVariable( checkLayer, isFormatVariable , offset)
     local isGetValue = true;
     if isFormatVariable == true then
         isGetValue = false;
@@ -2011,6 +2037,11 @@ function this.getVariable( checkLayer, isFormatVariable )
     local varTab = {};
     local stacklayer = ly;
     local k = 1;
+
+    if type(offset) == 'number' then
+        stacklayer = stacklayer + offset;
+    end
+
     repeat
         local n, v = debug.getlocal(stacklayer, k)
         if n == nil then
@@ -2051,7 +2082,7 @@ function this.getVariable( checkLayer, isFormatVariable )
         end
         k = k + 1
     until n == nil
-    return varTab, ly - 1;
+    return varTab, stacklayer - 1;
 end
 
 --检查变量列表中的同名变量
