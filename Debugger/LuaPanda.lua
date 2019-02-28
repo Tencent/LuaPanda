@@ -1720,7 +1720,8 @@ end
 -- @newValue 新的值
 -- @tableVarName 变量名拆分成的数组
 function this.setLocal( varName, newValue, tableVarName , stackId)
-    local layerVarTab, ly = this.getVariable(nil , true, stackId - 2);
+    local offset = (stackId and stackId - 2) or 0;
+    local layerVarTab, ly = this.getVariable(nil , true, offset);
     local ret = false;
     for i, realVar in ipairs(layerVarTab) do
         if realVar.name == varName then
