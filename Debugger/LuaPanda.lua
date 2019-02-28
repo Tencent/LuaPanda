@@ -732,7 +732,7 @@ function this.dataProcess( dataStr )
                 hookLib = luapanda_chook;
             else
                 if not(this.tryRequireClib("libpdebug", x64Path) or this.tryRequireClib("libpdebug", x86Path)) then
-                    this.printToVSCode("Require clib failed, use Lua to continue debug. Set logLevel to 1 and view the debugger log for more information.", 1);
+                    this.printToVSCode("Require clib failed, use Lua to continue debug. Set logLevel to 0 and view the debugger log for more information.", 1);
                 end
             end
         end
