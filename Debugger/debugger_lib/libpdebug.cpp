@@ -652,6 +652,9 @@ int checkHasBreakpoint(lua_State *L, const char * src1, int current_line, int sl
 }
 
 void check_hook_state(lua_State *L, const char* source ,  int current_line, int def_line, int last_line ,int event){
+    if (source == NULL) {
+        return;
+    }
     if(cur_run_state == RUN && cur_hook_state != DISCONNECT_HOOK){
         int stats = checkHasBreakpoint(L, source, current_line, def_line, last_line);
         if(stats == 0){
