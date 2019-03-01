@@ -1792,7 +1792,7 @@ function this.setVariableValue (varName, stackId, newValue , limit)
         local ret = this.setGlobal(varName, newValue);
         return ret;
     else
-        local ret = this.setLocal( varName, newValue, tableVarName) or this.setUpvalue(varName, newValue, stackId, tableVarName) or this.setGlobal(varName, newValue);
+        local ret = this.setLocal( varName, newValue, tableVarName, stackId) or this.setUpvalue(varName, newValue, stackId, tableVarName) or this.setGlobal(varName, newValue);
         this.printToConsole("set Value res :".. tostring(ret));
         return ret;
     end
