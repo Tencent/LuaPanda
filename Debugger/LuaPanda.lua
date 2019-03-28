@@ -879,7 +879,7 @@ function this.createSetValueRetTable(varName, newValue, needFindVariable, curSta
         end
 
     else
-        info = { success = "false", type = type(realVarValue), value = displayVarValue, tip = "输入的值无意义"};
+        info = { success = "false", type = nil, value = nil, tip = "输入的值无意义"};
     end
     return info
 end
@@ -1682,7 +1682,7 @@ end
 -- @tableVarName 变量名拆分成的数组
 function this.setUpvalue(varName, newValue, stackId, tableVarName)
     local ret = false;
-    local upTable = this.getUpValueVariable(currentCallStack[stackId - 1 ].func, isFormatVariable);
+    local upTable = this.getUpValueVariable(currentCallStack[stackId - 1 ].func, true);
     for i, realVar in ipairs(upTable) do
         if realVar.name == varName then
             if #tableVarName > 0 and type(realVar) == "table" then
@@ -1695,7 +1695,7 @@ function this.setUpvalue(varName, newValue, stackId, tableVarName)
                             this.printToConsole("[setVariable success1] 已设置 upvalue ".. varName .. " = " .. tostring(newValue) );
                             ret = true;
                         else
-                            this.printToConsole("[setVariable error1] 未能设置 upvalue ".. varName .. " = " .. tostring(newValue) " , 返回结果: ".. tostring(setVarRet));
+                            this.printToConsole("[setVariable error1] 未能设置 upvalue ".. varName .. " = " .. tostring(newValue).." , 返回结果: ".. tostring(setVarRet));
                         end
                         return ret;
                 end
@@ -1706,7 +1706,7 @@ function this.setUpvalue(varName, newValue, stackId, tableVarName)
                     this.printToConsole("[setVariable success] 已设置 upvalue ".. varName .. " = " .. tostring(newValue) );
                     ret = true;
                 else
-                    this.printToConsole("[setVariable error] 未能设置 upvalue ".. varName .. " = " .. tostring(newValue) " , 返回结果: ".. tostring(setVarRet));
+                    this.printToConsole("[setVariable error] 未能设置 upvalue ".. varName .. " = " .. tostring(newValue).." , 返回结果: ".. tostring(setVarRet));
                 end
                 return ret;
             end
@@ -1736,7 +1736,7 @@ function this.setLocal( varName, newValue, tableVarName, stackId)
                             this.printToConsole("[setVariable success1] 已设置 local ".. varName .. " = " .. tostring(newValue) );
                             ret = true;
                         else
-                            this.printToConsole("[setVariable error1] 未能设置 local ".. varName .. " = " .. tostring(newValue) " , 返回结果: ".. tostring(setVarRet));
+                            this.printToConsole("[setVariable error1] 未能设置 local ".. varName .. " = " .. tostring(newValue).." , 返回结果: ".. tostring(setVarRet));
                         end
                         return ret;
                 end
