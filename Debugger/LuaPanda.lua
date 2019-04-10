@@ -36,7 +36,7 @@ local attachInterval = 1;               --attach间隔时间(s)
 local TCPSplitChar = "|*|";             --json协议分隔符，如果用户传输的数据中包含相同符号会造成协议被错误分割，保证和传输内容不同即可，如无问题不必修改
 --用户设置项END
 
-local debuggerVer = "2.0.0";                 --debugger版本号
+local debuggerVer = "2.0.1";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = require("DebugTools");     --引用的开源工具，包括json解析和table展开工具
@@ -99,6 +99,7 @@ local inDebugLayer = false;     --debug模式下，调入了Debug层级，用来
 local pathCaseSensitivity = 1;  --路径是否发大小写敏感，这个选项接收VScode设置，请勿在此处更改
 local recvMsgQueue = {};        --接收的消息队列
 local coroutinePool = {};       --保存用户协程的队列
+local winDiskSymbolUpper = false;
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
 local stepOutCounter = 0;       --STEPOVER out计数器
@@ -173,6 +174,14 @@ function this.connectSuccess()
         for k,v in pairs(info) do
             if k == "source" then
                 DebuggerFileName = v;
+                if "Windows_NT" == OSType then
+                    --识别出来盘符的大小
+                    local pf = string.match(DebuggerFileName, ".:/");
+                    if pf:upper() == pf then
+                        winDiskSymbolUpper = true;
+                    end
+                    this.printToVSCode("winDiskSymbolUpper:" .. tostring(winDiskSymbolUpper)); 
+                end
                 if hookLib ~= nil then
                     hookLib.sync_debugger_path(DebuggerFileName);
                 end
@@ -557,6 +566,13 @@ function this.dataProcess( dataStr )
         this.printToVSCode("dataTable.cmd == setBreakPoint");
         local bkPath = dataTable.info.path;
         bkPath = this.genUnifiedPath(bkPath);
+        if winDiskSymbolUpper then
+            this.printToVSCode("change disk symbol to upper");
+            bkPath = bkPath:gsub("^.:/", string.upper);
+        else
+            this.printToVSCode("change disk symbol to lower");
+            bkPath = bkPath:gsub("^.:/", string.lower);
+        end
         this.printToVSCode("setBreakPoint path:"..tostring(bkPath));
         breaks[bkPath] = dataTable.info.bks;
         --save
@@ -1355,6 +1371,12 @@ function this.real_hook_process(info)
     --不处理C函数
     if info.source == "=[C]" then
         this.printToVSCode("current method is C");
+        return;
+    end
+
+    --不处理 slua "temp buffer"
+    if info.source == "temp buffer" then
+        this.printToVSCode("current method is in temp buffer");
         return;
     end
 
