@@ -28,6 +28,9 @@ API:
 
     LuaPanda.getBreaks()
         获取断点信息
+
+    LuaPanda.printTable(table)
+        序列化打印table
 ]]
 
 --用户设置项
@@ -374,6 +377,10 @@ function this.getMsgTable(cmd ,callbackId)
     return msgTable;
 end
 
+function this.printTable(tab)
+    local sTable = tools.serializeTable(tab);
+    return sTable;
+end
 ------------------------日志打印相关-------------------------
 -- 把日志打印在VSCode端
 -- @str: 日志内容
