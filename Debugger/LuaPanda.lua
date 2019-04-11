@@ -77,7 +77,7 @@ local recCallbackId = "";
 --VSCode端传过来的配置，在VSCode端的launch配置，传过来并赋值
 local luaFileExtension = "";    --脚本后缀
 local cwd = "";                 --工作路径
-local DebuggerFileName = "";    --Debugger文件名, 函数中会自动获取
+local DebuggerFileName = "";    --Debugger文件名(原始,未经path处理), 函数中会自动获取
 local DebuggerToolsName = "";
 local lastRunFunction = {};     --上一个执行过的函数。在有些复杂场景下(find,getcomponent)一行会挺两次
 local currentCallStack = {};    --获取当前调用堆栈信息
@@ -99,7 +99,7 @@ local inDebugLayer = false;     --debug模式下，调入了Debug层级，用来
 local pathCaseSensitivity = 1;  --路径是否发大小写敏感，这个选项接收VScode设置，请勿在此处更改
 local recvMsgQueue = {};        --接收的消息队列
 local coroutinePool = {};       --保存用户协程的队列
-local winDiskSymbolUpper = false;
+local winDiskSymbolUpper = false;--win下盘符的大小写。以此确保从VSCode中传入的断点路径和从lua虚拟机获得的文件路径盘符大小写一致
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
 local stepOutCounter = 0;       --STEPOVER out计数器
@@ -174,6 +174,7 @@ function this.connectSuccess()
         for k,v in pairs(info) do
             if k == "source" then
                 DebuggerFileName = v;
+                this.printToVSCode("DebuggerFileName:" .. tostring(DebuggerFileName)); 
                 if "Windows_NT" == OSType then
                     --识别出来盘符的大小
                     local pf = string.match(DebuggerFileName, ".:/");
