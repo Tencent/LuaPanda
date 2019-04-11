@@ -39,7 +39,7 @@ local attachInterval = 1;               --attach间隔时间(s)
 local TCPSplitChar = "|*|";             --json协议分隔符，如果用户传输的数据中包含相同符号会造成协议被错误分割，保证和传输内容不同即可，如无问题不必修改
 --用户设置项END
 
-local debuggerVer = "2.0.1";                 --debugger版本号
+local debuggerVer = "2.0.2";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = require("DebugTools");     --引用的开源工具，包括json解析和table展开工具
@@ -102,7 +102,7 @@ local inDebugLayer = false;     --debug模式下，调入了Debug层级，用来
 local pathCaseSensitivity = 1;  --路径是否发大小写敏感，这个选项接收VScode设置，请勿在此处更改
 local recvMsgQueue = {};        --接收的消息队列
 local coroutinePool = {};       --保存用户协程的队列
-local winDiskSymbolUpper = false;--win下盘符的大小写。以此确保从VSCode中传入的断点路径和从lua虚拟机获得的文件路径盘符大小写一致
+local winDiskSymbolUpper = true;--win下盘符的大小写。以此确保从VSCode中传入的断点路径,cwd和从lua虚拟机获得的文件路径盘符大小写一致
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
 local stepOutCounter = 0;       --STEPOVER out计数器
@@ -181,8 +181,8 @@ function this.connectSuccess()
                 if "Windows_NT" == OSType then
                     --识别出来盘符的大小
                     local pf = string.match(DebuggerFileName, ".:/");
-                    if pf:upper() == pf then
-                        winDiskSymbolUpper = true;
+                    if type(pf) == "string" and pf:lower() == pf then
+                        winDiskSymbolUpper = false;
                     end
                     this.printToVSCode("winDiskSymbolUpper:" .. tostring(winDiskSymbolUpper)); 
                 end
@@ -574,12 +574,14 @@ function this.dataProcess( dataStr )
         this.printToVSCode("dataTable.cmd == setBreakPoint");
         local bkPath = dataTable.info.path;
         bkPath = this.genUnifiedPath(bkPath);
-        if winDiskSymbolUpper then
-            this.printToVSCode("change disk symbol to upper");
-            bkPath = bkPath:gsub("^.:/", string.upper);
-        else
-            this.printToVSCode("change disk symbol to lower");
-            bkPath = bkPath:gsub("^.:/", string.lower);
+        if "Windows_NT" == OSType then
+            if winDiskSymbolUpper then
+                this.printToVSCode("change disk symbol to upper");
+                bkPath = bkPath:gsub("^.:/", string.upper);
+            else
+                this.printToVSCode("change disk symbol to lower");
+                bkPath = bkPath:gsub("^.:/", string.lower);
+            end
         end
         this.printToVSCode("setBreakPoint path:"..tostring(bkPath));
         breaks[bkPath] = dataTable.info.bks;
@@ -725,6 +727,15 @@ function this.dataProcess( dataStr )
         TempFilePath_luaString = TempFilePath;
 
         cwd = this.genUnifiedPath(dataTable.info.cwd);
+        if "Windows_NT" == OSType then
+            if winDiskSymbolUpper then
+                this.printToVSCode("change cwd disk symbol to upper");
+                cwd = cwd:gsub("^.:/", string.upper);
+            else
+                this.printToVSCode("change cwd disk symbol to lower");
+                cwd = cwd:gsub("^.:/", string.lower);
+            end
+        end
         logLevel = tonumber(dataTable.info.logLevel) or 1;
 
         OSType = dataTable.info.OSType;
