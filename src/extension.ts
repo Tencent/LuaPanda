@@ -49,13 +49,9 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             let activeWindow =  vscode.window.activeTextEditor;
             if (activeWindow){  
                 //有活动的窗口
-                let path = require("path");
                 let filePath = activeWindow.document.uri.fsPath;
-                let fileParser = path.parse(filePath);
-                let fileName = fileParser.name;
-                let dirName = fileParser.dir;
 
-                let pathCMD = "'" + dirName + "/?.lua;"
+                let pathCMD = "'";
                 if(config.packagePath){
                     for (let index = 0; index < config.packagePath.length; index++) {
                         const joinPath = config.packagePath[index];
@@ -64,15 +60,13 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
                 }
                 pathCMD = pathCMD + "'";
                 //拼接命令
-                pathCMD = " \"package.path = " + pathCMD + ".. package.path; ";
-                let doFileCMD = "require('"  +  fileName + "'); \" ";
+                pathCMD = " \"package.path = " + pathCMD + ".. package.path;\" ";
+                let doFileCMD =  filePath;
                 let runCMD = pathCMD + doFileCMD;
                 const terminal = vscode.window.createTerminal({
                     name: "Run Lua File (LuaPanda)",
-                    // shellPath: folder.uri.path,
                     env: {}, 
                 });
-                terminal.show();
                 let LuaCMD;
                 if(config.luaPath && config.luaPath != ''){
                     LuaCMD = config.luaPath + " -e "
@@ -80,6 +74,7 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
                     LuaCMD = "lua -e ";
                 }
                 terminal.sendText( LuaCMD + runCMD , true);
+                terminal.show();
             }
             return ;
         }
