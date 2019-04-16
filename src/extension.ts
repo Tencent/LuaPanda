@@ -50,7 +50,7 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             if (activeWindow){  
                 //有活动的窗口
                 let path = require("path");
-                let filePath = activeWindow.document.uri.path;
+                let filePath = activeWindow.document.uri.fsPath;
                 let fileParser = path.parse(filePath);
                 let fileName = fileParser.name;
                 let dirName = fileParser.dir;
@@ -73,7 +73,13 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
                     env: {}, 
                 });
                 terminal.show();
-                terminal.sendText("lua -e " + runCMD  , true);
+                let LuaCMD;
+                if(config.luaPath && config.luaPath != ''){
+                    LuaCMD = config.luaPath + " -e "
+                }else{
+                    LuaCMD = "lua -e ";
+                }
+                terminal.sendText( LuaCMD + runCMD , true);
             }
             return ;
         }

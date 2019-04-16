@@ -215,7 +215,7 @@ export class LuaDebugSession extends LoggingDebugSession {
             let activeWindow =  vscode.window.activeTextEditor;
             if (activeWindow){  
                 //有活动的窗口
-                let filePath = activeWindow.document.uri.path;
+                let filePath = activeWindow.document.uri.fsPath;
                 let fileParser = path.parse(filePath);
                 let fileName = fileParser.name;
                 let dirName = fileParser.dir;
@@ -240,7 +240,14 @@ export class LuaDebugSession extends LoggingDebugSession {
                 let reqCMD = "require('LuaPanda').start('127.0.0.1'," + LuaDebugSession.TCPPort + "); ";
                 let doFileCMD = "require('"  +  fileName + "'); \" ";
                 let runCMD = pathCMD + reqCMD + doFileCMD;
-                terminal.sendText("lua -e " + runCMD  , true);
+
+                let LuaCMD;
+                if(args.luaPath && args.luaPath != ''){
+                    LuaCMD = args.luaPath + " -e "
+                }else{
+                    LuaCMD = "lua -e ";
+                }
+                terminal.sendText( LuaCMD + runCMD , true);
             }
         }
     }

@@ -133,10 +133,15 @@
 								"description": "使用C Hook模块, 提高运行效率。默认true。设置为false则使用 lua hook 调试",
 								"default": true
 							},
-							"packagePath":{
+							"packagePath": {
 								"type": "array",
 								"description": "数组中的路径会在运行时加入package.path. 如 Doc/?.lua ",
 								"default": []
+							},
+							"luaPath": {
+								"type": "string",
+								"description": "lua命令的路径和文件名. 如 C:/lua5.3/lua.exe ",
+								"default": ""
 							}
 						}
 					}
@@ -155,7 +160,8 @@
 						"connectionPort": 8818,
 						"stopOnEntry": true,
 						"useCHook": true,
-						"logLevel": 1
+						"logLevel": 1,
+						"luaPath" : ""
 					},
 					{
 						"type": "lua",
@@ -171,7 +177,8 @@
 						"stopOnEntry": true,
 						"useCHook": true,
 						"logLevel": 1,
-						"packagePath" :[]
+						"luaPath" : "",
+						"packagePath": []
 					}
 				]
 			}
