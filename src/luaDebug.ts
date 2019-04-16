@@ -209,6 +209,40 @@ export class LuaDebugSession extends LoggingDebugSession {
         LuaDebugSession.isListening = true;
         LuaDebugSession.breakpointsArray = new Array();
         this.sendEvent(new InitializedEvent()); //收到返回后，执行setbreakpoint
+        
+        //单文件调试模式
+        if(args.name == 'LuaPanda-DebugFile'){
+            let activeWindow =  vscode.window.activeTextEditor;
+            if (activeWindow){  
+                //有活动的窗口
+                let filePath = activeWindow.document.uri.path;
+                let fileParser = path.parse(filePath);
+                let fileName = fileParser.name;
+                let dirName = fileParser.dir;
+                //直接运行
+                const terminal = vscode.window.createTerminal({
+                    name: "Run Lua File (LuaPanda)",
+                    env: {}, 
+                });
+
+                terminal.show();
+                //把路径加入package.path
+                let pathCMD = "'" + dirName + "/?.lua;"
+                if(args.packagePath){
+                    for (let index = 0; index < args.packagePath.length; index++) {
+                        const joinPath = args.packagePath[index];
+                        pathCMD = pathCMD + joinPath + ";";
+                    }
+                }
+                pathCMD = pathCMD + "'";
+                //拼接命令
+                pathCMD = " \"package.path = " + pathCMD + ".. package.path; ";
+                let reqCMD = "require('LuaPanda').start('127.0.0.1'," + LuaDebugSession.TCPPort + "); ";
+                let doFileCMD = "require('"  +  fileName + "'); \" ";
+                let runCMD = pathCMD + reqCMD + doFileCMD;
+                terminal.sendText("lua -e " + runCMD  , true);
+            }
+        }
     }
 
     /**

@@ -132,6 +132,11 @@
 								"type": "boolean",
 								"description": "使用C Hook模块, 提高运行效率。默认true。设置为false则使用 lua hook 调试",
 								"default": true
+							},
+							"packagePath":{
+								"type": "array",
+								"description": "数组中的路径会在运行时加入package.path. 如 Doc/?.lua ",
+								"default": []
 							}
 						}
 					}
@@ -151,6 +156,22 @@
 						"stopOnEntry": true,
 						"useCHook": true,
 						"logLevel": 1
+					},
+					{
+						"type": "lua",
+						"request": "launch",
+						"internalConsoleOptions": "neverOpen",
+						"name": "LuaPanda-DebugFile",
+						"program": "${workspaceFolder}",
+						"cwd": "${workspaceFolder}",
+						"TempFilePath": "${workspaceFolder}",
+						"luaFileExtension": "",
+						"pathCaseSensitivity": true,
+						"connectionPort": 8818,
+						"stopOnEntry": true,
+						"useCHook": true,
+						"logLevel": 1,
+						"packagePath" :[]
 					}
 				]
 			}

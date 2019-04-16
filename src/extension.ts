@@ -45,6 +45,39 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             }
         }
 
+        if(config.noDebug){
+            let activeWindow =  vscode.window.activeTextEditor;
+            if (activeWindow){  
+                //有活动的窗口
+                let path = require("path");
+                let filePath = activeWindow.document.uri.path;
+                let fileParser = path.parse(filePath);
+                let fileName = fileParser.name;
+                let dirName = fileParser.dir;
+
+                let pathCMD = "'" + dirName + "/?.lua;"
+                if(config.packagePath){
+                    for (let index = 0; index < config.packagePath.length; index++) {
+                        const joinPath = config.packagePath[index];
+                        pathCMD = pathCMD + joinPath + ";";
+                    }
+                }
+                pathCMD = pathCMD + "'";
+                //拼接命令
+                pathCMD = " \"package.path = " + pathCMD + ".. package.path; ";
+                let doFileCMD = "require('"  +  fileName + "'); \" ";
+                let runCMD = pathCMD + doFileCMD;
+                const terminal = vscode.window.createTerminal({
+                    name: "Run Lua File (LuaPanda)",
+                    // shellPath: folder.uri.path,
+                    env: {}, 
+                });
+                terminal.show();
+                terminal.sendText("lua -e " + runCMD  , true);
+            }
+            return ;
+        }
+
         if (!config.request) {
             vscode.window.showInformationMessage("请在launch中配置request方式!");
             config.request = 'launch';
