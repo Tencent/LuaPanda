@@ -39,7 +39,7 @@ local attachInterval = 1;               --attach间隔时间(s)
 local TCPSplitChar = "|*|";             --json协议分隔符，如果用户传输的数据中包含相同符号会造成协议被错误分割，保证和传输内容不同即可，如无问题不必修改
 --用户设置项END
 
-local debuggerVer = "2.0.2";                 --debugger版本号
+local debuggerVer = "2.0.5";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = require("DebugTools");     --引用的开源工具，包括json解析和table展开工具
@@ -575,13 +575,25 @@ function this.dataProcess( dataStr )
         local bkPath = dataTable.info.path;
         bkPath = this.genUnifiedPath(bkPath);
         if "Windows_NT" == OSType then
-            if winDiskSymbolUpper then
-                this.printToVSCode("change disk symbol to upper");
-                bkPath = bkPath:gsub("^.:/", string.upper);
-            else
-                this.printToVSCode("change disk symbol to lower");
-                bkPath = bkPath:gsub("^.:/", string.lower);
+            -- 根据lastRunFilePath重新判断盘符
+            local pf = string.match(lastRunFilePath, ".:/");
+            if type(pf) == "string" and pf:lower() == pf then
+                winDiskSymbolUpper = false;
+            elseif type(pf) == "string" and pf:upper() == pf then
+                winDiskSymbolUpper = true;
             end
+
+            if winDiskSymbolUpper then
+                this.printToVSCode("set breakpoint change disk symbol to upper");
+                bkPath = bkPath:gsub("^.:/", string.upper);
+                cwd = cwd:gsub("^.:/", string.upper);
+            else
+                this.printToVSCode("set breakpoint change disk symbol to lower");
+                bkPath = bkPath:gsub("^.:/", string.lower);
+                cwd = cwd:gsub("^.:/", string.lower);
+            end
+
+            if hookLib ~= nil then hookLib.sync_cwd(cwd); end
         end
         this.printToVSCode("setBreakPoint path:"..tostring(bkPath));
         breaks[bkPath] = dataTable.info.bks;
@@ -727,15 +739,7 @@ function this.dataProcess( dataStr )
         TempFilePath_luaString = TempFilePath;
 
         cwd = this.genUnifiedPath(dataTable.info.cwd);
-        if "Windows_NT" == OSType then
-            if winDiskSymbolUpper then
-                this.printToVSCode("change cwd disk symbol to upper");
-                cwd = cwd:gsub("^.:/", string.upper);
-            else
-                this.printToVSCode("change cwd disk symbol to lower");
-                cwd = cwd:gsub("^.:/", string.lower);
-            end
-        end
+
         logLevel = tonumber(dataTable.info.logLevel) or 1;
 
         OSType = dataTable.info.OSType;
