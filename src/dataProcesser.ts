@@ -8,9 +8,9 @@ export class dataProcesser {
     public static _runtime: luaDebugRuntime;							//RunTime句柄
     public static _socket: Socket;
     private static orderList: Array<Object> = new Array();			//记录随机数和它对应的回调
-    private static recvMsgQueue: Array<string> = new Array();  //记录粘包的多条指令
+    private static recvMsgQueue: Array<string> = new Array();   //记录粘包的多条指令
     private static cutoffString: string = "";
-
+    private static getDataJsonCatch: string = "";                      //解析缓存，防止用户信息中含有分隔符
     /**
      * 接收从Debugger发来的消息
      * @param orgData: 消息串
@@ -61,7 +61,19 @@ export class dataProcesser {
      * @param data 消息json
      */
     private static getData(data: string) {
-        let cmdInfo = JSON.parse(data);
+        let cmdInfo;
+        try{
+            if(this.getDataJsonCatch != ""){
+                data = data + this.getDataJsonCatch;
+            }
+            cmdInfo = JSON.parse(data);
+            this.getDataJsonCatch  = "";
+        }
+        catch(e){
+            this.getDataJsonCatch = "|*|" +  data ;
+            return;
+        }
+
         if (dataProcesser._runtime != null) {
             if (cmdInfo == null) {
                 DebugLogger.AdapterInfo("[Adapter Error]:json解析失败");
