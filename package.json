@@ -135,7 +135,7 @@
 							},
 							"packagePath": {
 								"type": "array",
-								"description": "数组中的路径会在运行时加入package.path. 如 /Script/?.lua ",
+								"description": "数组中的路径在运行时会加入package.path. 如 /Script/?.lua ",
 								"default": []
 							},
 							"luaPath": {

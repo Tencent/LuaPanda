@@ -102,7 +102,7 @@ local inDebugLayer = false;     --debug模式下，调入了Debug层级，用来
 local pathCaseSensitivity = 1;  --路径是否发大小写敏感，这个选项接收VScode设置，请勿在此处更改
 local recvMsgQueue = {};        --接收的消息队列
 local coroutinePool = {};       --保存用户协程的队列
-local winDiskSymbolUpper = true;--win下盘符的大小写。以此确保从VSCode中传入的断点路径,cwd和从lua虚拟机获得的文件路径盘符大小写一致
+local winDiskSymbolUpper = false;--设置win下盘符的大小写。以此确保从VSCode中传入的断点路径,cwd和从lua虚拟机获得的文件路径盘符大小写一致
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
 local stepOutCounter = 0;       --STEPOVER out计数器
@@ -178,14 +178,7 @@ function this.connectSuccess()
             if k == "source" then
                 DebuggerFileName = v;
                 this.printToVSCode("DebuggerFileName:" .. tostring(DebuggerFileName)); 
-                if "Windows_NT" == OSType then
-                    --识别出来盘符的大小
-                    local pf = string.match(DebuggerFileName, ".:/");
-                    if type(pf) == "string" and pf:lower() == pf then
-                        winDiskSymbolUpper = false;
-                    end
-                    this.printToVSCode("winDiskSymbolUpper:" .. tostring(winDiskSymbolUpper)); 
-                end
+
                 if hookLib ~= nil then
                     hookLib.sync_debugger_path(DebuggerFileName);
                 end
@@ -450,6 +443,16 @@ function this.genUnifiedPath(path)
     if path:sub(1,1) == '/' then
         newpath = '/'.. newpath;
     end
+
+    --win下按照winDiskSymbolUpper的设置修改盘符大小
+    if "Windows_NT" == OSType then
+        if winDiskSymbolUpper then
+            newpath = newpath:gsub("^.:/", string.upper);
+        else
+            newpath = newpath:gsub("^.:/", string.lower);
+        end
+    end
+
     return newpath;
 end
 
@@ -574,27 +577,7 @@ function this.dataProcess( dataStr )
         this.printToVSCode("dataTable.cmd == setBreakPoint");
         local bkPath = dataTable.info.path;
         bkPath = this.genUnifiedPath(bkPath);
-        if "Windows_NT" == OSType then
-            -- 根据lastRunFilePath重新判断盘符
-            local pf = string.match(lastRunFilePath, ".:/");
-            if type(pf) == "string" and pf:lower() == pf then
-                winDiskSymbolUpper = false;
-            elseif type(pf) == "string" and pf:upper() == pf then
-                winDiskSymbolUpper = true;
-            end
-
-            if winDiskSymbolUpper then
-                this.printToVSCode("set breakpoint change disk symbol to upper");
-                bkPath = bkPath:gsub("^.:/", string.upper);
-                cwd = cwd:gsub("^.:/", string.upper);
-            else
-                this.printToVSCode("set breakpoint change disk symbol to lower");
-                bkPath = bkPath:gsub("^.:/", string.lower);
-                cwd = cwd:gsub("^.:/", string.lower);
-            end
-
-            if hookLib ~= nil then hookLib.sync_cwd(cwd); end
-        end
+      
         this.printToVSCode("setBreakPoint path:"..tostring(bkPath));
         breaks[bkPath] = dataTable.info.bks;
         --save
