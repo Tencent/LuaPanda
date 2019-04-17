@@ -224,7 +224,9 @@ export class LuaDebugSession extends LoggingDebugSession {
 
                 //把路径加入package.path
                 let pathCMD = "'";
-                pathCMD = pathCMD + path.dirname(__dirname) + "/Debugger/?.lua;"
+                let pathArr = path.dirname(__dirname).split( path.sep );
+                let stdPath =  pathArr.join('/');
+                pathCMD = pathCMD + stdPath + "/Debugger/?.lua;"
                 if(args.packagePath){
                     for (let index = 0; index < args.packagePath.length; index++) {
                         const joinPath = args.packagePath[index];
