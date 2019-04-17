@@ -5,7 +5,6 @@ appveyor.yml
 src/**/*
 out/tests/**/*
 **/*.js.map
-Debugger/*.lua
 Debugger/debugger_lib/*.h
 Debugger/debugger_lib/*.cpp
 Docs/**/*

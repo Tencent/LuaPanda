@@ -1,7 +1,7 @@
 {
 	"name": "luapanda",
 	"displayName": "LuaPanda",
-	"version": "2.0.0",
+	"version": "2.0.5",
 	"publisher": "stuartwang",
 	"description": "lua debug adapters for VS Code.",
 	"author": {
@@ -135,7 +135,7 @@
 							},
 							"packagePath": {
 								"type": "array",
-								"description": "数组中的路径会在运行时加入package.path. 如 Doc/?.lua ",
+								"description": "数组中的路径会在运行时加入package.path. 如 /Script/?.lua ",
 								"default": []
 							},
 							"luaPath": {
