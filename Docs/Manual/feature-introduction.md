@@ -84,13 +84,13 @@ attach模式支持先执行lua工程，在希望调试的时候运行调试器�
 
 在 VSCode 行号前点击鼠标右键可选择普通断点，条件断点和记录点。
 
-![add_condition_bk](/Users/stuartmac/LuaPanda_out/Docs/static/feature-introduction/add_condition_bk.png)
+![add_condition_bk](../static/feature-introduction/add_condition_bk.png)
 
 若用户输入的条件是 `a == 2` , 调试器会执行表达式，并获取执行结果。注意执行结果 nil 和 false 为假，其他都为真。
 
 记录点在被执行时会打印日志。日志输出在：`DebugConsole - OUTPUT - Debugger/log` 
 
-![print_log](/Users/stuartmac/LuaPanda_out/Docs/static/feature-introduction/print_log.png)
+![print_log](../static/feature-introduction/print_log.png)
 
 
 
