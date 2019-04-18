@@ -59,6 +59,7 @@
 
 新增的配置项包括
 **luaPath**：lua命令路径，如果lua命令已经存在系统path中，可以不填。
+
 **packagePath**：运行起lua文件时，希望加入package.path的路径。
 
 
@@ -81,8 +82,7 @@ VSCode 会启动一个新终端，执行当前打开的lua代码。
 
 此模式下无需加入require("LuaPanda"), 调试器会自动引用。
 
-注意：刚加载文件夹后，VSCode读取当前活动窗口会出错，出现如下错误提示
+注意：刚加载文件夹后，VSCode读取当前活动窗口会出错，出现如下错误提示再执行一次就可以了。
 ```
 lua: cannot open extension-output-#5: No such file or directory
 ```
-再执行一次就可以了。

@@ -24,9 +24,11 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 本次更新主要支持了单文件运行和调试，可以在工程中很方便的调试单个lua文件。
 
-![debug-file](./Docs/static/debug-file.GIF)
+![debug-file](https://github.com/Tencent/LuaPanda/blob/master/Docs/static/debug-file.GIF?raw=true)
 
-详细配置请查看 [单文件调试说明](./Docs/Manual/debug-file.md)
+
+
+详细配置请查看 [单文件调试说明](https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-file.md)
 
 
 
