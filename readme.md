@@ -16,47 +16,23 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 # 关于VSCode 1.33的兼容
 
 我们注意到更新了 VScode 1.33 之后调试器可能出现断点无法停止的情况，并已进行了修复。
-如遇此问题，请从master分支中拉取最新的`LuaPanda.lua`文件，覆盖原有文件即可。也可从tag v2.0.2中获取该文件。
+如遇此问题，请从master分支中拉取最新的`LuaPanda.lua`文件，覆盖原有文件即可。也可从tag中获取最新文件。
 
 
 
 # 更新说明
 
-本次更新主要支持了条件断点和记录点，支持调试中变量赋值操作，并做了bug修复（修复详情请查看 [change log](https://github.com/Tencent/LuaPanda/blob/master/CHANGELOG.md) ）。
+本次更新主要支持了单文件运行和调试，可以在工程中很方便的调试单个lua文件。
 
-+ 条件断点和记录点
+![debug-file](./Docs/static/debug-file.GIF)
 
-  在 VSCode 代码行号前点击鼠标右键可选择普通断点，条件断点和记录点。
-
-  若用户输入的条件是 `a == 2` , 在断点行执行为真时断点生效。注意 lua 中 nil 和 false 为假，其他结果都为真。
-
-  记录点在被执行时会打印日志。日志输出在：DebugConsole - OUTPUT - Debugger/log ， 如下图。
-
-  ![](https://github.com/Tencent/LuaPanda/blob/dev/Docs/static/feature-introduction/logpoint-log.png?raw=true)
-
-
-
-+ 变量赋值
-
-  断点处允许用户修改变量的值， 用户也可以通过调试控制台给变量赋值。
-
-  ![企业微信截图_84fc8535-8733-4b04-9518-64cee91b2439](https://github.com/Tencent/LuaPanda/blob/dev/Docs/static/feature-introduction/set-var-value.gif?raw=true)
-
-
-
-
-
-更新方法
-
-1. 使用新版 LuaPanda.lua 和 DebugTools.lua 替换原文件即可。如果使用了源码编译请更新 C 库源码。
-2. 若不更新lua文件仍可继续使用调试功能，但以上新功能无法体验。
-3. useHighSpeedModule 配置项改名。如果工程 launch.json 文件中设置过 `"useHighSpeedModule"` ，请改为 `"useCHook"`。 如无则忽略。 
+详细配置请查看 [单文件调试说明](./Docs/Manual/debug-file.md)
 
 
 
 # 特性
 
-+ 支持单步调试，断点调试，协程调试，支持调试时变量赋值。
++ 支持单步调试，条件断点，协程调试，支持调试时变量赋值。
 + 支持lua5.1- 5.3, 支持 slua/xlua/slua-unreal 等框架
 + 在断点处可以监视和运行表达式，返回结果
 + 可以根据断点密集程度调整 hook 频率, 有较好高的效率

@@ -148,7 +148,7 @@ c hook的源码放置在工程中`Debugger/debugger_lib`中。以供参考
         {
             "type": "lua",
             "request": "launch",
-            "name": "LuaPanda",
+            "name": "LuaPanda",	//配置名，正常调试
             "program": "${workspaceFolder}",
             "cwd": "${workspaceFolder}", //工作路径
             "TempFilePath": "${workspaceFolder}",//临时文件存放路径
@@ -156,8 +156,26 @@ c hook的源码放置在工程中`Debugger/debugger_lib`中。以供参考
             "pathCaseSensitivity": true,//路径是否大小写敏感
             "stopOnEntry": true,//是否在开始调试时停止
             "connectionPort": 8818,//连接端口号，默认8818
-            "logLevel": 1 //日志等级
-        	"useCHook":true //是否使用C lib库
+            "logLevel": 1, //日志等级
+        		"useCHook":true, //是否使用C lib库
+            "luaPath": ""		//执行lua文件时，lua命令的路径
+        },
+    		{
+            "type": "lua",
+            "request": "launch",
+            "internalConsoleOptions": "neverOpen",
+            "name": "LuaPanda-DebugFile", //配置名，调试单文件
+            "program": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}",
+            "TempFilePath": "${workspaceFolder}",
+            "luaFileExtension": "",
+            "pathCaseSensitivity": true,
+            "connectionPort": 8818,
+            "stopOnEntry": true,
+            "useCHook": true,
+            "logLevel": 1,
+            "luaPath": "",	//执行lua文件时，lua命令的路径	
+            "packagePath": ["./doc1/?.lua"] //执行lua文件时，加入package.path的路径
         }
     ]
 }
