@@ -106,7 +106,7 @@ export class dataProcesser {
                 }
 
                 if (cmdInfo["cmd"] == "tip") {
-                    dataProcesser._runtime.showTip(cmdInfo["info"]["tipInfo"]);
+                    dataProcesser._runtime.showTip(cmdInfo["info"]["logInfo"]);
                     return;
                 }
 

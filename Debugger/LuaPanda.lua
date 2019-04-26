@@ -6,8 +6,10 @@ https://opensource.org/licenses/BSD-3-Clause
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
 API:
-    LuaPanda.printToVSCode()
+    LuaPanda.printToVSCode(logStr, printLevel, type)
         打印日志到VSCode Output下Debugger/log中
+        @printLevel: debug(0)/info(1)/error(2) 这里的日志等级需高于launch.json中配置等级日志才能输出 (可选参数，默认0)
+        @type: 0:VSCode output console  1:VSCode tip (可选参数，默认0)
 
     LuaPanda.BP()
         强制打断点，可以在协程中使用。建议使用以下写法:
