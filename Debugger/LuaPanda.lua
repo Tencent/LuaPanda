@@ -352,11 +352,11 @@ end
 -- @t 目标table
 -- @return 元素数量
 function this.getTableMemberNum(t)
+    local retNum = 0;
     if type(t) ~= "table" then
         this.printToVSCode("[debugger Error] getTableMemberNum get "..tostring(type(t)), 2)
-        return nil;
+        return retNum;
     end
-    local retNum = 0;
     for k,v in pairs(t) do
         retNum = retNum + 1;
     end
@@ -1935,7 +1935,7 @@ function this.getVariableRef( refStr )
                 variableRefIdx = variableRefIdx + 1;
                 if var.type == "table" then
                     local memberNum = this.getTableMemberNum(v);
-                    var.value = memberNum .." Members ".. var.value
+                    var.value = memberNum .." Members ".. ( var.value or '' );
                 end
             elseif var.type == "string" then
                 var.value = '"' ..v.. '"';
@@ -1991,7 +1991,7 @@ function this.getGlobalVariable( ... )
             variableRefIdx = variableRefIdx + 1;
             if var.type == "table" then
                 local memberNum = this.getTableMemberNum(v);
-                var.value = memberNum .." Members ".. var.value
+                var.value = memberNum .." Members ".. ( var.value or '' );
             end
         elseif var.type == "string" then
             var.value = '"' ..v.. '"';
@@ -2034,7 +2034,7 @@ function this.getUpValueVariable( checkFunc , isFormatVariable)
                 variableRefIdx = variableRefIdx + 1;
                 if var.type == "table" then
                     local memberNum = this.getTableMemberNum(v);
-                    var.value = memberNum .." Members ".. var.value
+                    var.value = memberNum .." Members ".. ( var.value or '' );
                 end
             elseif var.type == "string" then
                 var.value = '"' ..v.. '"';
@@ -2096,7 +2096,7 @@ function this.getVariable( checkLayer, isFormatVariable , offset)
                     variableRefIdx = variableRefIdx + 1;
                     if var.type == "table" then
                         local memberNum = this.getTableMemberNum(v);
-                        var.value = memberNum .." Members ".. var.value
+                        var.value = memberNum .." Members ".. ( var.value or '' );
                     end
                 elseif var.type == "string" then
                         var.value = '"' ..v.. '"';
