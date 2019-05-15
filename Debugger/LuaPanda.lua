@@ -299,25 +299,28 @@ function this.tryRequireClib(libName , libPath)
 end
 ------------------------字符串处理-------------------------
 -- 倒序查找字符串 a.b/c查找/ , 返回4
+-- @str 被查找的长串
+-- @subPattern 查找的子串, 也可以是pattern
+-- @plain plane text / pattern
 -- @return 未找到目标串返回nil. 否则返回倒序找到的字串位置
-function this.revFindString(str, subStr)
+function this.revFindString(str, subPattern, plain)
     local revStr = string.reverse(str);
-    local _, idx = string.find(revStr, subStr)
+    local _, idx = string.find(revStr, subPattern, 1, plain);
     if idx == nil then return nil end;
     return string.len(revStr) - idx + 1;
 end
 
 -- 反序裁剪字符串 如:print(subString("a.b/c", "/"))输出c
 -- @return 未找到目标串返回nil. 否则返回被裁剪后的字符串
-function this.revSubString(str, subStr)
-    local idx = this.revFindString(str, subStr)
+function this.revSubString(str, subStr, plain)
+    local idx = this.revFindString(str, subStr, plain)
     if idx == nil then return nil end;
     return string.sub(str, idx + 1, str.length)
 end
 
 -- 把字符串按reps分割成并放入table
 -- @str 目标串
--- @reps 分割符
+-- @reps 分割符。注意这个分隔符是一个pattern
 function this.stringSplit( str, separator )
     local retStrTable = {}
     string.gsub(str, '[^' .. separator ..']+', function ( word )
@@ -909,7 +912,7 @@ function this.createSetValueRetTable(varName, newValue, needFindVariable, curSta
 end
 
 --接收消息
---这里维护一个队列
+--这里维护一个接收消息队列，因为Lua端未做隔断符保护，变量赋值时请注意其中不要包含隔断符 |*|
 -- @timeoutSec 超时时间
 -- @return  boolean 成功/失败
 function this.receiveMessage( timeoutSec )
@@ -943,7 +946,7 @@ function this.receiveMessage( timeoutSec )
 
         --判断是否是一条消息，分拆
         local proc_response = string.sub(response, 1, -1 * (TCPSplitChar:len() + 1 ));
-        local match_res = string.find(proc_response, TCPSplitChar);
+        local match_res = string.find(proc_response, TCPSplitChar, 1, true);
         if match_res == nil then
             --单条
             this.dataProcess(proc_response);
@@ -955,7 +958,7 @@ function this.receiveMessage( timeoutSec )
                 table.insert(recvMsgQueue, str1);
                 --剩余匹配
                 local str2 = string.sub(proc_response, match_res + TCPSplitChar:len() , -1);
-                match_res = string.find(str2, TCPSplitChar);
+                match_res = string.find(str2, TCPSplitChar, 1, true);
             until not match_res
             this.receiveMessage();
         end
@@ -1093,8 +1096,8 @@ function this.getPath( info )
     --需要拼接
     local retPath = filePath;
     if cwd ~= "" then
-        --这里做一次匹配,文件名不能出现符号，否则会匹配错误
-        local matchRes = string.match(filePath, cwd);
+        --查看filePath中是否包含cwd
+        local matchRes = string.find(filePath, cwd, 1, true);
         if matchRes == nil then
             retPath = cwd.."/"..filePath;
         end

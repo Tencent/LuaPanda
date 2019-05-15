@@ -39,7 +39,7 @@ export class dataProcesser {
             } while (pos > 0);
 
             while (dataProcesser.recvMsgQueue.length > 0) {
-                let dt1 = dataProcesser.recvMsgQueue.pop();
+                let dt1 = dataProcesser.recvMsgQueue.shift();   //从头部取元素，保证是一个队列形式
                 dataProcesser.getData(String(dt1));
             }
         }
@@ -64,13 +64,13 @@ export class dataProcesser {
         let cmdInfo;
         try{
             if(this.getDataJsonCatch != ""){
-                data = data + this.getDataJsonCatch;
+                data = this.getDataJsonCatch +  data;
             }
             cmdInfo = JSON.parse(data);
             this.getDataJsonCatch  = "";
         }
         catch(e){
-            this.getDataJsonCatch = "|*|" +  data ;
+            this.getDataJsonCatch = data + "|*|";
             return;
         }
 
