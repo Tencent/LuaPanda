@@ -101,3 +101,12 @@ attach模式支持先执行lua工程，在希望调试的时候运行调试器�
 ![企业微信截图_84fc8535-8733-4b04-9518-64cee91b2439](https://github.com/Tencent/LuaPanda/blob/dev/Docs/static/feature-introduction/set-var-value.gif?raw=true)
 
 
+
+### 单文件调试
+
+使用单文件调试，可以在工程中很方便的调试单个lua文件。
+
+![debug-file](https://github.com/Tencent/LuaPanda/blob/master/Docs/static/debug-file.GIF?raw=true)
+
+详细配置请查看 [单文件调试说明](https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-file.md)
+

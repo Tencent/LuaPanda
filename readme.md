@@ -22,13 +22,9 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 # 更新说明
 
-本次更新主要支持了单文件运行和调试，可以在工程中很方便的调试单个lua文件。
-
-![debug-file](https://github.com/Tencent/LuaPanda/blob/master/Docs/static/debug-file.GIF?raw=true)
-
-
-
-详细配置请查看 [单文件调试说明](https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-file.md)
++ v2.0.6 
+  本次仅更新VSCode端，lua文件未做变更。
+  修复了调试中查询变量时，json通信量大导致的查询失败。
 
 
 
