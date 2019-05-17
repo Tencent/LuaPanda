@@ -142,7 +142,12 @@
 								"type": "string",
 								"description": "lua命令的路径和文件名. 如 C:/lua5.3/lua.exe ",
 								"default": ""
-							}
+							},
+							"docPathReplace": {
+								"type": "array",
+								"description": "被调试文件和VSCode中加载文件路径不一致时，通过此项设置，完成路径替换。输入格式[\"被替换掉的路径\", \"新路径\"]",
+								"default": []
+							}	
 						}
 					}
 				},
@@ -161,7 +166,8 @@
 						"stopOnEntry": true,
 						"useCHook": true,
 						"logLevel": 1,
-						"luaPath" : ""
+						"luaPath" : "",
+						"docPathReplace": []
 					},
 					{
 						"type": "lua",

@@ -28,7 +28,7 @@ export class LuaDebugSession extends LoggingDebugSession {
     private static autoReconnect;
     private _configurationDone = new Subject();
     private _variableHandles = new Handles<string>(50000);//Handle编号从50000开始
-
+    private static replacePath; //替换路径数组
     //自身单例
     private static instance: LuaDebugSession;
     public static userConnectionFlag;      //这个标记位的作用是标记Adapter停止连接，因为Adapter是Server端，要等Client发来请求才能断开
@@ -146,6 +146,12 @@ export class LuaDebugSession extends LoggingDebugSession {
         sendArgs["OSType"] = os.type();
         sendArgs["clibPath"] = clibPath;
         sendArgs["useCHook"] = args.useCHook;
+
+        if(args.docPathReplace instanceof Array && args.docPathReplace.length == 2 ){
+            LuaDebugSession.replacePath = new Array( String(args.docPathReplace[0]), String(args.docPathReplace[1]) );
+        }else{
+            LuaDebugSession.replacePath = null;
+        }
 
         LuaDebugSession.autoReconnect = args.autoReconnect;
         //2. 初始化内存分析状态栏
@@ -320,7 +326,14 @@ export class LuaDebugSession extends LoggingDebugSession {
         const endFrame = startFrame + maxLevels;
         const stk = this._runtime.stack(startFrame, endFrame);
         response.body = {
-            stackFrames: stk.frames.map(f => new StackFrame(f.index, f.name, this.createSource(f.file), f.line)),
+            stackFrames: stk.frames.map(f => {
+                    let source = f.file;
+                    if(LuaDebugSession.replacePath && LuaDebugSession.replacePath.length == 2){
+                        source = source.replace(LuaDebugSession.replacePath[0], LuaDebugSession.replacePath[1]);
+                    }
+                    return new StackFrame(f.index, f.name, this.createSource(source), f.line);
+                }
+            ),
             totalFrames: stk.count
         };
         this.sendResponse(response);
