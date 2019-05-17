@@ -434,7 +434,7 @@ function this.genUnifiedPath(path)
     local pathTab = this.stringSplit(path, '/');
     local newPathTab = {};
     for k, v in ipairs(pathTab) do
-        if v == '.'  then
+        if v == '.' then
             --continue
         elseif v == ".." and #newPathTab >= 1 and newPathTab[#newPathTab]:sub(2,2) ~= ':' then
             --newPathTab有元素，最后一项不是X:
@@ -486,14 +486,14 @@ end
 -----------------------------------------------------------------------------
 --刷新socket
 function this.reGetSock()
-    if sock~= nil then
+    if sock ~= nil then
         pcall(function() sock:close() end);
     end
     sock = lua_extension and lua_extension.luasocket and lua_extension.luasocket().tcp();
     if sock == nil then
        if pcall(function() sock =  require("socket.core").tcp(); end) then
             this.printToConsole("reGetSock success");
-            sock:settimeout(0.05);
+            sock:settimeout(0.005);
        else
             this.printToConsole("reGetSock fail");
        end
@@ -514,11 +514,15 @@ function this.reConnect()
             return 1;
         end
 
-        local sockSuccess = sock and sock:connect(connectHost, connectPort);
-        if sockSuccess ~= nil then
+        if sock == nil then
+            this.reGetSock();
+        end
+
+        local sockSuccess, status = sock:connect(connectHost, connectPort);
+        print(sockSuccess, status)
+        if sockSuccess == 1 or status == "already_connected" then
             this.connectSuccess();
         else
-            this.reGetSock();
             stopConnectTime = os.time();
         end
         return 1;
