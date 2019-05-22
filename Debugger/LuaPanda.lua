@@ -171,7 +171,7 @@ function this.connectSuccess()
     this.changeRunState(runState.WAIT_CMD);
     this.printToConsole("connectSuccess");
     --设置初始状态
-    local ret = this.debugger_wait_msg();
+    local ret = this.debugger_wait_msg(0.05);
 
     --获取debugger文件路径
     if DebuggerFileName == "" then
