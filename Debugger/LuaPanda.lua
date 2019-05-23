@@ -100,7 +100,6 @@ local logLevel = 1;             --日志等级all/info/error. 初始等级(从Ad
 local variableRefIdx = 1;       --变量索引
 local variableRefTab = {};      --变量记录table
 local lastRunFilePath = "";     --最后执行的文件路径
-local inDebugLayer = false;     --debug模式下，调入了Debug层级，用来做变量层级展示判断
 local pathCaseSensitivity = 1;  --路径是否发大小写敏感，这个选项接收VScode设置，请勿在此处更改
 local recvMsgQueue = {};        --接收的消息队列
 local coroutinePool = {};       --保存用户协程的队列
@@ -179,7 +178,7 @@ function this.connectSuccess()
         for k,v in pairs(info) do
             if k == "source" then
                 DebuggerFileName = v;
-                this.printToVSCode("DebuggerFileName:" .. tostring(DebuggerFileName)); 
+                this.printToVSCode("DebuggerFileName:" .. tostring(DebuggerFileName));
 
                 if hookLib ~= nil then
                     hookLib.sync_debugger_path(DebuggerFileName);
@@ -586,7 +585,7 @@ function this.dataProcess( dataStr )
         this.printToVSCode("dataTable.cmd == setBreakPoint");
         local bkPath = dataTable.info.path;
         bkPath = this.genUnifiedPath(bkPath);
-      
+
         this.printToVSCode("setBreakPoint path:"..tostring(bkPath));
         breaks[bkPath] = dataTable.info.bks;
         --save
@@ -968,7 +967,6 @@ function this.receiveMessage( timeoutSec )
         end
         return true;
     end
-    return false;
 end
 
 --这里不用循环，在外面处理完消息会在调用回来
@@ -1422,7 +1420,6 @@ function this.real_hook_process(info)
     --输出函数信息到前台
     if logLevel == 0 and jumpFlag == false then
         local logTable = {"[lua hook] event:", tostring(event), " currentRunState:",tostring(currentRunState)," currentHookState:",tostring(currentHookState)," jumpFlag:", tostring(jumpFlag)};
-        local logInfo = event;
         for k,v in pairs(info) do
             table.insert(logTable, tostring(k));
             table.insert(logTable, ":");
