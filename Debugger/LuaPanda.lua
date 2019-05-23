@@ -520,7 +520,7 @@ function this.reConnect()
 
         local sockSuccess, status = sock:connect(connectHost, connectPort);
         print(sockSuccess, status)
-        if sockSuccess == 1 or status == "already_connected" then
+        if sockSuccess == 1 or status == "already connected" then
             this.connectSuccess();
         else
             stopConnectTime = os.time();
