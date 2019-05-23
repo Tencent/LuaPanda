@@ -41,7 +41,7 @@ local attachInterval = 1;               --attach间隔时间(s)
 local TCPSplitChar = "|*|";             --json协议分隔符，如果用户传输的数据中包含相同符号会造成协议被错误分割，保证和传输内容不同即可，如无问题不必修改
 --用户设置项END
 
-local debuggerVer = "2.0.5";                 --debugger版本号
+local debuggerVer = "2.1.0";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = require("DebugTools");     --引用的开源工具，包括json解析和table展开工具
@@ -518,7 +518,6 @@ function this.reConnect()
         end
 
         local sockSuccess, status = sock:connect(connectHost, connectPort);
-        print(sockSuccess, status)
         if sockSuccess == 1 or status == "already connected" then
             this.connectSuccess();
         else
