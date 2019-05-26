@@ -24,6 +24,4 @@ export class DebugLogger {
             DebugLogger.Ainfo.appendLine(str);
         }
     }
-
-
 }
