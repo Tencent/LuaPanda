@@ -20,7 +20,7 @@ import { dataProcesser } from './dataProcesser';
 import { DebugLogger } from './LogManager';
 import { StatusBarManager } from './StatusBarManager';
 import { LineBreakpoint, ConditionBreakpoint, LogPoint } from './BreakPoint';
-
+import { Tools } from './Tools';
 export class LuaDebugSession extends LoggingDebugSession {
     private static THREAD_ID = 1; 	  //调试器不支持多线程，硬编码THREAD_ID为1
     public static TCPPort = 0;			//和客户端连接的端口号，通过VScode的设置赋值
@@ -148,7 +148,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         sendArgs["useCHook"] = args.useCHook;
 
         if(args.docPathReplace instanceof Array && args.docPathReplace.length == 2 ){
-            LuaDebugSession.replacePath = new Array( String(args.docPathReplace[0]), String(args.docPathReplace[1]) );
+            LuaDebugSession.replacePath = new Array( Tools.genUnifiedPath(String(args.docPathReplace[0])), Tools.genUnifiedPath(String(args.docPathReplace[1])));
         }else{
             LuaDebugSession.replacePath = null;
         }
@@ -263,7 +263,13 @@ export class LuaDebugSession extends LoggingDebugSession {
      */
     protected setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments): void {
         DebugLogger.AdapterInfo('setBreakPointsRequest');
-        const path = <string>args.source.path;
+        let path = <string>args.source.path;
+        path = Tools.genUnifiedPath(path);
+
+        if(LuaDebugSession.replacePath && LuaDebugSession.replacePath.length == 2){
+            path = path.replace(LuaDebugSession.replacePath[1], LuaDebugSession.replacePath[0]);
+        }        
+
         let vscodeBreakpoints = new Array(); //VScode UI识别的断点（起始行号1）
 
         args.breakpoints!.map(bp => {
