@@ -22,8 +22,16 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 # 更新说明
 
++ v2.1.0
+  
+  增加真机调试中对替换路径的支持。相关文档 [真机调试说明](./Docs/Manual/debug-on-phone.md)
+  
+  优化了attach造成运行卡顿的问题。
+  
+  
+
 + v2.0.6 
-  本次仅更新VSCode端，lua文件未做变更。
+  仅更新VSCode端，lua文件未做变更。
   修复了调试中查询变量时，json通信量大导致的查询失败。
 
 
@@ -41,7 +49,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 # 项目介绍和接入文档
 
-[项目介绍](./Docs/Manual/feature-introduction.md)	| [快速开始](./Docs/Manual/quick-use.md) | [接入指引](./Docs/Manual/access-guidelines.md) | [FAQ](./Docs/Manual/FAQ.md) 
+[项目介绍](./Docs/Manual/feature-introduction.md)	| [快速开始](./Docs/Manual/quick-use.md) | [接入指引](./Docs/Manual/access-guidelines.md) | [FAQ](./Docs/Manual/FAQ.md) | [真机调试](./Docs/Manual/debug-on-phone.md)
 
 我们正在补全文档，以方便接入和开发，我们也非常欢迎您可以帮助完善文档。
 
