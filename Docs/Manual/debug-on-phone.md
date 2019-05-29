@@ -54,7 +54,7 @@ require("LuaPanda").start("pcIP"，8818)
 
 
 
-### 关于真机调试路径问题的说明
+### 关于真机调试路径的说明
 
 + 当调试lua文件时，当前正在执行的lua文件路径是由lua虚拟机返回给调试器([http://www.lua.org/manual/5.3/manual.html#lua_getinfo](http://www.lua.org/manual/5.3/manual.html#lua_getinfo))。
 

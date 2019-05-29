@@ -13,10 +13,19 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 
 
-# 关于VSCode 1.33的兼容
+# 说明
 
-我们注意到更新了 VScode 1.33 之后调试器可能出现断点无法停止的情况，并已进行了修复。
-如遇此问题，请从master分支中拉取最新的`LuaPanda.lua`文件，覆盖原有文件即可。
++ 关于VSCode 1.33的兼容
+
+  我们注意到更新了 VScode 1.33 之后调试器可能出现断点无法停止的情况，如遇此问题，请从master分支中拉取最新的`LuaPanda.lua`文件，覆盖原有文件即可。
+
++ 关于`module 'libpdebug' not found`报错
+
+  libpdebug.so(dll) 是放置在VSCode插件中的调试器C扩展，会在调试器运行时自动被调用，作用是加速调试。
+
+  发生此问题的原因之一是用户重写了加载函数CustomLoader中没有加入对so/dll的处理，加载so/dll时会报找不到文件，但随后执行lua原生loader能够正确加载libpdebug。
+
+  查看libpdebug.so是否加载的方式是在控制台输入`LuaPanda.getInfo()`, 返回信息中有clib版本说明libpdebug已经加载。
 
 
 
