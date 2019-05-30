@@ -39,6 +39,8 @@ API:
 local openAttachMode = true;            --是否开启attach模式。attach模式开启后可以在任意时刻启动vscode连接调试。缺点是不调试时也会略降低lua执行效率(会不断进行attach请求)
 local attachInterval = 1;               --attach间隔时间(s)
 local TCPSplitChar = "|*|";             --json协议分隔符，如果用户传输的数据中包含相同符号会造成协议被错误分割，保证和传输内容不同即可，如无问题不必修改
+local customGetSocketInstance;    --支持用户实现一个自定义调用luasocket的函数，函数返回值必须是一个socket实例。例: function() return require("socket.core").tcp() end;
+local consoleLogLevel = 2;           --打印在控制台(print)的日志等级all/info/error.
 --用户设置项END
 
 local debuggerVer = "2.1.0";                 --debugger版本号
@@ -96,7 +98,7 @@ local OSType;                --VSCode识别出的系统类型
 local clibPath;                 --chook库在VScode端的路径
 local hookLib;                  --chook库的引用实例
 --标记位
-local logLevel = 1;             --日志等级all/info/error. 初始等级(从Adapter接收赋值之前) 为0
+local logLevel = 1;             --日志等级all/info/error. 此设置对应的是VSCode端设置的日志等级.
 local variableRefIdx = 1;       --变量索引
 local variableRefTab = {};      --变量记录table
 local lastRunFilePath = "";     --最后执行的文件路径
@@ -143,12 +145,11 @@ env = setmetatable({ }, {
 -- @host adapter端ip, 默认127.0.0.1
 -- @port adapter端port ,默认8818
 function this.start(host, port)
-    this.printToConsole("Debugger start", 1);
     host = tostring(host or "127.0.0.1") ;
     port = tonumber(port) or 8818;
-
+    this.printToConsole("Debugger start. connect host:" .. host .. " port:".. tostring(port), 1);
     if sock ~= nil then
-        this.printToConsole("[debugger warning]调试器已经启动，请不要再次调用start()");
+        this.printToConsole("[Warning] 调试器已经启动，请不要再次调用start()" , 1);
         return;
     end
 
@@ -159,8 +160,10 @@ function this.start(host, port)
     connectPort = port;
     local sockSuccess = sock and sock:connect(connectHost, connectPort);
     if sockSuccess ~= nil then
+        this.printToConsole("first connect success!");
         this.connectSuccess();
     else
+        this.printToConsole("first connect failed!");
         this.changeHookState(hookState.DISCONNECT_HOOK);
     end
 end
@@ -168,7 +171,7 @@ end
 -- 连接成功，开始初始化
 function this.connectSuccess()
     this.changeRunState(runState.WAIT_CMD);
-    this.printToConsole("connectSuccess");
+    this.printToConsole("connectSuccess", 1);
     --设置初始状态
     local ret = this.debugger_wait_msg();
 
@@ -222,6 +225,8 @@ end
 
 --断开连接
 function this.disconnect()
+    this.printToConsole("Debugger disconnect", 1);
+
     this.changeHookState( hookState.DISCONNECT_HOOK );
     stopConnectTime = os.time();
     this.changeRunState(runState.DISCONNECT);
@@ -261,7 +266,14 @@ function this.getInfo()
     if hookLib ~= nil then
         retStr = retStr.. " | hookLib Ver:" .. tostring(hookLib.sync_getLibVersion());
     end
-    retStr = retStr .." | supportREPL:".. tostring(isUseLoadstring);
+
+    local outputIsUseLoadstring = false
+    if type(isUseLoadstring) == "number" and isUseLoadstring == 1 then 
+        outputIsUseLoadstring = true;
+    end
+
+    retStr = retStr .." | supportREPL:".. tostring(outputIsUseLoadstring);
+    retStr = retStr .." | attachMode:".. tostring(openAttachMode);
     return retStr;
 end
 
@@ -408,10 +420,10 @@ end
 -- @printLevel: all(0)/info(1)/error(2)
 function this.printToConsole(str, printLevel)
     printLevel = printLevel or 0;
-    if logLevel > printLevel then
+    if consoleLogLevel > printLevel then
         return;
     end
-    print(str);
+    print("[LuaPanda] ".. tostring(str));
 end
 
 -----------------------------------------------------------------------------
@@ -488,25 +500,32 @@ function this.reGetSock()
     if sock ~= nil then
         pcall(function() sock:close() end);
     end
+    --call ue4 luasocket
     sock = lua_extension and lua_extension.luasocket and lua_extension.luasocket().tcp();
     if sock == nil then
+        --call u3d luasocket
        if pcall(function() sock =  require("socket.core").tcp(); end) then
             this.printToConsole("reGetSock success");
             sock:settimeout(0.005);
        else
-            this.printToConsole("reGetSock fail");
+            --call custom function to get socket
+            if customGetSocketInstance and pcall( function() sock =  customGetSocketInstance(); end ) then
+                this.printToConsole("reGetSock custom success");
+                sock:settimeout(0.005);      
+            else
+                this.printToConsole("[Error] reGetSock fail", 2);
+            end
        end
+    else
+        --set ue4 luasocket
+        this.printToConsole("reGetSock ue4 success");
+        sock:settimeout(0.005);
     end
 end
 
 -- 定时(以函数return为时机) 进行attach连接
 function this.reConnect()
     if currentHookState == hookState.DISCONNECT_HOOK then
-        if sock == nil then
-            this.printToConsole("[debugger error] have no find luascoket!", 2);
-            return 1;
-        end
-
         if os.time() - stopConnectTime < attachInterval then
             this.printToConsole("Reconnect time less than 1s");
             this.printToConsole("os.time:".. os.time() .. " | stopConnectTime:" ..stopConnectTime);
@@ -519,8 +538,10 @@ function this.reConnect()
 
         local sockSuccess, status = sock:connect(connectHost, connectPort);
         if sockSuccess == 1 or status == "already connected" then
+            this.printToConsole("reconnect success");
             this.connectSuccess();
         else
+            this.printToConsole("reconnect failed . retCode:" .. tostring(sockSuccess) .. "  status:" .. status);
             stopConnectTime = os.time();
         end
         return 1;
@@ -934,13 +955,13 @@ function this.receiveMessage( timeoutSec )
     end
 
     if sock == nil then
-        print("[debugger error]接收信息失败  |  reason: socket == nil");
+        this.printToConsole("[debugger error]接收信息失败  |  reason: socket == nil", 2);
         return;
     end
     local response, err = sock:receive();
     if response == nil then
         if err == "closed" then
-            print("[debugger error]接收信息失败  |  reason:"..err);
+            this.printToConsole("[debugger error]接收信息失败  |  reason:"..err, 2);
             this.disconnect();
         end
         return false;
@@ -1797,11 +1818,11 @@ end
 -- @newValue 新的值
 -- @limit 限制符， 10000表示仅在局部变量查找 ，20000 global, 30000 upvalue
 function this.setVariableValue (varName, stackId, newValue , limit)
-    this.printToConsole("setVariableValue | varName:" .. varName .. " stackId:".. stackId .." newValue:" .. tostring(newValue) .." limit:"..tostring(limit) )
+    this.printToConsole("setVariableValue | varName:" .. tostring(varName) .. " stackId:".. tostring(stackId) .." newValue:" .. tostring(newValue) .." limit:"..tostring(limit) )
     if tostring(varName) == nil or tostring(varName) == "" then
         --赋值错误
-        this.printToConsole("[setVariable Error] 被赋值的变量名为空" );
-        this.printToVSCode("[setVariable Error] 被赋值的变量名为空" );
+        this.printToConsole("[setVariable Error] 被赋值的变量名为空", 2 );
+        this.printToVSCode("[setVariable Error] 被赋值的变量名为空", 2 );
         return false;
     end
 
@@ -1837,7 +1858,7 @@ end
 -- @isFormatVariable    是否把变量格式化为VSCode接收的形式
 -- @return 查到返回信息，查不到返回nil
 function this.getWatchedVariable( varName , stackId , isFormatVariable )
-    this.printToConsole("getWatchedVariable | varName:" .. varName .. " stackId:".. stackId .." isFormatVariable:" .. tostring(isFormatVariable) )
+    this.printToConsole("getWatchedVariable | varName:" .. tostring(varName) .. " stackId:".. tostring(stackId) .." isFormatVariable:" .. tostring(isFormatVariable) )
     if tostring(varName) == nil or tostring(varName) == "" then
         return nil;
     end
