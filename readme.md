@@ -13,7 +13,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 
 
-# 说明
+# 提示
 
 + 关于VSCode 1.33的兼容
 
@@ -25,7 +25,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
   发生此问题的原因之一是用户重写了加载函数CustomLoader中没有加入对so/dll的处理，加载so/dll时会报找不到文件，但随后执行lua原生loader能够正确加载libpdebug。
 
-  查看libpdebug.so是否加载的方式是在控制台输入`LuaPanda.getInfo()`, 返回信息中有clib版本说明libpdebug已经加载。
+  查看libpdebug.so是否加载的方式是在控制台输入`LuaPanda.getInfo()`, 返回信息中有 hookLib Ver 说明libpdebug已经加载。
 
 
 
