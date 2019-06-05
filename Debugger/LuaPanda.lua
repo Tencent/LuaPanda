@@ -39,7 +39,7 @@ API:
 local openAttachMode = true;            --是否开启attach模式。attach模式开启后可以在任意时刻启动vscode连接调试。缺点是不调试时也会略降低lua执行效率(会不断进行attach请求)
 local attachInterval = 1;               --attach间隔时间(s)
 local TCPSplitChar = "|*|";             --json协议分隔符，如果用户传输的数据中包含相同符号会造成协议被错误分割，保证和传输内容不同即可，如无问题不必修改
-local customGetSocketInstance;    --支持用户实现一个自定义调用luasocket的函数，函数返回值必须是一个socket实例。例: function() return require("socket.core").tcp() end;
+local customGetSocketInstance = nil;    --支持用户实现一个自定义调用luasocket的函数，函数返回值必须是一个socket实例。例: function() return require("socket.core").tcp() end;
 local consoleLogLevel = 2;           --打印在控制台(print)的日志等级all/info/error.
 --用户设置项END
 
@@ -912,7 +912,7 @@ function this.createSetValueRetTable(varName, newValue, needFindVariable, curSta
         end
 
         local setVarRet;
-        if assigndVar == nil then
+        if type(assigndVar) ~= table  then
             setVarRet = this.setVariableValue( varName, curStackId, realVarValue, setLimit );
         else
             assigndVar[varName] = realVarValue;
