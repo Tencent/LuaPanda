@@ -17,7 +17,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 + 关于VSCode 1.33的兼容
 
-  我们注意到更新了 VScode 1.33 之后调试器可能出现断点无法停止的情况，如遇此问题，请从master分支中拉取最新的`LuaPanda.lua`文件，覆盖原有文件即可。
+  更新 VScode 1.33 之后调试器可能出现断点无法停止的情况，如遇此问题，请从master分支中拉取最新的`LuaPanda.lua`文件，覆盖原有文件即可。
 
 + 关于`module 'libpdebug' not found`报错
 
@@ -93,7 +93,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 # 技术支持
 
-如有问题先参阅 [FAQ](./Docs/Manual/FAQ.md) ，如有问题建议使用 [issues](https://github.com/Tencent/LuaPanda/issues),  我们会关注和回复。
+如有问题先参阅 [FAQ](./Docs/Manual/FAQ.md) ，如有问题建议使用 [issues](https://github.com/Tencent/LuaPanda/issues) ，我们会关注和回复。
 
 QQ群：974257225
 

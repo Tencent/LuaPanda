@@ -1,16 +1,20 @@
 {
 	"name": "luapanda",
 	"displayName": "LuaPanda",
-	"version": "2.0.10",
+	"version": "2.0.20",
 	"publisher": "stuartwang",
 	"description": "lua debug adapters for VS Code.",
 	"author": {
 		"name": "stuartwang",
 		"email": "3030078087@qq.com"
 	},
-	"license": "MIT",
+	"license": "BSD",
 	"keywords": [
-		"luapanda"
+		"lua",
+		"debug",
+		"panda",
+		"analyzer",
+		"luaanalyzer"
 	],
 	"engines": {
 		"vscode": "^1.18.0",
