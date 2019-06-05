@@ -691,6 +691,8 @@ void debug_hook_c(lua_State *L, lua_Debug *ar) {
         if(!strcmp(debug_file_path, ar->source) || !strcmp(tools_file_path, ar->source)) return;
 		//slua "temp buffer"
 		if(!strcmp(ar->source, "temp buffer"))	return;
+		//xlua "chunk"
+		if (!strcmp(ar->source, "chunk"))	return;
         //code section
         if(!hook_process_code_section(L, ar)) return;
 

@@ -1415,6 +1415,12 @@ function this.real_hook_process(info)
         return;
     end
 
+    --不处理 xlua "chunk"
+    if info.source == "chunk" then
+        this.printToVSCode("current method is in chunk");
+        return;
+    end
+
     --lua 代码段的处理，目前暂不调试代码段。
     if info.short_src:match("%[string \"")  then
             --当shortSrc中出现[string时]。要检查一下source, 区别是路径还是代码段. 方法是看路径中有没有\t \n ;
