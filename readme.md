@@ -93,6 +93,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 # 技术支持
 
-如有问题先参阅 [FAQ](./Docs/Manual/FAQ.md) 
+如有问题先参阅 [FAQ](./Docs/Manual/FAQ.md) ，如有问题建议使用 [issues](https://github.com/Tencent/LuaPanda/issues),  我们会关注和回复。
 
 QQ群：974257225
+
