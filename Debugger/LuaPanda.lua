@@ -264,7 +264,9 @@ end
 function this.getInfo()
     local retStr = "Lua Ver:" .. _VERSION .." | Debugger Ver:"..tostring(debuggerVer);
     if hookLib ~= nil then
-        retStr = retStr.. " | hookLib Ver:" .. tostring(hookLib.sync_getLibVersion());
+        local clibVer, forluaVer = hookLib.sync_getLibVersion();
+        local clibStr = forluaVer ~= nil and tostring(clibVer) .. " for " .. tostring(forluaVer) or tostring(clibVer);
+        retStr = retStr.. " | hookLib Ver:" .. clibStr;
     end
 
     local outputIsUseLoadstring = false

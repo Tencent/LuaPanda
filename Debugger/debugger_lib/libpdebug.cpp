@@ -252,7 +252,8 @@ extern "C" int sync_tempfile_path(lua_State *L) {
 //lua 获取版本号
 extern "C" int sync_getLibVersion(lua_State *L) {
     lua_pushstring(L, HOOK_LIB_VERSION);
-    return 1;
+	lua_pushnumber(L, LUA_VERSION_NUM);
+    return 2;
 }
 
 //同步文件后缀
