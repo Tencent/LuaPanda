@@ -223,10 +223,20 @@ function this.connectSuccess()
 
 end
 
+--重置数据
+function this.clearData()
+    -- reset breaks
+    breaks = {};
+    this.breaks = breaks;
+    if hookLib ~= nil then
+        hookLib.sync_breakpoints(); -- 这个函数不能兼容空breaks
+    end
+end
+
 --断开连接
 function this.disconnect()
     this.printToConsole("Debugger disconnect", 1);
-
+    this.clearData()
     this.changeHookState( hookState.DISCONNECT_HOOK );
     stopConnectTime = os.time();
     this.changeRunState(runState.DISCONNECT);
@@ -401,7 +411,7 @@ end
 function this.printToVSCode(str, printLevel, type)
     type = type or 0;
     printLevel = printLevel or 0;
-    if logLevel > printLevel then
+    if currentRunState == runState.DISCONNECT or logLevel > printLevel then
         return;
     end
 
@@ -561,10 +571,12 @@ function this.sendMsg( sendTab )
         return;
     end
 
-    local succ,err = sock:send(sendStr..TCPSplitChar.."\n");
-    if succ == nil then
-        if err == "closed" then
-            this.disconnect();
+    local succ,err;
+    if pcall(function() succ,err = sock:send(sendStr..TCPSplitChar.."\n"); end) then
+        if succ == nil then
+            if err == "closed" then
+                this.disconnect();
+            end
         end
     end
 end
@@ -2260,4 +2272,5 @@ function this.processWatchedExp(msgTable)
     return retTab;
 end
 
+this.printToConsole("load LuaPanda success", 1);
 return this;

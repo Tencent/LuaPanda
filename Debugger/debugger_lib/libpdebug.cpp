@@ -322,7 +322,7 @@ extern "C" int lua_set_hookstate(lua_State *L) {
 }
 
 void print_to_vscode(lua_State *L, const char* msg, int level) {
-    if (level >= logLevel) {
+    if ( DISCONNECT != cur_run_state && level >= logLevel) {
         //打印
         call_lua_function(L, "printToVSCode", 0, msg,  level);
     }
