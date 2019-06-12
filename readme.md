@@ -13,19 +13,21 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 
 
-# 提示
+# Tips
 
 + 关于VSCode 1.33的兼容
 
   更新 VScode 1.33 之后调试器可能出现断点无法停止的情况，如遇此问题，请从master分支中拉取最新的`LuaPanda.lua`文件，覆盖原有文件即可。
 
-+ 关于`module 'libpdebug' not found`报错
++ 关于找不到`libpdebug`模块报错
 
-  libpdebug.so(dll) 是放置在VSCode插件中的调试器C扩展，会在调试器运行时自动被调用，作用是加速调试。
+  `libpdebug.so(dll)` 是放置在VSCode插件中的调试器C扩展，会在调试器运行时自动加载，作用是加速调试。
 
-  发生此问题的原因之一是用户重写了加载函数CustomLoader中没有加入对so/dll的处理，加载so/dll时会报找不到文件，但随后执行lua原生loader能够正确加载libpdebug。
+  xlua允许用户重写文件加载函数`CustomLoader`，sluaunreal也提供类似方法`setLoadFileDelegate`。
 
-  查看libpdebug.so是否加载的方式是在控制台输入`LuaPanda.getInfo()`, 返回信息中有 hookLib Ver 说明libpdebug已经加载。
+  发生此问题的原因之一是用户重写了加载函数中没有加入对so/dll的处理，加载so/dll时会报找不到文件，但随后执行lua原生loader能够正确加载libpdebug。
+  
+  查看libpdebug.so是否加载的方式是在控制台输入`LuaPanda.getInfo()`, 返回信息中有 hookLib Ver 说明libpdebug已经加载。此时可以忽略报错或在文件加载函数函数中正确处理.so/dll.
 
 
 
@@ -58,7 +60,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 # 项目介绍和接入文档
 
-[项目介绍](./Docs/Manual/feature-introduction.md)	| [快速开始](./Docs/Manual/quick-use.md) | [接入指引](./Docs/Manual/access-guidelines.md) | [FAQ](./Docs/Manual/FAQ.md) | [真机调试](./Docs/Manual/debug-on-phone.md)
+[项目介绍](./Docs/Manual/feature-introduction.md)	| [快速开始](./Docs/Manual/quick-use.md) | [接入指引](./Docs/Manual/access-guidelines.md) |  [真机调试](./Docs/Manual/debug-on-phone.md)  |  [FAQ](./Docs/Manual/FAQ.md)
 
 我们正在补全文档，以方便接入和开发，我们也非常欢迎您可以帮助完善文档。
 

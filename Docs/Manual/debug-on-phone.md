@@ -18,7 +18,11 @@ https://developer.android.com/studio/releases/platform-tools.html
 
 2. 设置反向代理
 
-手机通过数据线连接PC，在终端输入`adb reverse tcp:8818 tcp:8818`
+手机通过数据线连接PC，在终端输入
+
+```
+adb reverse tcp:8818 tcp:8818
+```
 
 这样，手机的8818端口数据会转发到pc的8818端口，实现内网访问。
 
@@ -76,3 +80,12 @@ require("LuaPanda").start("pcIP"，8818)
   ```
 
   就可以完成路径映射，把运行环境的/data/data/com.project.test/script/test.lua映射到观察环境C:/GameProcect/Assets/script/test.lua
+
++ 安卓手机连接windows开启反向代理后，游戏运行会因为attach连接而卡顿。建议准备进行连接时再开反向代理，不需要调试时拔线或者使用下面命令解除反向代理
+
+  ```
+  adb reverse --remove-all
+  ```
+
+  mac上无此现象。
+
