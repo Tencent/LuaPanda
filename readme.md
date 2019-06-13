@@ -39,7 +39,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
   
   优化了attach造成运行卡顿的问题。
   
-  
+  建议把LuaPanda.lua更新到最新版本。
 
 + v2.0.6 
   仅更新VSCode端，lua文件未做变更。

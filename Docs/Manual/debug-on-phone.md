@@ -1,10 +1,10 @@
-## 真机调试说明
+## 真机调试
 
 [TOC]
 
-LuaPanda已支持真机调试。我们建议真机调试使用lua库，可以灵活地通过热更lua代码下发调试器。
+LuaPanda已支持真机调试。我们建议真机调试使用lua库，可以热更下发调试器。
 
-libpdebug.so库默认放置在VSCode插件中，真机调试时可能无法被找到。所以如果希望使用C库调试，需要把库或是C库源码编译到工程中。
+libpdebug.so库默认放置在VSCode插件中，真机调试时可能无法被找到。如果希望使用C库调试，需要把库或是C库源码编译到工程中(Release版本不建议)。
 
 以下是真机调试的两种方法
 
@@ -24,7 +24,7 @@ https://developer.android.com/studio/releases/platform-tools.html
 adb reverse tcp:8818 tcp:8818
 ```
 
-这样，手机的8818端口数据会转发到pc的8818端口，实现内网访问。
+如果没有报错，手机的8818端口数据会转发到pc的8818端口，实现内网访问。
 
 VSCode 端 Launch.json中的`connectionPort`也到要是8818（默认），以便接收消息。
 
@@ -38,7 +38,7 @@ VSCode 端 Launch.json中的`connectionPort`也到要是8818（默认），以�
 
 
 
-### 2. 局域网内调试
+### 2. 局域网调试
 
 1. 处于同一网络
 
@@ -46,7 +46,7 @@ VSCode 端 Launch.json中的`connectionPort`也到要是8818（默认），以�
 
 2. 修改代码
 
-require LuaPanda的位置，ip改为运行 VSCode 的 pc的 ip 地址。
+启动调试器代码，ip改为运行 VSCode 的 pc的 ip 地址。
 
 ```
 require("LuaPanda").start("pcIP"，8818)
@@ -58,20 +58,20 @@ require("LuaPanda").start("pcIP"，8818)
 
 
 
-### 关于真机调试路径的说明
+### 关于真机调试的说明
 
-+ 当调试lua文件时，当前正在执行的lua文件路径是由lua虚拟机返回给调试器([http://www.lua.org/manual/5.3/manual.html#lua_getinfo](http://www.lua.org/manual/5.3/manual.html#lua_getinfo))。
++ 当调试lua文件时，当前正在执行的文件路径是由lua虚拟机返回给调试器([http://www.lua.org/manual/5.3/manual.html#lua_getinfo](http://www.lua.org/manual/5.3/manual.html#lua_getinfo))。
 
-+ 调试器获得的路径可能是文件的绝对路径，也可能是相对路径。它取决于加载文件时传入虚拟机的路径信息。
+  调试器获得的路径可能是文件的绝对路径，也可能是相对路径。这取决于加载文件时传给lua虚拟机的文件路径。
 
   如果调试器获得的是绝对路径，那么在命中断点时直接把这个路径传给VSCode。
 
-  如果是相对路径，调试器使用cwd+getinfo拼出完整路径，再传给VScode。所以请调整cwd，以确保拼出的路径是正确的。
+  如果是相对路径，调试器使用cwd+getinfo拼出完整路径，再传给VSCode。可以调整cwd，以确保拼出的路径是正确的。
 
-+ 另一种可能性：如果调试器获得的是绝对路径，并回传给VSCode，但这个路径有偏差（参见 [issue #18](https://github.com/Tencent/LuaPanda/issues/18)） 我们提供路径映射 docPathReplace
++ 如果调试器获得的绝对路径，或者拼接成的路径有偏差（参见 [issue #18](https://github.com/Tencent/LuaPanda/issues/18)），我们提供路径映射配置 docPathReplace
 
   比如lua文件在pc上路径 		 C:/GameProcect/Assets/script/test.lua
-  被打在手机里时，路径变成了 /data/data/com.project.test/script/test.lua
+  放置在手机里，路径变成了 	/data/data/com.project.test/script/test.lua
 
   在launch.json docPathReplace中设置
 
@@ -88,4 +88,3 @@ require("LuaPanda").start("pcIP"，8818)
   ```
 
   mac上无此现象。
-
