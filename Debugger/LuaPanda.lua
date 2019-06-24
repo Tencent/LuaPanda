@@ -301,10 +301,10 @@ end
 --返回一些信息，帮助用户定位问题
 function this.getInfo()
     --用户设置项
-    local retStr = "\n--- Base Info ---\n";
+    local retStr = "\n- Base Info: \n";
     retStr = retStr .. this.getBaseInfo();
     --已经加载C库，x86/64  未能加载，原因
-    retStr = retStr .. "\n--- User Setting ---\n";
+    retStr = retStr .. "\n\n- User Setting: \n";
     retStr = retStr .. "stopOnEntry:" .. tostring(stopOnEntry) .. ' | ' ;
     -- retStr = retStr .. "luaFileExtension:" .. luaFileExtension .. ' | ' ;
     retStr = retStr .. "logLevel:" .. logLevel .. ' | ' ;
@@ -317,12 +317,15 @@ function this.getInfo()
         retStr = retStr .. "useCHook:false";
     end
 
-    --此处记录
-    retStr = retStr .. "\n--- Path Info ---\n";
-    retStr = retStr .. "clibPath: " .. clibPath .. '\n';
+    -- --此处记录
+    retStr = retStr .. "\n\n- Path Info: \n";
+    retStr = retStr .. "clibPath: " .. tostring(clibPath) .. '\n';
+    retStr = retStr .. "debugger: " .. this.getPath(DebuggerFileName) .. '\n';
     retStr = retStr .. this.getCWD();
-    retStr = retStr .. "\n--- Breaks Info ---\n";
-    retStr = retStr .. this.printTable(this.getBreaks()) .. '\n';
+    retStr = retStr .. "\n说明: 请确定format路径下的文件是存在的，如format文件路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。可以在format对应的文件下打一个断点，调整直到format和Breaks Info中断点路径完全一致。";
+
+    retStr = retStr .. "\n\n- Breaks Info: \n";
+    retStr = retStr .. this.printTable(this.getBreaks());
     return retStr;
 end
 
@@ -353,10 +356,10 @@ function this.tryRequireClib(libName , libPath)
         end
     else
         -- 此处考虑到tryRequireClib会被调用两次，日志级别设置为0，防止输出不必要的信息。
-        if not string.match(err, "%%1 is not a valid Win32 application")  then
+        if not (string.match(err, "%%1 is not a valid Win32 application")  or string.match(err, "module 'libpdebug' not found")) then
             loadclibErrReason = err;
-            this.printToVSCode("[Require clib error]: " .. err, 0);
         end
+        this.printToVSCode("[Require clib error]: " .. err, 0);
     end
     package.cpath = save_cpath;
     return false
@@ -835,7 +838,7 @@ function this.dataProcess( dataStr )
                 hookLib = luapanda_chook;
             else
                 if not(this.tryRequireClib("libpdebug", x64Path) or this.tryRequireClib("libpdebug", x86Path)) then
-                    this.printToVSCode("Require clib failed, use Lua to continue debug. Set logLevel to 0 and view the debugger log for more information.", 1);
+                    this.printToVSCode("Require clib failed, use Lua to continue debug, use LuaPanda.getInfo() for more information.", 1);
                 end
             end
         end
