@@ -23,7 +23,7 @@ API:
         用户可以调用或在调试控制台中输出这个函数，返回帮助设置CWD的路径。比如
         cwd:      F:/1/2/3/4/5
         getinfo:  @../../../../../unreal_10/slua-unreal_1018/Content//Lua/TestArray.lua
-        format:   F:/unreal_10/slua-unreal_1018/Content/Lua/TestArray.lua
+        format:   f:/unreal_10/slua-unreal_1018/Content/Lua/TestArray.lua
         cwd是vscode传来的配置路径。getinfo是通过getinfo获取到的正在运行的文件路径。format是经过 cwd + getinfo 整合后的格式化路径。
         format是传给VSCode的最终路径。
         如果format路径和文件真实路径不符，导致VSCode找不到文件，通过调整工程中launch.json的cwd，使format路径和真实路径一致。
@@ -44,7 +44,7 @@ local consoleLogLevel = 2;           --打印在控制台(print)的日志等级a
 local connectTimeoutSec = 0.005;       --等待连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
 --用户设置项END
 
-local debuggerVer = "2.1.0";                 --debugger版本号
+local debuggerVer = "2.1.1";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = require("DebugTools");     --引用的开源工具，包括json解析和table展开工具
@@ -119,6 +119,10 @@ local stopConnectTime = 0;      --用来临时记录stop断开连接的时间
 local isInMainThread;
 local receiveMsgTimer = 0;
 local pathFormatCache = {};
+--VSCodeSetting
+local stopOnEntry;
+local loadclibErrReason = 'launch.json 文件中，配置项 useCHook 被设置为 false.';
+
 --5.1/5.3兼容
 if _VERSION == "Lua 5.1" then
     debugger_loadString = loadstring;
@@ -272,12 +276,16 @@ function this.getCWD()
 end
 
 --返回版本号等配置
-function this.getInfo()
+function this.getBaseInfo()
     local retStr = "Lua Ver:" .. _VERSION .." | Debugger Ver:"..tostring(debuggerVer);
+    local moreInfoStr = "";
     if hookLib ~= nil then
         local clibVer, forluaVer = hookLib.sync_getLibVersion();
         local clibStr = forluaVer ~= nil and tostring(clibVer) .. " for " .. tostring(math.ceil(forluaVer)) or tostring(clibVer);
         retStr = retStr.. " | hookLib Ver:" .. clibStr;
+        moreInfoStr = moreInfoStr .. "说明: 已加载 libpdebug 库.";
+    else
+        moreInfoStr = moreInfoStr .. "说明: 未能加载 libpdebug 库。原因是 ".. loadclibErrReason;
     end
 
     local outputIsUseLoadstring = false
@@ -285,8 +293,37 @@ function this.getInfo()
         outputIsUseLoadstring = true;
     end
 
-    retStr = retStr .." | supportREPL:".. tostring(outputIsUseLoadstring);
-    retStr = retStr .." | attachMode:".. tostring(openAttachMode);
+    retStr = retStr .. " | supportREPL:".. tostring(outputIsUseLoadstring);
+    retStr = retStr .. " | codeEnv:" .. OSType .. '\n';
+    retStr = retStr .. moreInfoStr;
+    return retStr;
+end
+
+--返回一些信息，帮助用户定位问题
+function this.getInfo()
+    --用户设置项
+    local retStr = "\n--- Base Info ---\n";
+    retStr = retStr .. this.getBaseInfo();
+    --已经加载C库，x86/64  未能加载，原因
+    retStr = retStr .. "\n--- User Setting ---\n";
+    retStr = retStr .. "stopOnEntry:" .. tostring(stopOnEntry) .. ' | ' ;
+    -- retStr = retStr .. "luaFileExtension:" .. luaFileExtension .. ' | ' ;
+    retStr = retStr .. "logLevel:" .. logLevel .. ' | ' ;
+    retStr = retStr .. "pathCaseSensitivity:" .. pathCaseSensitivity .. ' | ' ;
+    retStr = retStr .. "attachMode:".. tostring(openAttachMode).. ' | ' ;
+
+    if hookLib ~= nil then
+        retStr = retStr .. "useCHook:true";
+    else
+        retStr = retStr .. "useCHook:false";
+    end
+
+    --此处记录
+    retStr = retStr .. "\n--- Path Info ---\n";
+    retStr = retStr .. "clibPath: " .. clibPath .. '\n';
+    retStr = retStr .. this.getCWD();
+    retStr = retStr .. "\n--- Breaks Info ---\n";
+    retStr = retStr .. this.printTable(this.getBreaks()) .. '\n';
     return retStr;
 end
 
@@ -310,13 +347,17 @@ function this.tryRequireClib(libName , libPath)
             this.printToVSCode("tryRequireClib success : [" .. libName .. "] in "..libPath);
             return true;
         else
+            loadclibErrReason = "tryRequireClib fail : require success, but member function num <= 0; [" .. libName .. "] in "..libPath;
             this.printToVSCode("tryRequireClib fail : require success, but member function num <= 0; [" .. libName .. "] in "..libPath);
             hookLib = nil;
             return false;
         end
     else
         -- 此处考虑到tryRequireClib会被调用两次，日志级别设置为0，防止输出不必要的信息。
-        this.printToVSCode("[Require clib error]: " .. err, 0);
+        if not string.match(err, "%%1 is not a valid Win32 application")  then
+            loadclibErrReason = err;
+            this.printToVSCode("[Require clib error]: " .. err, 0);
+        end
     end
     package.cpath = save_cpath;
     return false
@@ -656,9 +697,7 @@ function this.dataProcess( dataStr )
         local msgTab = this.getMsgTable("setBreakPoint", this.getCallbackId());
         this.sendMsg(msgTab);
         -- 打印调试信息
-        this.printToVSCode("LuaPanda.getInfo()\n" .. LuaPanda.getInfo())
-        this.printToVSCode("LuaPanda.getCWD()\n" .. LuaPanda.getCWD())
-        this.printToVSCode("LuaPanda.getBreaks()\n" .. tools.serializeTable(LuaPanda.getBreaks()));
+        this.printToVSCode("LuaPanda.getInfo()\n" .. this.getInfo())
         this.debugger_wait_msg();
     elseif dataTable.cmd == "setVariable" then
         if currentRunState == runState.STOP_ON_ENTRY or
@@ -824,6 +863,7 @@ function this.dataProcess( dataStr )
         msgTab.info  = tab;
         this.sendMsg(msgTab);
         --上面getBK中会判断当前状态是否WAIT_CMD, 所以最后再切换状态。
+        stopOnEntry = dataTable.info.stopOnEntry;
         if dataTable.info.stopOnEntry == "true" then
             this.changeRunState(runState.STOP_ON_ENTRY);   --停止在STOP_ON_ENTRY再接收breaks消息
         else
@@ -1121,27 +1161,21 @@ function this.getPath( info )
     end
 
     --拼路径
-    --若在Mac下以/开头，或者在Win下以*:开头，说明是绝对路径，不需要再拼。直接返回
-    if filePath:sub(1,1) == [[/]]  then
-        return this.genUnifiedPath(filePath);
-    end
-
-    if filePath:sub(1,2):match("%a:") then
-        return this.genUnifiedPath(filePath);
-    end
-
-    --需要拼接
     local retPath = filePath;
-    if cwd ~= "" then
-        --查看filePath中是否包含cwd
-        local matchRes = string.find(filePath, cwd, 1, true);
-        if matchRes == nil then
-            retPath = cwd.."/"..filePath;
-        end
-        --检查一下是否出现/./
-        retPath = this.genUnifiedPath(retPath);
-    end
+    --若在Mac下以/开头，或者在Win下以*:开头，说明是绝对路径，不需要再拼。
+    if filePath:sub(1,1) == [[/]] or filePath:sub(1,3):match("^.:/") then
 
+    else
+        --需要拼接
+        if cwd ~= "" then
+            --查看filePath中是否包含cwd
+            local matchRes = string.find(filePath, cwd, 1, true);
+            if matchRes == nil then
+                retPath = cwd.."/"..filePath;
+            end
+        end
+    end
+    retPath = this.genUnifiedPath(retPath);
     --放入Cache中缓存
     this.setPathToCache(originalPath, retPath);
     return retPath;
@@ -1391,6 +1425,11 @@ function this.debug_hook(event, line)
         info = debug.getinfo(co, 2, "Slf")
     end
     info.event = event;
+
+    if string.match(info.source, "^.:/") then
+        info.source = info.source:gsub("^.:/", string.upper);
+    end
+
     this.real_hook_process(info);
 end
 
