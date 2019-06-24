@@ -107,6 +107,8 @@ local pathCaseSensitivity = 1;  --路径是否发大小写敏感，这个选项�
 local recvMsgQueue = {};        --接收的消息队列
 local coroutinePool = {};       --保存用户协程的队列
 local winDiskSymbolUpper = false;--设置win下盘符的大小写。以此确保从VSCode中传入的断点路径,cwd和从lua虚拟机获得的文件路径盘符大小写一致
+local stopOnEntry;
+local loadclibErrReason = 'launch.json 文件中，配置项 useCHook 被设置为 false.';
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
 local stepOutCounter = 0;       --STEPOVER out计数器
@@ -119,9 +121,6 @@ local stopConnectTime = 0;      --用来临时记录stop断开连接的时间
 local isInMainThread;
 local receiveMsgTimer = 0;
 local pathFormatCache = {};
---VSCodeSetting
-local stopOnEntry;
-local loadclibErrReason = 'launch.json 文件中，配置项 useCHook 被设置为 false.';
 
 --5.1/5.3兼容
 if _VERSION == "Lua 5.1" then
