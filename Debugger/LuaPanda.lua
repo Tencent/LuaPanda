@@ -317,7 +317,6 @@ function this.getInfo()
         retStr = retStr .. "useCHook:false";
     end
 
-    -- --此处记录
     retStr = retStr .. "\n\n- Path Info: \n";
     retStr = retStr .. "clibPath: " .. tostring(clibPath) .. '\n';
     retStr = retStr .. "debugger: " .. this.getPath(DebuggerFileName) .. '\n';
@@ -350,7 +349,7 @@ function this.tryRequireClib(libName , libPath)
             return true;
         else
             loadclibErrReason = "tryRequireClib fail : require success, but member function num <= 0; [" .. libName .. "] in "..libPath;
-            this.printToVSCode("tryRequireClib fail : require success, but member function num <= 0; [" .. libName .. "] in "..libPath);
+            this.printToVSCode(loadclibErrReason);
             hookLib = nil;
             return false;
         end
@@ -1166,7 +1165,7 @@ function this.getPath( info )
     local retPath = filePath;
     --若在Mac下以/开头，或者在Win下以*:开头，说明是绝对路径，不需要再拼。
     if filePath:sub(1,1) == [[/]] or filePath:sub(1,3):match("^.:/") then
-
+        --绝对路径
     else
         --需要拼接
         if cwd ~= "" then
@@ -1427,10 +1426,6 @@ function this.debug_hook(event, line)
         info = debug.getinfo(co, 2, "Slf")
     end
     info.event = event;
-
-    if string.match(info.source, "^.:/") then
-        info.source = info.source:gsub("^.:/", string.upper);
-    end
 
     this.real_hook_process(info);
 end
