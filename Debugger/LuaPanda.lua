@@ -295,7 +295,7 @@ function this.getBaseInfo()
     end
 
     retStr = retStr .. " | supportREPL:".. tostring(outputIsUseLoadstring);
-    retStr = retStr .. " | codeEnv:" .. OSType .. '\n';
+    retStr = retStr .. " | codeEnv:" .. tostring(OSType) .. '\n';
     retStr = retStr .. moreInfoStr;
     return retStr;
 end
@@ -815,13 +815,16 @@ function this.dataProcess( dataStr )
         end
 
         TempFilePath_luaString = TempFilePath;
-
         cwd = this.genUnifiedPath(dataTable.info.cwd);
-
         logLevel = tonumber(dataTable.info.logLevel) or 1;
 
-        OSType = dataTable.info.OSType;
-        clibPath = dataTable.info.clibPath;
+        if type(dataTable.info.OSType) == "string" then 
+            if nil == OSType then OSType = dataTable.info.OSType end
+        else
+            if nil == OSType then OSType = "Windows_NT" end
+        end
+
+        clibPath = tostring(dataTable.info.clibPath);
 
         if  tostring(dataTable.info.pathCaseSensitivity) == "false" then
             pathCaseSensitivity =  0;
@@ -833,6 +836,7 @@ function this.dataProcess( dataStr )
         if tostring(dataTable.info.useCHook) == "true" then
             local clibExt, platform;
             if OSType == "Darwin" then clibExt = "/?.so;"; platform = "mac";
+            elseif OSType == "Linux" then clibExt = "/?.so;"; platform = "linux";
             else clibExt = "/?.dll;"; platform = "win";   end
 
             local lua_ver;
