@@ -109,6 +109,8 @@ local coroutinePool = {};       --保存用户协程的队列
 local winDiskSymbolUpper = false;--设置win下盘符的大小写。以此确保从VSCode中传入的断点路径,cwd和从lua虚拟机获得的文件路径盘符大小写一致
 local stopOnEntry;
 local loadclibErrReason = 'launch.json 文件中，配置项 useCHook 被设置为 false.';
+local winDiskSymbolTip = "";
+local isAbsolutePath = false;
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
 local stepOutCounter = 0;       --STEPOVER out计数器
@@ -321,8 +323,11 @@ function this.getInfo()
     retStr = retStr .. "clibPath: " .. tostring(clibPath) .. '\n';
     retStr = retStr .. "debugger: " .. this.getPath(DebuggerFileName) .. '\n';
     retStr = retStr .. this.getCWD();
-    retStr = retStr .. "\n说明: 请确定format路径下的文件是存在的，如format文件路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。可以在format对应的文件下打一个断点，调整直到format和Breaks Info中断点路径完全一致。";
-
+    if isAbsolutePath then
+        retStr = retStr .. "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。" .. winDiskSymbolTip;
+    else
+        retStr = retStr .. "\n说明:从lua虚拟机获取到的是相对路径，format来源于cwd+getinfo拼接。如format文件路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。也可以在format对应的文件下打一个断点，调整直到format和Breaks Info中断点路径完全一致。" .. winDiskSymbolTip;
+    end
     retStr = retStr .. "\n\n- Breaks Info: \n";
     retStr = retStr .. this.printTable(this.getBreaks());
     return retStr;
@@ -518,9 +523,11 @@ function this.genUnifiedPath(path)
     --win下按照winDiskSymbolUpper的设置修改盘符大小
     if "Windows_NT" == OSType then
         if winDiskSymbolUpper then
-            newpath = newpath:gsub("^.:/", string.upper);
+            newpath = newpath:gsub("^%a:", string.upper);
+            winDiskSymbolTip = "路径中Windows盘符已转为大写。"
         else
-            newpath = newpath:gsub("^.:/", string.lower);
+            newpath = newpath:gsub("^%a:", string.lower);
+            winDiskSymbolTip = "路径中Windows盘符已转为小写。"
         end
     end
 
@@ -1164,9 +1171,10 @@ function this.getPath( info )
     --拼路径
     local retPath = filePath;
     --若在Mac下以/开头，或者在Win下以*:开头，说明是绝对路径，不需要再拼。
-    if filePath:sub(1,1) == [[/]] or filePath:sub(1,3):match("^.:/") then
-        --绝对路径
+    if filePath:sub(1,1) == [[/]] or filePath:sub(1,2):match("^%a:") then
+        isAbsolutePath = true;
     else
+        isAbsolutePath = false;
         --需要拼接
         if cwd ~= "" then
             --查看filePath中是否包含cwd
