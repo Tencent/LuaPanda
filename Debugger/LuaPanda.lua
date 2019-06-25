@@ -310,6 +310,7 @@ function this.getInfo()
     retStr = retStr .. "stopOnEntry:" .. tostring(stopOnEntry) .. ' | ' ;
     -- retStr = retStr .. "luaFileExtension:" .. luaFileExtension .. ' | ' ;
     retStr = retStr .. "logLevel:" .. logLevel .. ' | ' ;
+    retStr = retStr .. "consoleLogLevel:" .. consoleLogLevel .. ' | ' ;
     retStr = retStr .. "pathCaseSensitivity:" .. pathCaseSensitivity .. ' | ' ;
     retStr = retStr .. "attachMode:".. tostring(openAttachMode).. ' | ' ;
 
@@ -317,6 +318,10 @@ function this.getInfo()
         retStr = retStr .. "useCHook:true";
     else
         retStr = retStr .. "useCHook:false";
+    end
+    
+    if logLevel == 0 or consoleLogLevel == 0 then
+        retStr = retStr .. "\n说明:日志等级过低，会影响执行效率。请调整logLevel和consoleLogLevel值 >= 1";
     end
 
     retStr = retStr .. "\n\n- Path Info: \n";
