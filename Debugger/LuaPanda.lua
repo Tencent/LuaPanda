@@ -108,7 +108,8 @@ local recvMsgQueue = {};        --接收的消息队列
 local coroutinePool = {};       --保存用户协程的队列
 local winDiskSymbolUpper = false;--设置win下盘符的大小写。以此确保从VSCode中传入的断点路径,cwd和从lua虚拟机获得的文件路径盘符大小写一致
 local stopOnEntry;
-local loadclibErrReason = 'launch.json 文件中，配置项 useCHook 被设置为 false.';
+local loadclibErrReason = '未能在clibpath路径下找到libpdebug 或 launch.json文件的配置项useCHook被设置为false.';
+local pathErrTip = ""
 local winDiskSymbolTip = "";
 local isAbsolutePath = false;
 --Step控制标记位
@@ -333,6 +334,11 @@ function this.getInfo()
     else
         retStr = retStr .. "\n说明:从lua虚拟机获取到的是相对路径，format来源于cwd+getinfo拼接。如format文件路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。也可以在format对应的文件下打一个断点，调整直到format和Breaks Info中断点路径完全一致。" .. winDiskSymbolTip;
     end
+
+    if pathErrTip ~= nil and pathErrTip ~= '' then
+        retStr = retStr .. '\n' .. pathErrTip;
+    end
+
     retStr = retStr .. "\n\n- Breaks Info: \n";
     retStr = retStr .. this.printTable(this.getBreaks());
     return retStr;
@@ -348,12 +354,10 @@ end
 -- path lib的cpath路径
 function this.tryRequireClib(libName , libPath)
     this.printToVSCode("tryRequireClib search : [" .. libName .. "] in "..libPath);
-
-    local save_cpath = package.cpath;
-    package.cpath = libPath;
+    package.cpath = package.cpath  .. ';' .. libPath;
+    this.printToVSCode("package.cpath:" .. package.cpath);
     local status, err = pcall(function() hookLib = require(libName) end);
     if status then
-        package.cpath = save_cpath;
         if type(hookLib) == "table" and this.getTableMemberNum(hookLib) > 0 then
             this.printToVSCode("tryRequireClib success : [" .. libName .. "] in "..libPath);
             return true;
@@ -370,7 +374,6 @@ function this.tryRequireClib(libName , libPath)
         end
         this.printToVSCode("[Require clib error]: " .. err, 0);
     end
-    package.cpath = save_cpath;
     return false
 end
 ------------------------字符串处理-------------------------
@@ -824,7 +827,11 @@ function this.dataProcess( dataStr )
             if nil == OSType then OSType = "Windows_NT" end
         end
 
-        clibPath = tostring(dataTable.info.clibPath);
+        if type(dataTable.info.clibPath) == "string" then 
+            if nil == clibPath then clibPath = dataTable.info.clibPath end
+        else
+            if nil == clibPath then clibPath = ""; pathErrTip = "未能正确获取libpdebug库所在位置, 可能无法加载libpdebug库。" end
+        end
 
         if  tostring(dataTable.info.pathCaseSensitivity) == "false" then
             pathCaseSensitivity =  0;
