@@ -95,8 +95,8 @@ local TempFilePath_luaString = ""; --VSCode端配置的临时文件存放路径
 local connectHost;              --记录连接端IP
 local connectPort;              --记录连接端口号
 local sock;                     --tcp socket
-local OSType;                --VSCode识别出的系统类型
-local clibPath;                 --chook库在VScode端的路径
+local OSType;                --VSCode识别出的系统类型，也可以自行设置。Windows_NT | Linux | Darwin
+local clibPath;                 --chook库在VScode端的路径，也可自行设置。
 local hookLib;                  --chook库的引用实例
 --标记位
 local logLevel = 1;             --日志等级all/info/error. 此设置对应的是VSCode端设置的日志等级.
@@ -109,6 +109,7 @@ local coroutinePool = {};       --保存用户协程的队列
 local winDiskSymbolUpper = false;--设置win下盘符的大小写。以此确保从VSCode中传入的断点路径,cwd和从lua虚拟机获得的文件路径盘符大小写一致
 local stopOnEntry;
 local loadclibErrReason = '未能在clibpath路径下找到libpdebug 或 launch.json文件的配置项useCHook被设置为false.';
+local OSTypeErrTip = "";
 local pathErrTip = ""
 local winDiskSymbolTip = "";
 local isAbsolutePath = false;
@@ -298,6 +299,9 @@ function this.getBaseInfo()
     retStr = retStr .. " | supportREPL:".. tostring(outputIsUseLoadstring);
     retStr = retStr .. " | codeEnv:" .. tostring(OSType) .. '\n';
     retStr = retStr .. moreInfoStr;
+    if OSTypeErrTip ~= nil and OSTypeErrTip ~= '' then
+        retStr = retStr .. '\n' ..OSTypeErrTip;
+    end
     return retStr;
 end
 
@@ -821,10 +825,17 @@ function this.dataProcess( dataStr )
         cwd = this.genUnifiedPath(dataTable.info.cwd);
         logLevel = tonumber(dataTable.info.logLevel) or 1;
 
-        if type(dataTable.info.OSType) == "string" then 
-            if nil == OSType then OSType = dataTable.info.OSType end
+        if nil == OSType then
+            --用户未主动设置OSType, 接收VSCode传来的数据
+            if type(dataTable.info.OSType) == "string" then 
+                OSType = dataTable.info.OSType;
+            else
+                OSType = "Windows_NT";
+                --tips
+                OSTypeErrTip = "未能检测出OSType, 可能是node os库未能加载，系统使用默认设置Windows_NT"
+            end
         else
-            if nil == OSType then OSType = "Windows_NT" end
+            --用户自设OSType, 使用用户的设置
         end
 
         local isUserSetClibPath = false;
