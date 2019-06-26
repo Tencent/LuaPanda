@@ -827,10 +827,18 @@ function this.dataProcess( dataStr )
             if nil == OSType then OSType = "Windows_NT" end
         end
 
-        if type(dataTable.info.clibPath) == "string" then 
-            if nil == clibPath then clibPath = dataTable.info.clibPath end
+        local isUserSetClibPath = false;
+        if nil == clibPath then
+            --用户未设置clibPath, 接收VSCode传来的数据
+            if type(dataTable.info.clibPath) == "string" then  
+                clibPath = dataTable.info.clibPath;
+            else 
+                clibPath = ""; 
+                pathErrTip = "未能正确获取libpdebug库所在位置, 可能无法加载libpdebug库。";
+            end
         else
-            if nil == clibPath then clibPath = ""; pathErrTip = "未能正确获取libpdebug库所在位置, 可能无法加载libpdebug库。" end
+            --用户自设clibPath
+            isUserSetClibPath = true;
         end
 
         if  tostring(dataTable.info.pathCaseSensitivity) == "false" then
@@ -841,26 +849,36 @@ function this.dataProcess( dataStr )
 
         --查找c++的hook库是否存在
         if tostring(dataTable.info.useCHook) == "true" then
-            local clibExt, platform;
-            if OSType == "Darwin" then clibExt = "/?.so;"; platform = "mac";
-            elseif OSType == "Linux" then clibExt = "/?.so;"; platform = "linux";
-            else clibExt = "/?.dll;"; platform = "win";   end
-
-            local lua_ver;
-            if _VERSION == "Lua 5.1" then
-                lua_ver = "501";
+            if isUserSetClibPath == true then
+                if luapanda_chook ~= nil then
+                    hookLib = luapanda_chook;
+                else
+                    if not(this.tryRequireClib("libpdebug", clibPath)) then
+                        this.printToVSCode("Require clib failed, use Lua to continue debug, use LuaPanda.getInfo() for more information.", 1);
+                    end
+                end
             else
-                lua_ver = "503";
-            end
+                local clibExt, platform;
+                if OSType == "Darwin" then clibExt = "/?.so;"; platform = "mac";
+                elseif OSType == "Linux" then clibExt = "/?.so;"; platform = "linux";
+                else clibExt = "/?.dll;"; platform = "win";   end
 
-            local x86Path = clibPath.. platform .."/x86/".. lua_ver .. clibExt;
-            local x64Path = clibPath.. platform .."/x86_64/".. lua_ver .. clibExt;
+                local lua_ver;
+                if _VERSION == "Lua 5.1" then
+                    lua_ver = "501";
+                else
+                    lua_ver = "503";
+                end
 
-            if luapanda_chook ~= nil then
-                hookLib = luapanda_chook;
-            else
-                if not(this.tryRequireClib("libpdebug", x64Path) or this.tryRequireClib("libpdebug", x86Path)) then
-                    this.printToVSCode("Require clib failed, use Lua to continue debug, use LuaPanda.getInfo() for more information.", 1);
+                local x86Path = clibPath.. platform .."/x86/".. lua_ver .. clibExt;
+                local x64Path = clibPath.. platform .."/x86_64/".. lua_ver .. clibExt;
+
+                if luapanda_chook ~= nil then
+                    hookLib = luapanda_chook;
+                else
+                    if not(this.tryRequireClib("libpdebug", x64Path) or this.tryRequireClib("libpdebug", x86Path)) then
+                        this.printToVSCode("Require clib failed, use Lua to continue debug, use LuaPanda.getInfo() for more information.", 1);
+                    end
                 end
             end
         end
