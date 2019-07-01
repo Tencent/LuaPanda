@@ -67,6 +67,13 @@ export class dataProcesser {
                 data = this.getDataJsonCatch +  data;
             }
             cmdInfo = JSON.parse(data);
+            if (cmdInfo.info !== undefined) {
+                for (let i = 0, len = cmdInfo.info.length; i < len; i++) {
+                    if (cmdInfo.info[i].type === "string") {
+                        cmdInfo.info[i].value = Buffer.from(cmdInfo.info[i].value, 'base64').toString()
+                    }
+                }
+            }
             this.getDataJsonCatch  = "";
         }
         catch(e){

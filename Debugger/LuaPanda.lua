@@ -626,6 +626,14 @@ end
 -- 向adapter发消息
 -- @sendTab 消息体table
 function this.sendMsg( sendTab )
+    if sendTab["info"] ~= nil then
+        for _, v in ipairs(sendTab["info"]) do
+            if v["type"] == "string" then
+                v["value"] = tools.base64encode(v["value"])
+            end
+        end
+    end
+
     local sendStr = json.encode(sendTab);
     if currentRunState == runState.DISCONNECT then
         this.printToConsole("[debugger error] disconnect but want sendMsg:" .. sendStr, 2);
