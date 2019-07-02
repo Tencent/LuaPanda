@@ -107,6 +107,7 @@ local pathCaseSensitivity = 1;  --路径是否发大小写敏感，这个选项�
 local recvMsgQueue = {};        --接收的消息队列
 local coroutinePool = {};       --保存用户协程的队列
 local winDiskSymbolUpper = false;--设置win下盘符的大小写。以此确保从VSCode中传入的断点路径,cwd和从lua虚拟机获得的文件路径盘符大小写一致
+local isNeedB64EncodeStr = false;-- 记录是否使用base64编码字符串
 local stopOnEntry;
 local loadclibErrReason = '未能在clibpath路径下找到libpdebug 或 launch.json文件的配置项useCHook被设置为false.';
 local OSTypeErrTip = "";
@@ -326,7 +327,7 @@ function this.getInfo()
     else
         retStr = retStr .. "useCHook:false";
     end
-    
+
     if logLevel == 0 or consoleLogLevel == 0 then
         retStr = retStr .. "\n说明:日志等级过低，会影响执行效率。请调整logLevel和consoleLogLevel值 >= 1";
     end
@@ -628,7 +629,7 @@ end
 -- 向adapter发消息
 -- @sendTab 消息体table
 function this.sendMsg( sendTab )
-    if sendTab["info"] ~= nil then
+    if isNeedB64EncodeStr and sendTab["info"] ~= nil then
         for _, v in ipairs(sendTab["info"]) do
             if v["type"] == "string" then
                 v["value"] = tools.base64encode(v["value"])
@@ -825,6 +826,9 @@ function this.dataProcess( dataStr )
         end
     elseif dataTable.cmd == "initSuccess" then
         --初始化会传过来一些变量，这里记录这些变量
+        if dataTable.info.isNeedB64EncodeStr == "true" then
+            isNeedB64EncodeStr = true
+        end
         luaFileExtension = dataTable.info.luaFileExtension
         local TempFilePath = dataTable.info.TempFilePath;
         if TempFilePath:sub(-1, -1) == [[\]] or TempFilePath:sub(-1, -1) == [[/]] then
@@ -922,7 +926,7 @@ function this.dataProcess( dataStr )
                 isUseLoadstring = 1;
             end
         end
-        local tab = { debuggerVer = tostring(debuggerVer) , UseHookLib = tostring(isUseHookLib) , UseLoadstring = tostring(isUseLoadstring) };
+        local tab = { debuggerVer = tostring(debuggerVer) , UseHookLib = tostring(isUseHookLib) , UseLoadstring = tostring(isUseLoadstring), isNeedB64EncodeStr = tostring(isNeedB64EncodeStr) };
         msgTab.info  = tab;
         this.sendMsg(msgTab);
         --上面getBK中会判断当前状态是否WAIT_CMD, 所以最后再切换状态。

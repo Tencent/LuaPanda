@@ -1,6 +1,7 @@
 import { luaDebugRuntime } from './luaDebugRuntime';
 import { Socket } from 'net';
 import { DebugLogger } from './LogManager';
+import { LuaDebugSession } from './luaDebug';
 
 //网络收发消息，记录回调
 export class dataProcesser {
@@ -67,7 +68,7 @@ export class dataProcesser {
                 data = this.getDataJsonCatch +  data;
             }
             cmdInfo = JSON.parse(data);
-            if (cmdInfo.info !== undefined) {
+            if (LuaDebugSession.isNeedB64EncodeStr && cmdInfo.info !== undefined) {
                 for (let i = 0, len = cmdInfo.info.length; i < len; i++) {
                     if (cmdInfo.info[i].type === "string") {
                         cmdInfo.info[i].value = Buffer.from(cmdInfo.info[i].value, 'base64').toString()
