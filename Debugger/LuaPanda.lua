@@ -235,9 +235,11 @@ end
 function this.clearData()
     -- reset breaks
     breaks = {};
+    pathFormatCache = {};
     this.breaks = breaks;
     if hookLib ~= nil then
-        hookLib.sync_breakpoints(); -- 这个函数不能兼容空breaks
+        hookLib.sync_breakpoints(); --清空断点信息
+        hookLib.clear_pathcache(); --清空路径缓存
     end
 end
 

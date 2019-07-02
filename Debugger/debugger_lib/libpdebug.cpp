@@ -211,6 +211,13 @@ void call_lua_function(lua_State *L, const char * lua_function_name, int retCoun
 
 
 //------------Lua同步数据接口------------
+//lua层主动清除路径缓存
+extern "C" int clear_pathcache(lua_State *L)
+{
+    path_cache_list.clear();
+    return 0;
+}
+
 //lua主动调用从c获取current_hook_state状态
 extern "C" int get_libhook_state(lua_State *L)
 {
@@ -753,6 +760,7 @@ static luaL_Reg libpdebug[] = {
     { "endHook", endHook },                       //结束hook，停止调试
     { "get_libhook_state", get_libhook_state },
     { "get_last_source", get_last_source },
+    { "clear_pathcache", clear_pathcache },
     { NULL, NULL }
 };
 
