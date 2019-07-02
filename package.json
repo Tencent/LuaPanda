@@ -102,6 +102,11 @@
 								"description": "设置运行时的工程路径",
 								"default": "${workspaceFolder}"
 							},
+							"isNeedB64EncodeStr": {
+								"type": "boolean",
+								"description": "是否使用base64编码传输字符串，默认请开启。",
+								"default": true
+							},
 							"luaFileExtension": {
 								"type": "string",
 								"description": "Lua文件后缀",
@@ -163,6 +168,7 @@
 						"name": "LuaPanda",
 						"program": "${workspaceFolder}",
 						"cwd": "${workspaceFolder}",
+						"isNeedB64EncodeStr": true,
 						"luaFileExtension": "",
 						"pathCaseSensitivity": true,
 						"connectionPort": 8818,
@@ -178,6 +184,7 @@
 						"name": "LuaPanda-DebugFile",
 						"program": "${workspaceFolder}",
 						"cwd": "${workspaceFolder}",
+						"isNeedB64EncodeStr": true,
 						"luaFileExtension": "",
 						"pathCaseSensitivity": true,
 						"connectionPort": 8818,
