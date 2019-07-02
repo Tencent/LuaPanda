@@ -22,6 +22,7 @@ import { StatusBarManager } from './StatusBarManager';
 import { LineBreakpoint, ConditionBreakpoint, LogPoint } from './BreakPoint';
 import { Tools } from './Tools';
 export class LuaDebugSession extends LoggingDebugSession {
+    public static isNeedB64EncodeStr: boolean = false;
     private static THREAD_ID = 1; 	  //调试器不支持多线程，硬编码THREAD_ID为1
     public static TCPPort = 0;			//和客户端连接的端口号，通过VScode的设置赋值
     private static breakpointsArray; //在socket连接前临时保存断点的数组
@@ -139,6 +140,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         sendArgs["stopOnEntry"] = !!args.stopOnEntry;
         sendArgs["luaFileExtension"] = args.luaFileExtension;
         sendArgs["cwd"] = args.cwd;
+        sendArgs["isNeedB64EncodeStr"] = !!args.isNeedB64EncodeStr;
         sendArgs["TempFilePath"] = args.TempFilePath;
         sendArgs["logLevel"] = args.logLevel;
         sendArgs["debugMode"] = args.DebugMode;
@@ -173,6 +175,11 @@ export class LuaDebugSession extends LoggingDebugSession {
                     this.UseLoadstring = true;
                 } else {
                     this.UseLoadstring = false;
+                }
+                if (info.isNeedB64EncodeStr === "true") {
+                    LuaDebugSession.isNeedB64EncodeStr = true;
+                } else {
+                    LuaDebugSession.isNeedB64EncodeStr = false;
                 }
                 if (info.UseHookLib == "1") { }
                 //已建立连接，并完成初始化
