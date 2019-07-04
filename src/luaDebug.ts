@@ -148,6 +148,9 @@ export class LuaDebugSession extends LoggingDebugSession {
         sendArgs["OSType"] = os.type();
         sendArgs["clibPath"] = clibPath;
         sendArgs["useCHook"] = args.useCHook;
+        let pkg = require("../package.json");
+        let adapterVersion = pkg.version;
+        sendArgs["adapterVersion"] = String(adapterVersion);
 
         if(args.docPathReplace instanceof Array && args.docPathReplace.length == 2 ){
             LuaDebugSession.replacePath = new Array( Tools.genUnifiedPath(String(args.docPathReplace[0])), Tools.genUnifiedPath(String(args.docPathReplace[1])));
@@ -171,6 +174,21 @@ export class LuaDebugSession extends LoggingDebugSession {
             this._runtime.start((arr, info) => {
                 DebugLogger.AdapterInfo("已建立连接，发送初始化协议和断点信息!");
                 //设置标记位
+                if (typeof info.debuggerVer == "string"){
+                    //转数字
+                    let DVerArr = info.debuggerVer.split(".");
+                    let AVerArr = String(adapterVersion).split(".");
+                    if (DVerArr.length == AVerArr.length && DVerArr.length == 3 ){
+                        //比较大版本，大版本相差1就提示
+                        if ( parseInt(AVerArr[0]) > parseInt(DVerArr[0]) ){
+                            this._runtime.showTip("调试器Lua文件较旧, 建议升级至最新版本。获取帮助 https://github.com/Tencent/LuaPanda ");
+                        }
+                        //比较小版本，小版本相差20就提示
+                        if ( (  parseInt(AVerArr[1]) - parseInt(DVerArr[1])  ) >= 20 ){
+                            this._runtime.showTip("调试器Lua文件较旧, 建议升级至最新版本。获取帮助 https://github.com/Tencent/LuaPanda ");
+                        }
+                    }
+                }
                 if (info.UseLoadstring == "1") {
                     this.UseLoadstring = true;
                 } else {

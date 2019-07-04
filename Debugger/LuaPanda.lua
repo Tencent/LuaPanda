@@ -19,6 +19,12 @@ API:
     LuaPanda.getInfo()
         返回获取调试器信息。包括版本号，是否使用lib库，系统是否支持loadstring(load方法)
 
+    LuaPanda.help()
+        返回一些帮助信息。
+
+    LuaPanda.doctor()
+        返回对当前环境的诊断信息，提示可能存在的问题。
+
     LuaPanda.getCWD()
         用户可以调用或在调试控制台中输出这个函数，返回帮助设置CWD的路径。比如
         cwd:      F:/1/2/3/4/5
@@ -36,18 +42,17 @@ API:
 ]]
 
 --用户设置项
-local openAttachMode = true;            --是否开启attach模式。attach模式开启后可以在任意时刻启动vscode连接调试。缺点是不调试时也会略降低lua执行效率(会不断进行attach请求)
+local openAttachMode = true;            --是否开启attach模式。attach模式开启后可以在任意时刻启动vscode连接调试。缺点是没有连接调试时也会略降低lua执行效率(会不断进行attach请求)
 local attachInterval = 1;               --attach间隔时间(s)
-local TCPSplitChar = "|*|";             --json协议分隔符，如果用户传输的数据中包含相同符号会造成协议被错误分割，保证和传输内容不同即可，如无问题不必修改
 local customGetSocketInstance = nil;    --支持用户实现一个自定义调用luasocket的函数，函数返回值必须是一个socket实例。例: function() return require("socket.core").tcp() end;
-local consoleLogLevel = 2;           --打印在控制台(print)的日志等级all/info/error.
+local consoleLogLevel = 2;           --打印在控制台(print)的日志等级 0 : all/ 1: info/ 2: error.
 local connectTimeoutSec = 0.005;       --等待连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
 --用户设置项END
 
 local debuggerVer = "2.1.1";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
-local tools = require("DebugTools");     --引用的开源工具，包括json解析和table展开工具
+local tools = require("DebugTools");     --引用的开源工具，包括json解析和table展开工具等
 this.tools = tools;
 this.curStackId = 0;
 --json处理
@@ -74,6 +79,7 @@ local runState = {
     HIT_BREAKPOINT = 10
 };
 
+local TCPSplitChar = "|*|";             --json协议分隔符，请不要修改
 local MAX_TIMEOUT_SEC = 3600 * 24;   --网络最大超时等待时间
 --当前运行状态
 local currentRunState;
@@ -98,6 +104,7 @@ local sock;                     --tcp socket
 local OSType;                --VSCode识别出的系统类型，也可以自行设置。Windows_NT | Linux | Darwin
 local clibPath;                 --chook库在VScode端的路径，也可自行设置。
 local hookLib;                  --chook库的引用实例
+local adapterVer;               --VScode传来的adapter版本号
 --标记位
 local logLevel = 1;             --日志等级all/info/error. 此设置对应的是VSCode端设置的日志等级.
 local variableRefIdx = 1;       --变量索引
@@ -108,12 +115,13 @@ local recvMsgQueue = {};        --接收的消息队列
 local coroutinePool = {};       --保存用户协程的队列
 local winDiskSymbolUpper = false;--设置win下盘符的大小写。以此确保从VSCode中传入的断点路径,cwd和从lua虚拟机获得的文件路径盘符大小写一致
 local isNeedB64EncodeStr = false;-- 记录是否使用base64编码字符串
-local stopOnEntry;
-local loadclibErrReason = '未能在clibpath路径下找到libpdebug 或 launch.json文件的配置项useCHook被设置为false.';
+local loadclibErrReason = 'launch.json文件的配置项useCHook被设置为false.';
 local OSTypeErrTip = "";
 local pathErrTip = ""
 local winDiskSymbolTip = "";
 local isAbsolutePath = false;
+local stopOnEntry;         --用户在VSCode端设置的是否打开stopOnEntry
+local userSetUseClib;    --用户在VSCode端设置的是否是用clib库
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
 local stepOutCounter = 0;       --STEPOVER out计数器
@@ -126,7 +134,7 @@ local stopConnectTime = 0;      --用来临时记录stop断开连接的时间
 local isInMainThread;
 local receiveMsgTimer = 0;
 local pathFormatCache = {};
-
+local isUserSetClibPath = false;        --用户是否在本文件中自设了clib路径
 --5.1/5.3兼容
 if _VERSION == "Lua 5.1" then
     debugger_loadString = loadstring;
@@ -283,7 +291,7 @@ end
 
 --返回版本号等配置
 function this.getBaseInfo()
-    local retStr = "Lua Ver:" .. _VERSION .." | Debugger Ver:"..tostring(debuggerVer);
+    local retStr = "Lua Ver:" .. _VERSION .." | adapterVer:" .. tostring(adapterVer) .. " | Debugger Ver:"..tostring(debuggerVer);
     local moreInfoStr = "";
     if hookLib ~= nil then
         local clibVer, forluaVer = hookLib.sync_getLibVersion();
@@ -291,7 +299,7 @@ function this.getBaseInfo()
         retStr = retStr.. " | hookLib Ver:" .. clibStr;
         moreInfoStr = moreInfoStr .. "说明: 已加载 libpdebug 库.";
     else
-        moreInfoStr = moreInfoStr .. "说明: 未能加载 libpdebug 库。原因是 ".. loadclibErrReason;
+        moreInfoStr = moreInfoStr .. "说明: 未能加载 libpdebug 库。原因请使用 LuaPanda.doctor() 查看";
     end
 
     local outputIsUseLoadstring = false
@@ -308,6 +316,127 @@ function this.getBaseInfo()
     return retStr;
 end
 
+--返回一些帮助信息
+function this.help()
+    local retStr =     '\nFAQ:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/FAQ.md';
+    retStr = retStr .. '\n真机调试:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
+    retStr = retStr .. '\n升级指引:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
+    retStr = retStr .. '\n调试器原理:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
+    return retStr;
+end
+
+--自动诊断当前环境的错误，并输出信息
+function this.doctor()
+    local retStr = '';
+    if debuggerVer ~= adapterVer then 
+        retStr = retStr .. "\n- 建议更新版本\nLuaPanda VSCode插件版本是" ..  adapterVer .. ", LuaPanda.lua文件版本是" ..  debuggerVer .. "。建议检查并更新到最新版本。";
+        retStr = retStr .. "\n更新帮助: https://github.com/Tencent/LuaPanda";
+        retStr = retStr .. "\n下载地址: https://github.com/Tencent/LuaPanda/releases";
+    end
+    --plibdebug
+    if hookLib == nil then
+        retStr = retStr .. "\n\n- libpdebug 库没有加载\n";
+        if userSetUseClib then 
+            --用户允许使用clib插件
+            if isUserSetClibPath == true then 
+                --用户自设了clib地址
+                retStr = retStr .. "用户使用 LuaPanda.lua 中 clibPath 变量指定了 plibdebug 的位置: " .. clibPath;
+                if this.tryRequireClib("libpdebug", clibPath) then 
+                    retStr = retStr .. "\n引用成功";
+                else
+                    retStr = retStr .. "\n引用错误:" .. loadclibErrReason;
+                end
+            else
+                --使用默认clib地址
+                local clibExt, platform;
+                if OSType == "Darwin" then clibExt = "/?.so;"; platform = "mac";
+                elseif OSType == "Linux" then clibExt = "/?.so;"; platform = "linux";
+                else clibExt = "/?.dll;"; platform = "win";   end
+                local lua_ver;
+                if _VERSION == "Lua 5.1" then
+                    lua_ver = "501";
+                else
+                    lua_ver = "503";
+                end
+                local x86Path = clibPath.. platform .."/x86/".. lua_ver .. clibExt;
+                local x64Path = clibPath.. platform .."/x86_64/".. lua_ver .. clibExt;
+    
+                retStr = retStr .. "尝试引用x64库: ".. x64Path;
+                if this.tryRequireClib("libpdebug", x64Path) then
+                    retStr = retStr .. "\n引用成功";
+                else
+                    retStr = retStr .. "\n引用错误:" .. loadclibErrReason;
+                    retStr = retStr .. "\n尝试引用x86库: ".. x86Path;
+                    if this.tryRequireClib("libpdebug", x86Path) then
+                        retStr = retStr .. "\n引用成功";
+                    else
+                        retStr = retStr .. "\n引用错误:" .. loadclibErrReason;
+                    end
+                end
+            end
+        else
+            retStr = retStr .. "原因是" .. loadclibErrReason;
+        end
+    end
+
+    --path
+    --尝试直接读当前getinfo指向的文件，看能否找到。如果能，提示正确，如果找不到，给出提示，建议玩家在这个文件中打一个断点
+    --检查断点，文件和当前文件的不同，给出建议
+    local runSource = lastRunFilePath;
+    if hookLib ~= nil then
+        runSource = this.getPath(tostring(hookLib.get_last_source()));
+    end
+    if runSource and runSource ~= "" then
+        -- 读文件
+        local isFileExist = this.fileExists(runSource);
+        if not isFileExist then 
+            retStr = retStr .. "\n\n- 路径存在问题\n";
+            --解析路径，得到文件名，到断点路径中查这个文件名
+            local pathArray = this.stringSplit(runSource, '/');
+            --如果pathArray和断点能匹配上
+            local fileMatch= false;
+            for key, value in pairs(this.getBreaks()) do
+                local xx = string.find(key, pathArray[#pathArray], 1, true);
+                if xx then 
+                    --和断点匹配了
+                    fileMatch = true;
+                    -- retStr = retStr .. "\n请对比如下路径:\n";
+                    retStr = retStr .. this.getCWD();
+                    retStr = retStr .. "\nfilepath: " .. key;
+                    if isAbsolutePath then
+                        retStr = retStr .. "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。" .. winDiskSymbolTip;
+                    else
+                        retStr = retStr .. "\n说明:从lua虚拟机获取到的是相对路径，format来源于cwd+getinfo拼接。" .. winDiskSymbolTip;
+                    end
+                    retStr = retStr .. "\nfilepath是VSCode通过获取到的文件正确路径 , 对比format和filepath，调整launch.json中CWD，或改变VSCode打开文件夹的位置。使format和filepath一致即可。";   
+                end
+            end
+
+            if fileMatch == false then
+                 --未能和断点匹配
+                 retStr = retStr .. "\n找不到文件:"  .. runSource .. ", 请检查路径是否正确。\n或者在VSCode文件" .. pathArray[#pathArray] .. "中打一个断点后，再执行一次doctor命令，查看路径分析结果。";
+            end
+        end
+    end
+
+    --日志等级对性能的影响
+    if logLevel < 1 or consoleLogLevel < 1 then
+        retStr = retStr .. "\n\n- 日志等级\n";
+        if logLevel < 1 then 
+            retStr = retStr .. "当前日志等级是" ..  logLevel .. ", 过低的日志等级会降低调试速度，建议调整launch.json中的logLevel选项";
+        end
+        if consoleLogLevel < 1 then 
+            retStr = retStr .. "当前console日志等级是" ..  consoleLogLevel .. ", 过低的日志等级会降低调试速度，建议调整LuaPanda.lua头部的consoleLogLevel选项";
+        end
+    end
+    return retStr;
+end
+
+function this.fileExists(path)
+    local f=io.open(path,"r");
+    if f~= nil then io.close(f) return true else return false end
+ end
+
 --返回一些信息，帮助用户定位问题
 function this.getInfo()
     --用户设置项
@@ -322,7 +451,7 @@ function this.getInfo()
     retStr = retStr .. "pathCaseSensitivity:" .. pathCaseSensitivity .. ' | ' ;
     retStr = retStr .. "attachMode:".. tostring(openAttachMode).. ' | ' ;
 
-    if hookLib ~= nil then
+    if userSetUseClib then
         retStr = retStr .. "useCHook:true";
     else
         retStr = retStr .. "useCHook:false";
@@ -361,26 +490,28 @@ end
 -- path lib的cpath路径
 function this.tryRequireClib(libName , libPath)
     this.printToVSCode("tryRequireClib search : [" .. libName .. "] in "..libPath);
+    local savedCpath = package.cpath;
     package.cpath = package.cpath  .. ';' .. libPath;
     this.printToVSCode("package.cpath:" .. package.cpath);
     local status, err = pcall(function() hookLib = require(libName) end);
     if status then
         if type(hookLib) == "table" and this.getTableMemberNum(hookLib) > 0 then
             this.printToVSCode("tryRequireClib success : [" .. libName .. "] in "..libPath);
+            package.cpath = savedCpath;
             return true;
         else
             loadclibErrReason = "tryRequireClib fail : require success, but member function num <= 0; [" .. libName .. "] in "..libPath;
             this.printToVSCode(loadclibErrReason);
             hookLib = nil;
+            package.cpath = savedCpath;
             return false;
         end
     else
         -- 此处考虑到tryRequireClib会被调用两次，日志级别设置为0，防止输出不必要的信息。
-        if not (string.match(err, "%%1 is not a valid Win32 application")  or string.match(err, "module 'libpdebug' not found")) then
-            loadclibErrReason = err;
-        end
+        loadclibErrReason = err;
         this.printToVSCode("[Require clib error]: " .. err, 0);
     end
+    package.cpath = savedCpath;
     return false
 end
 ------------------------字符串处理-------------------------
@@ -852,7 +983,8 @@ function this.dataProcess( dataStr )
             --用户自设OSType, 使用用户的设置
         end
 
-        local isUserSetClibPath = false;
+        --检测用户是否自设了clib路径
+        isUserSetClibPath = false;
         if nil == clibPath then
             --用户未设置clibPath, 接收VSCode传来的数据
             if type(dataTable.info.clibPath) == "string" then  
@@ -874,7 +1006,8 @@ function this.dataProcess( dataStr )
 
         --查找c++的hook库是否存在
         if tostring(dataTable.info.useCHook) == "true" then
-            if isUserSetClibPath == true then
+            userSetUseClib = true;      --用户确定使用clib
+            if isUserSetClibPath == true then   --如果用户自设了clib路径
                 if luapanda_chook ~= nil then
                     hookLib = luapanda_chook;
                 else
@@ -906,8 +1039,12 @@ function this.dataProcess( dataStr )
                     end
                 end
             end
+        else
+            userSetUseClib = false;
         end
-        --设置是否stopOnEntry
+
+        --adapter版本信息
+        adapterVer = tostring(dataTable.info.adapterVersion);
         local msgTab = this.getMsgTable("initSuccess", this.getCallbackId());
         --回传是否使用了lib，是否有loadstring函数
         local isUseHookLib = 0;
@@ -926,7 +1063,7 @@ function this.dataProcess( dataStr )
                 isUseLoadstring = 1;
             end
         end
-        local tab = { debuggerVer = tostring(debuggerVer) , UseHookLib = tostring(isUseHookLib) , UseLoadstring = tostring(isUseLoadstring), isNeedB64EncodeStr = tostring(isNeedB64EncodeStr) };
+        local tab = { debuggerVer = tostring(debuggerVer) , UseHookLib = tostring(isUseHookLib) , UseLoadstring = tostring(isUseLoadstring), isNeedB64EncodeStr = tostring(isNeedB64EncodeStr), debuggerVer = tostring(debuggerVer) };
         msgTab.info  = tab;
         this.sendMsg(msgTab);
         --上面getBK中会判断当前状态是否WAIT_CMD, 所以最后再切换状态。
