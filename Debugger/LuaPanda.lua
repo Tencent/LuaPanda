@@ -1348,20 +1348,14 @@ function this.getPath( info )
     end
 
     local originalPath = filePath;
-    --判断@
+    --如果路径头部有@,去除
     if filePath:sub(1,1) == '@' then
         filePath = filePath:sub(2);
     end
 
     --后缀处理
     if luaFileExtension ~= "" then
-        local checkExtension = string.sub(filePath, -6, -1)
-        local ExtensionMatchRes = this.revFindString(checkExtension, "%.");
-        if ExtensionMatchRes ~= nil then
-            --去后缀.这里的完整公式是(-1)*(6 - ExtensionMatchRes + 2)
-            filePath = string.sub(filePath, 1 , -6 - 2 + ExtensionMatchRes);
-        end
-        filePath = filePath.."."..luaFileExtension;
+        filePath = string.gsub(filePath, "%.%w+$",  luaFileExtension);
     end
 
     --拼路径
@@ -1371,7 +1365,6 @@ function this.getPath( info )
         isAbsolutePath = true;
     else
         isAbsolutePath = false;
-        --需要拼接
         if cwd ~= "" then
             --查看filePath中是否包含cwd
             local matchRes = string.find(filePath, cwd, 1, true);
