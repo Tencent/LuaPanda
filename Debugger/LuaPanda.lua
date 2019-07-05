@@ -395,9 +395,8 @@ function this.doctor()
             local pathArray = this.stringSplit(runSource, '/');
             --如果pathArray和断点能匹配上
             local fileMatch= false;
-            for key, value in pairs(this.getBreaks()) do
-                local xx = string.find(key, pathArray[#pathArray], 1, true);
-                if xx then 
+            for key, _ in pairs(this.getBreaks()) do
+                if string.find(key, pathArray[#pathArray], 1, true) then
                     --和断点匹配了
                     fileMatch = true;
                     -- retStr = retStr .. "\n请对比如下路径:\n";
@@ -1355,7 +1354,12 @@ function this.getPath( info )
 
     --后缀处理
     if luaFileExtension ~= "" then
-        filePath = string.gsub(filePath, "%.%w+$",  luaFileExtension);
+        --判断后缀中是否包含%1等魔法字符
+        if string.find(luaFileExtension, "%%%d") then
+            filePath = string.gsub(filePath, "%.%w+$", luaFileExtension);
+        else
+            filePath = string.gsub(filePath, "%.%w+$", '.' .. luaFileExtension);
+        end
     end
 
     --拼路径
