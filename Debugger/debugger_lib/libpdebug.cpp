@@ -185,28 +185,34 @@ void push_args(lua_State *L, T value ,ARGS... args){
 //push_args End
 
 template <typename ... ARGS>
-void call_lua_function(lua_State *L, const char * lua_function_name, int retCount , ARGS... args){
+int call_lua_function(lua_State *L, const char * lua_function_name, int retCount , ARGS... args){
     lua_getglobal(L, LUA_DEBUGGER_NAME);
     if (!lua_istable(L, -1)) {
-        printf("[Debug Lib Error]:call_lua_function get LUA_DEBUGGER_NAME error\n");
-        exit(1001);
-        return;
+        const char *err_msg = "[Debug Lib Error]:call_lua_function Get LUA_DEBUGGER_NAME error.\n";
+        print_to_vscode(L, err_msg, 2);
+        return -1;
     }
 
     lua_getfield(L, -1, lua_function_name);
     if (!lua_isfunction(L, -1)) {
-        printf("[Debug Lib Error]:call_lua_function get lua function %s error\n", lua_function_name);
-        exit(1002);
-        return;
+        char err_msg[100];
+        snprintf(err_msg, sizeof(err_msg), "[Debug Lib Error]:call_lua_function Get lua function %s error\n.", lua_function_name);
+        print_to_vscode(L, err_msg, 2);
+        return -1;
     }
 
     push_args(L, args...);
     int run_result = lua_pcall(L, sizeof...(args), retCount, 0);
     if (run_result) {
-        printf("[Debug Lib Error]:call_lua_function call lua function %s error %d\n", lua_function_name, run_result);
-        exit(1003);
-        return;
+        char err_msg[500];
+        const char *lua_error = lua_tostring(L, -1);
+        snprintf(err_msg, sizeof(err_msg), "[Debug Lib Error]:call_lua_function Call lua function %s error code: %d, error message: %s.\n", lua_function_name, run_result, lua_error);
+        print_to_vscode(L, err_msg, 2);
+        lua_pop(L, 1);
+        return run_result;
     }
+
+    return 0;
 }
 
 
@@ -353,7 +359,10 @@ const char* getPath(lua_State *L,const char* source){
     }
 
     //若缓存中没有，到lua中转换
-    call_lua_function(L, "getPath", 1 , source);
+    int lua_ret = call_lua_function(L, "getPath", 1 , source);
+    if (lua_ret != 0) {
+        return nullptr;
+    }
     const char* retSource = lua_tostring(L, -1);
     //加入缓存,返回
     path_transfer_node *nd = new path_transfer_node(source, retSource );
@@ -465,7 +474,10 @@ int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
     // 条件断点
     if (const_iter2->second.type == CONDITION_BREAKPOINT) {
         std::string condition = const_iter2->second.info;
-        call_lua_function(L, "IsMeetCondition", 1, condition.c_str());
+        int lua_ret = call_lua_function(L, "IsMeetCondition", 1, condition.c_str());
+        if (lua_ret != 0) {
+            return 0;
+        }
         // if (!lua_isboolean(L, -1)) {
         //     print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk process condition expression result error!", 2);
         //     return 0;
