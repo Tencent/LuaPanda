@@ -1354,11 +1354,12 @@ function this.getPath( info )
 
     --后缀处理
     if luaFileExtension ~= "" then
-        --判断后缀中是否包含%1等魔法字符
+        --判断后缀中是否包含%1等魔法字符.用于从lua虚拟机获取到的路径含.的情况
         if string.find(luaFileExtension, "%%%d") then
             filePath = string.gsub(filePath, "%.%w+$", luaFileExtension);
         else
-            filePath = string.gsub(filePath, "%.%w+$", '.' .. luaFileExtension);
+            filePath = string.gsub(filePath, "%.%w+$", "");
+            filePath = filePath .. "." .. luaFileExtension;
         end
     end
 
