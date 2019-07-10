@@ -291,39 +291,41 @@ end
 
 --返回版本号等配置
 function this.getBaseInfo()
-    local retStr = "Lua Ver:" .. _VERSION .. " | adapterVer:" .. tostring(adapterVer) .. " | Debugger Ver:" .. tostring(debuggerVer);
+    local strTable = {};
+    strTable[#strTable + 1] = "Lua Ver:" .. _VERSION .. " | adapterVer:" .. tostring(adapterVer) .. " | Debugger Ver:" .. tostring(debuggerVer);
     local moreInfoStr = "";
     if hookLib ~= nil then
         local clibVer, forluaVer = hookLib.sync_getLibVersion();
         local clibStr = forluaVer ~= nil and tostring(clibVer) .. " for " .. tostring(math.ceil(forluaVer)) or tostring(clibVer);
-        retStr = retStr.. " | hookLib Ver:" .. clibStr;
+        strTable[#strTable + 1] = " | hookLib Ver:" .. clibStr;
         moreInfoStr = moreInfoStr .. "说明: 已加载 libpdebug 库.";
     else
         moreInfoStr = moreInfoStr .. "说明: 未能加载 libpdebug 库。原因请使用 LuaPanda.doctor() 查看";
     end
 
     local outputIsUseLoadstring = false
-    if type(isUseLoadstring) == "number" and isUseLoadstring == 1 then 
+    if type(isUseLoadstring) == "number" and isUseLoadstring == 1 then
         outputIsUseLoadstring = true;
     end
 
-    retStr = retStr .. " | supportREPL:".. tostring(outputIsUseLoadstring);
-    retStr = retStr .. " | useBase64EncodeString:".. tostring(isNeedB64EncodeStr);
-    retStr = retStr .. " | codeEnv:" .. tostring(OSType) .. '\n';
-    retStr = retStr .. moreInfoStr;
+    strTable[#strTable + 1] = " | supportREPL:".. tostring(outputIsUseLoadstring);
+    strTable[#strTable + 1] = " | useBase64EncodeString:".. tostring(isNeedB64EncodeStr);
+    strTable[#strTable + 1] = " | codeEnv:" .. tostring(OSType) .. '\n';
+    strTable[#strTable + 1] = moreInfoStr;
     if OSTypeErrTip ~= nil and OSTypeErrTip ~= '' then
-        retStr = retStr .. '\n' ..OSTypeErrTip;
+        strTable[#strTable + 1] = '\n' ..OSTypeErrTip;
     end
-    return retStr;
+    return table.concat(strTable);
 end
 
 --返回一些帮助信息
 function this.help()
-    local retStr =     '\nFAQ:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/FAQ.md';
-    retStr = retStr .. '\n真机调试:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
-    retStr = retStr .. '\n升级指引:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
-    retStr = retStr .. '\n调试器原理:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
-    return retStr;
+    local strTable = {};
+    strTable[#strTable + 1] = '\nFAQ:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/FAQ.md';
+    strTable[#strTable + 1] = '\n真机调试:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
+    strTable[#strTable + 1] = '\n升级指引:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
+    strTable[#strTable + 1] = '\n调试器原理:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
+    return table.concat(strTable);
 end
 
 --自动诊断当前环境的错误，并输出信息
