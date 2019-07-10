@@ -956,26 +956,29 @@ function this.dataProcess( dataStr )
         end
     elseif dataTable.cmd == "initSuccess" then
         --初始化会传过来一些变量，这里记录这些变量
+        --Base64
         if dataTable.info.isNeedB64EncodeStr == "true" then
-            isNeedB64EncodeStr = true
+            isNeedB64EncodeStr = true;
+        else
+            isNeedB64EncodeStr = false;
         end
+        --path
         luaFileExtension = dataTable.info.luaFileExtension
         local TempFilePath = dataTable.info.TempFilePath;
         if TempFilePath:sub(-1, -1) == [[\]] or TempFilePath:sub(-1, -1) == [[/]] then
             TempFilePath = TempFilePath:sub(1, -2);
         end
-
         TempFilePath_luaString = TempFilePath;
         cwd = this.genUnifiedPath(dataTable.info.cwd);
+        --logLevel
         logLevel = tonumber(dataTable.info.logLevel) or 1;
-
+        --OS type
         if nil == OSType then
             --用户未主动设置OSType, 接收VSCode传来的数据
             if type(dataTable.info.OSType) == "string" then 
                 OSType = dataTable.info.OSType;
             else
                 OSType = "Windows_NT";
-                --tips
                 OSTypeErrTip = "未能检测出OSType, 可能是node os库未能加载，系统使用默认设置Windows_NT"
             end
         else
@@ -1062,7 +1065,7 @@ function this.dataProcess( dataStr )
                 isUseLoadstring = 1;
             end
         end
-        local tab = { debuggerVer = tostring(debuggerVer) , UseHookLib = tostring(isUseHookLib) , UseLoadstring = tostring(isUseLoadstring), isNeedB64EncodeStr = tostring(isNeedB64EncodeStr), debuggerVer = tostring(debuggerVer) };
+        local tab = { debuggerVer = tostring(debuggerVer) , UseHookLib = tostring(isUseHookLib) , UseLoadstring = tostring(isUseLoadstring), isNeedB64EncodeStr = tostring(isNeedB64EncodeStr) };
         msgTab.info  = tab;
         this.sendMsg(msgTab);
         --上面getBK中会判断当前状态是否WAIT_CMD, 所以最后再切换状态。

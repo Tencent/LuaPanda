@@ -135,6 +135,10 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             config.useCHook = true;
         }
 
+        if (config.isNeedB64EncodeStr == undefined) {
+            config.isNeedB64EncodeStr = true;
+        }
+        
         if (!this._server) {
             this._server = Net.createServer(socket => {
                 const session = new LuaDebugSession();
