@@ -346,7 +346,7 @@ const char* getPath(lua_State *L,const char* source){
     debug_auto_stack _tt(L);
 
     if(source == nullptr){
-        print_to_vscode(L, "[Debug Lib Error]:function getPath source == nullptr");
+        print_to_vscode(L, "[Debug Lib Error]:function getPath source == nullptr", 2);
         return "";
     }
 
