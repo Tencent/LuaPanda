@@ -202,14 +202,14 @@ int call_lua_function(lua_State *L, const char * lua_function_name, int retCount
     }
 
     push_args(L, args...);
-    int run_result = lua_pcall(L, sizeof...(args), retCount, 0);
-    if (run_result) {
-        char err_msg[500];
+    int err_code = lua_pcall(L, sizeof...(args), retCount, 0);
+    if (err_code) {
+        char err_msg[1024];
         const char *lua_error = lua_tostring(L, -1);
-        snprintf(err_msg, sizeof(err_msg), "[Debug Lib Error]:call_lua_function Call lua function %s error code: %d, error message: %s.\n", lua_function_name, run_result, lua_error);
+        snprintf(err_msg, sizeof(err_msg), "[Debug Lib Error]:call_lua_function Call lua function %s error code: %d, error message: %s.\n", lua_function_name, err_code, lua_error);
         print_to_vscode(L, err_msg, 2);
         lua_pop(L, 1);
-        return run_result;
+        return err_code;
     }
 
     return 0;
@@ -346,8 +346,8 @@ const char* getPath(lua_State *L,const char* source){
     debug_auto_stack _tt(L);
 
     if(source == nullptr){
-        //报错
-        return nullptr;
+        print_to_vscode(L, "[Debug Lib Error]:function getPath source == nullptr");
+        return "";
     }
 
     //检查缓存
@@ -361,7 +361,7 @@ const char* getPath(lua_State *L,const char* source){
     //若缓存中没有，到lua中转换
     int lua_ret = call_lua_function(L, "getPath", 1 , source);
     if (lua_ret != 0) {
-        return nullptr;
+        return "";
     }
     const char* retSource = lua_tostring(L, -1);
     //加入缓存,返回
@@ -633,9 +633,8 @@ int hook_process_code_section(lua_State *L, lua_Debug *ar){
 int checkHasBreakpoint(lua_State *L, const char * src1, int current_line, int sline , int eline){
     debug_auto_stack tt(L);
     //先检查行号，再置换路径
-    const char * src = getPath(L, src1);
-    if(src == nullptr){
-        printf("checkHasBreakpoint error ");
+    const char *src = getPath(L, src1);
+    if(!strcmp(src,"")){
         return 3;
     }
 
