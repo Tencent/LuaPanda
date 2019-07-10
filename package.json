@@ -169,13 +169,13 @@
 						"program": "${workspaceFolder}",
 						"cwd": "${workspaceFolder}",
 						"isNeedB64EncodeStr": true,
-						"luaFileExtension": "",
 						"pathCaseSensitivity": true,
+						"docPathReplace": [],
+						"luaFileExtension": "",
 						"connectionPort": 8818,
 						"stopOnEntry": true,
 						"useCHook": true,
-						"logLevel": 1,
-						"docPathReplace": []
+						"logLevel": 1
 					},
 					{
 						"type": "lua",
@@ -185,14 +185,13 @@
 						"program": "${workspaceFolder}",
 						"cwd": "${workspaceFolder}",
 						"isNeedB64EncodeStr": true,
-						"luaFileExtension": "",
 						"pathCaseSensitivity": true,
+						"luaPath" : "",
+						"luaFileExtension": "",
 						"connectionPort": 8818,
 						"stopOnEntry": true,
 						"useCHook": true,
 						"logLevel": 1,
-						"luaPath" : "",
-						"packagePath": []
 					}
 				]
 			}
