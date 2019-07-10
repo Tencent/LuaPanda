@@ -291,7 +291,7 @@ end
 
 --返回版本号等配置
 function this.getBaseInfo()
-    local retStr = "Lua Ver:" .. _VERSION .. " | adapterVer:" .. tostring(adapterVer) .. " | Debugger Ver:" .. tostring(debuggerVer) .. " | useBase64EncodeString:" .. tostring(isNeedB64EncodeStr);
+    local retStr = "Lua Ver:" .. _VERSION .. " | adapterVer:" .. tostring(adapterVer) .. " | Debugger Ver:" .. tostring(debuggerVer);
     local moreInfoStr = "";
     if hookLib ~= nil then
         local clibVer, forluaVer = hookLib.sync_getLibVersion();
@@ -308,6 +308,7 @@ function this.getBaseInfo()
     end
 
     retStr = retStr .. " | supportREPL:".. tostring(outputIsUseLoadstring);
+    retStr = retStr .. " | useBase64EncodeString:".. tostring(isNeedB64EncodeStr);
     retStr = retStr .. " | codeEnv:" .. tostring(OSType) .. '\n';
     retStr = retStr .. moreInfoStr;
     if OSTypeErrTip ~= nil and OSTypeErrTip ~= '' then
