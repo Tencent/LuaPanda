@@ -22,7 +22,7 @@ import { StatusBarManager } from './StatusBarManager';
 import { LineBreakpoint, ConditionBreakpoint, LogPoint } from './BreakPoint';
 import { Tools } from './Tools';
 export class LuaDebugSession extends LoggingDebugSession {
-    public static isNeedB64EncodeStr: boolean = false;
+    public static isNeedB64EncodeStr: boolean = true;
     private static THREAD_ID = 1; 	  //调试器不支持多线程，硬编码THREAD_ID为1
     public static TCPPort = 0;			//和客户端连接的端口号，通过VScode的设置赋值
     private static breakpointsArray; //在socket连接前临时保存断点的数组
