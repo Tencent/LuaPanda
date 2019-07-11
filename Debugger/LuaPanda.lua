@@ -291,60 +291,63 @@ end
 
 --返回版本号等配置
 function this.getBaseInfo()
-    local retStr = "Lua Ver:" .. _VERSION .. " | adapterVer:" .. tostring(adapterVer) .. " | Debugger Ver:" .. tostring(debuggerVer) .. " | useBase64EncodeString:" .. tostring(isNeedB64EncodeStr);
+    local strTable = {};
+    strTable[#strTable + 1] = "Lua Ver:" .. _VERSION .. " | adapterVer:" .. tostring(adapterVer) .. " | Debugger Ver:" .. tostring(debuggerVer);
     local moreInfoStr = "";
     if hookLib ~= nil then
         local clibVer, forluaVer = hookLib.sync_getLibVersion();
         local clibStr = forluaVer ~= nil and tostring(clibVer) .. " for " .. tostring(math.ceil(forluaVer)) or tostring(clibVer);
-        retStr = retStr.. " | hookLib Ver:" .. clibStr;
+        strTable[#strTable + 1] = " | hookLib Ver:" .. clibStr;
         moreInfoStr = moreInfoStr .. "说明: 已加载 libpdebug 库.";
     else
         moreInfoStr = moreInfoStr .. "说明: 未能加载 libpdebug 库。原因请使用 LuaPanda.doctor() 查看";
     end
 
     local outputIsUseLoadstring = false
-    if type(isUseLoadstring) == "number" and isUseLoadstring == 1 then 
+    if type(isUseLoadstring) == "number" and isUseLoadstring == 1 then
         outputIsUseLoadstring = true;
     end
 
-    retStr = retStr .. " | supportREPL:".. tostring(outputIsUseLoadstring);
-    retStr = retStr .. " | codeEnv:" .. tostring(OSType) .. '\n';
-    retStr = retStr .. moreInfoStr;
+    strTable[#strTable + 1] = " | supportREPL:".. tostring(outputIsUseLoadstring);
+    strTable[#strTable + 1] = " | useBase64EncodeString:".. tostring(isNeedB64EncodeStr);
+    strTable[#strTable + 1] = " | codeEnv:" .. tostring(OSType) .. '\n';
+    strTable[#strTable + 1] = moreInfoStr;
     if OSTypeErrTip ~= nil and OSTypeErrTip ~= '' then
-        retStr = retStr .. '\n' ..OSTypeErrTip;
+        strTable[#strTable + 1] = '\n' ..OSTypeErrTip;
     end
-    return retStr;
+    return table.concat(strTable);
 end
 
 --返回一些帮助信息
 function this.help()
-    local retStr =     '\nFAQ:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/FAQ.md';
-    retStr = retStr .. '\n真机调试:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
-    retStr = retStr .. '\n升级指引:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
-    retStr = retStr .. '\n调试器原理:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
-    return retStr;
+    local strTable = {};
+    strTable[#strTable + 1] = '\nFAQ:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/FAQ.md';
+    strTable[#strTable + 1] = '\n真机调试:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
+    strTable[#strTable + 1] = '\n升级指引:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
+    strTable[#strTable + 1] = '\n调试器原理:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
+    return table.concat(strTable);
 end
 
 --自动诊断当前环境的错误，并输出信息
 function this.doctor()
-    local retStr = '';
-    if debuggerVer ~= adapterVer then 
-        retStr = retStr .. "\n- 建议更新版本\nLuaPanda VSCode插件版本是" ..  adapterVer .. ", LuaPanda.lua文件版本是" ..  debuggerVer .. "。建议检查并更新到最新版本。";
-        retStr = retStr .. "\n更新帮助: https://github.com/Tencent/LuaPanda";
-        retStr = retStr .. "\n下载地址: https://github.com/Tencent/LuaPanda/releases";
+    local strTable = {};
+    if debuggerVer ~= adapterVer then
+        strTable[#strTable + 1] = "\n- 建议更新版本\nLuaPanda VSCode插件版本是" ..  adapterVer .. ", LuaPanda.lua文件版本是" ..  debuggerVer .. "。建议检查并更新到最新版本。";
+        strTable[#strTable + 1] = "\n更新帮助: https://github.com/Tencent/LuaPanda";
+        strTable[#strTable + 1] = "\n下载地址: https://github.com/Tencent/LuaPanda/releases";
     end
     --plibdebug
     if hookLib == nil then
-        retStr = retStr .. "\n\n- libpdebug 库没有加载\n";
-        if userSetUseClib then 
+        strTable[#strTable + 1] = "\n\n- libpdebug 库没有加载\n";
+        if userSetUseClib then
             --用户允许使用clib插件
-            if isUserSetClibPath == true then 
+            if isUserSetClibPath == true then
                 --用户自设了clib地址
-                retStr = retStr .. "用户使用 LuaPanda.lua 中 clibPath 变量指定了 plibdebug 的位置: " .. clibPath;
-                if this.tryRequireClib("libpdebug", clibPath) then 
-                    retStr = retStr .. "\n引用成功";
+                strTable[#strTable + 1] = "用户使用 LuaPanda.lua 中 clibPath 变量指定了 plibdebug 的位置: " .. clibPath;
+                if this.tryRequireClib("libpdebug", clibPath) then
+                    strTable[#strTable + 1] = "\n引用成功";
                 else
-                    retStr = retStr .. "\n引用错误:" .. loadclibErrReason;
+                    strTable[#strTable + 1] = "\n引用错误:" .. loadclibErrReason;
                 end
             else
                 --使用默认clib地址
@@ -358,24 +361,24 @@ function this.doctor()
                 else
                     lua_ver = "503";
                 end
-                local x86Path = clibPath.. platform .."/x86/".. lua_ver .. clibExt;
-                local x64Path = clibPath.. platform .."/x86_64/".. lua_ver .. clibExt;
-    
-                retStr = retStr .. "尝试引用x64库: ".. x64Path;
+                local x86Path = clibPath .. platform .."/x86/".. lua_ver .. clibExt;
+                local x64Path = clibPath .. platform .."/x86_64/".. lua_ver .. clibExt;
+
+                strTable[#strTable + 1] = "尝试引用x64库: ".. x64Path;
                 if this.tryRequireClib("libpdebug", x64Path) then
-                    retStr = retStr .. "\n引用成功";
+                    strTable[#strTable + 1] = "\n引用成功";
                 else
-                    retStr = retStr .. "\n引用错误:" .. loadclibErrReason;
-                    retStr = retStr .. "\n尝试引用x86库: ".. x86Path;
+                    strTable[#strTable + 1] = "\n引用错误:" .. loadclibErrReason;
+                    strTable[#strTable + 1] = "\n尝试引用x86库: ".. x86Path;
                     if this.tryRequireClib("libpdebug", x86Path) then
-                        retStr = retStr .. "\n引用成功";
+                        strTable[#strTable + 1] = "\n引用成功";
                     else
-                        retStr = retStr .. "\n引用错误:" .. loadclibErrReason;
+                        strTable[#strTable + 1] = "\n引用错误:" .. loadclibErrReason;
                     end
                 end
             end
         else
-            retStr = retStr .. "原因是" .. loadclibErrReason;
+            strTable[#strTable + 1] = "原因是" .. loadclibErrReason;
         end
     end
 
@@ -389,8 +392,8 @@ function this.doctor()
     if runSource and runSource ~= "" then
         -- 读文件
         local isFileExist = this.fileExists(runSource);
-        if not isFileExist then 
-            retStr = retStr .. "\n\n- 路径存在问题\n";
+        if not isFileExist then
+            strTable[#strTable + 1] = "\n\n- 路径存在问题\n";
             --解析路径，得到文件名，到断点路径中查这个文件名
             local pathArray = this.stringSplit(runSource, '/');
             --如果pathArray和断点能匹配上
@@ -400,35 +403,35 @@ function this.doctor()
                     --和断点匹配了
                     fileMatch = true;
                     -- retStr = retStr .. "\n请对比如下路径:\n";
-                    retStr = retStr .. this.getCWD();
-                    retStr = retStr .. "\nfilepath: " .. key;
+                    strTable[#strTable + 1] = this.getCWD();
+                    strTable[#strTable + 1] = "\nfilepath: " .. key;
                     if isAbsolutePath then
-                        retStr = retStr .. "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。" .. winDiskSymbolTip;
+                        strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。" .. winDiskSymbolTip;
                     else
-                        retStr = retStr .. "\n说明:从lua虚拟机获取到的是相对路径，format来源于cwd+getinfo拼接。" .. winDiskSymbolTip;
+                        strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是相对路径，format来源于cwd+getinfo拼接。" .. winDiskSymbolTip;
                     end
-                    retStr = retStr .. "\nfilepath是VSCode通过获取到的文件正确路径 , 对比format和filepath，调整launch.json中CWD，或改变VSCode打开文件夹的位置。使format和filepath一致即可。";   
+                    strTable[#strTable + 1] = "\nfilepath是VSCode通过获取到的文件正确路径 , 对比format和filepath，调整launch.json中CWD，或改变VSCode打开文件夹的位置。使format和filepath一致即可。";
                 end
             end
 
             if fileMatch == false then
                  --未能和断点匹配
-                 retStr = retStr .. "\n找不到文件:"  .. runSource .. ", 请检查路径是否正确。\n或者在VSCode文件" .. pathArray[#pathArray] .. "中打一个断点后，再执行一次doctor命令，查看路径分析结果。";
+                 strTable[#strTable + 1] = "\n找不到文件:"  .. runSource .. ", 请检查路径是否正确。\n或者在VSCode文件" .. pathArray[#pathArray] .. "中打一个断点后，再执行一次doctor命令，查看路径分析结果。";
             end
         end
     end
 
     --日志等级对性能的影响
     if logLevel < 1 or consoleLogLevel < 1 then
-        retStr = retStr .. "\n\n- 日志等级\n";
-        if logLevel < 1 then 
-            retStr = retStr .. "当前日志等级是" ..  logLevel .. ", 过低的日志等级会降低调试速度，建议调整launch.json中的logLevel选项";
+        strTable[#strTable + 1] = "\n\n- 日志等级\n";
+        if logLevel < 1 then
+            strTable[#strTable + 1] = "当前日志等级是" ..  logLevel .. ", 过低的日志等级会降低调试速度，建议调整launch.json中的logLevel选项";
         end
-        if consoleLogLevel < 1 then 
-            retStr = retStr .. "当前console日志等级是" ..  consoleLogLevel .. ", 过低的日志等级会降低调试速度，建议调整LuaPanda.lua头部的consoleLogLevel选项";
+        if consoleLogLevel < 1 then
+            strTable[#strTable + 1] = "当前console日志等级是" ..  consoleLogLevel .. ", 过低的日志等级会降低调试速度，建议调整LuaPanda.lua头部的consoleLogLevel选项";
         end
     end
-    return retStr;
+    return table.concat(strTable);
 end
 
 function this.fileExists(path)
@@ -439,44 +442,45 @@ function this.fileExists(path)
 --返回一些信息，帮助用户定位问题
 function this.getInfo()
     --用户设置项
-    local retStr = "\n- Base Info: \n";
-    retStr = retStr .. this.getBaseInfo();
+    local strTable = {};
+    strTable[#strTable + 1] = "\n- Base Info: \n";
+    strTable[#strTable + 1] = this.getBaseInfo();
     --已经加载C库，x86/64  未能加载，原因
-    retStr = retStr .. "\n\n- User Setting: \n";
-    retStr = retStr .. "stopOnEntry:" .. tostring(stopOnEntry) .. ' | ' ;
-    -- retStr = retStr .. "luaFileExtension:" .. luaFileExtension .. ' | ' ;
-    retStr = retStr .. "logLevel:" .. logLevel .. ' | ' ;
-    retStr = retStr .. "consoleLogLevel:" .. consoleLogLevel .. ' | ' ;
-    retStr = retStr .. "pathCaseSensitivity:" .. pathCaseSensitivity .. ' | ' ;
-    retStr = retStr .. "attachMode:".. tostring(openAttachMode).. ' | ' ;
+    strTable[#strTable + 1] = "\n\n- User Setting: \n";
+    strTable[#strTable + 1] = "stopOnEntry:" .. tostring(stopOnEntry) .. ' | ';
+    -- strTable[#strTable + 1] = "luaFileExtension:" .. luaFileExtension .. ' | ';
+    strTable[#strTable + 1] = "logLevel:" .. logLevel .. ' | ' ;
+    strTable[#strTable + 1] = "consoleLogLevel:" .. consoleLogLevel .. ' | ';
+    strTable[#strTable + 1] = "pathCaseSensitivity:" .. pathCaseSensitivity .. ' | ';
+    strTable[#strTable + 1] = "attachMode:".. tostring(openAttachMode).. ' | ';
 
     if userSetUseClib then
-        retStr = retStr .. "useCHook:true";
+        strTable[#strTable + 1] = "useCHook:true";
     else
-        retStr = retStr .. "useCHook:false";
+        strTable[#strTable + 1] = "useCHook:false";
     end
 
     if logLevel == 0 or consoleLogLevel == 0 then
-        retStr = retStr .. "\n说明:日志等级过低，会影响执行效率。请调整logLevel和consoleLogLevel值 >= 1";
+        strTable[#strTable + 1] = "\n说明:日志等级过低，会影响执行效率。请调整logLevel和consoleLogLevel值 >= 1";
     end
 
-    retStr = retStr .. "\n\n- Path Info: \n";
-    retStr = retStr .. "clibPath: " .. tostring(clibPath) .. '\n';
-    retStr = retStr .. "debugger: " .. this.getPath(DebuggerFileName) .. '\n';
-    retStr = retStr .. this.getCWD();
+    strTable[#strTable + 1] = "\n\n- Path Info: \n";
+    strTable[#strTable + 1] = "clibPath: " .. tostring(clibPath) .. '\n';
+    strTable[#strTable + 1] = "debugger: " .. this.getPath(DebuggerFileName) .. '\n';
+    strTable[#strTable + 1] = this.getCWD();
     if isAbsolutePath then
-        retStr = retStr .. "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。" .. winDiskSymbolTip;
+        strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。" .. winDiskSymbolTip;
     else
-        retStr = retStr .. "\n说明:从lua虚拟机获取到的是相对路径，format来源于cwd+getinfo拼接。如format文件路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。也可以在format对应的文件下打一个断点，调整直到format和Breaks Info中断点路径完全一致。" .. winDiskSymbolTip;
+        strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是相对路径，format来源于cwd+getinfo拼接。如format文件路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。也可以在format对应的文件下打一个断点，调整直到format和Breaks Info中断点路径完全一致。" .. winDiskSymbolTip;
     end
 
     if pathErrTip ~= nil and pathErrTip ~= '' then
-        retStr = retStr .. '\n' .. pathErrTip;
+        strTable[#strTable + 1] = '\n' .. pathErrTip;
     end
 
-    retStr = retStr .. "\n\n- Breaks Info: \n";
-    retStr = retStr .. this.printTable(this.getBreaks());
-    return retStr;
+    strTable[#strTable + 1] = "\n\n- Breaks Info: \n";
+    strTable[#strTable + 1] = this.printTable(this.getBreaks());
+    return table.concat(strTable);
 end
 
 --判断是否在协程中
