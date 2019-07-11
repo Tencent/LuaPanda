@@ -217,7 +217,7 @@ function this.connectSuccess()
         this.printToVSCode("[debugger error]初始化未完成, 建立连接但接收初始化消息失败。请更换端口重试", 2);
         return;
     end
-    this.printToVSCode("初始化完成")
+    this.printToVSCode("debugger init success", 1);
 
     this.changeHookState(hookState.ALL_HOOK);
     if hookLib == nil then
