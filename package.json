@@ -191,7 +191,7 @@
 						"connectionPort": 8818,
 						"stopOnEntry": true,
 						"useCHook": true,
-						"logLevel": 1,
+						"logLevel": 1
 					}
 				]
 			}
