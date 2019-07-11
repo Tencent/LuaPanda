@@ -20,7 +20,9 @@ static int stackdeep_counter = 0;   //step用的栈深度计数器
 static lua_Number BPhit = 0;               //BP命中标志位
 static char hookLog[1024] = { 0 };
 const char* debug_file_path;             //debugger的文件路径
+int debug_file_path_len;
 const char* tools_file_path;             //tools的文件路径
+int tools_file_path_len;
 char config_ext[32] = "";             //后缀（从lua同步）
 const char* config_cwd = "";             //cwd(从lua同步)
 const char* config_tempfile_path = "";
@@ -279,12 +281,14 @@ extern "C" int sync_file_ext(lua_State *L) {
 //debugger路径
 extern "C" int sync_debugger_path(lua_State *L) {
     debug_file_path = luaL_checkstring(L, 1);
+	debug_file_path_len = strlen(debug_file_path);
     return 0;
 }
 
 //tools路径
 extern "C" int sync_tools_path(lua_State *L) {
     tools_file_path = luaL_checkstring(L, 1);
+	tools_file_path_len = strlen(tools_file_path);
     return 0;
 }
 
@@ -705,12 +709,23 @@ void debug_hook_c(lua_State *L, lua_Debug *ar) {
     if (lua_getinfo(L, "Slf", ar) != 0) {
         //if in c function , return
         if(!hook_process_cfunction(L, ar)) return;
-        //if in debugger , return
-        if(!strcmp(debug_file_path, ar->source) || !strcmp(tools_file_path, ar->source)) return;
+        //if in debugger , return	
+		int source_len = strlen(ar->source);
+		if (debug_file_path_len == source_len) {
+			if (!strcmp(debug_file_path, ar->source))	return;
+		}
+		if (tools_file_path_len == source_len) {
+			if (!strcmp(tools_file_path, ar->source))	return;
+		}
 		//slua "temp buffer"
-		if(!strcmp(ar->source, "temp buffer"))	return;
+		if (11 == source_len) {
+			if (!strcmp("temp buffer", ar->source))	return;
+		}
 		//xlua "chunk"
-		if(!strcmp(ar->source, "chunk"))	return;
+		if (5 == source_len) {
+			if (!strcmp("chunk", ar->source))	return;
+		}
+
         //code section
         if(!hook_process_code_section(L, ar)) return;
 
