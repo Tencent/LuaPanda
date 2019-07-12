@@ -242,6 +242,8 @@ end
 
 --重置数据
 function this.clearData()
+    OSType = nil;
+    clibPath = nil;
     -- reset breaks
     breaks = {};
     pathFormatCache = {};
@@ -333,8 +335,8 @@ function this.doctor()
     local strTable = {};
     if debuggerVer ~= adapterVer then
         strTable[#strTable + 1] = "\n- 建议更新版本\nLuaPanda VSCode插件版本是" ..  adapterVer .. ", LuaPanda.lua文件版本是" ..  debuggerVer .. "。建议检查并更新到最新版本。";
-        strTable[#strTable + 1] = "\n更新帮助: https://github.com/Tencent/LuaPanda";
-        strTable[#strTable + 1] = "\n下载地址: https://github.com/Tencent/LuaPanda/releases";
+        strTable[#strTable + 1] = "\n更新方式   : https://github.com/Tencent/LuaPanda";
+        strTable[#strTable + 1] = "\nRelease版本: https://github.com/Tencent/LuaPanda/releases";
     end
     --plibdebug
     if hookLib == nil then
@@ -406,11 +408,11 @@ function this.doctor()
                     strTable[#strTable + 1] = this.getCWD();
                     strTable[#strTable + 1] = "\nfilepath: " .. key;
                     if isAbsolutePath then
-                        strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。" .. winDiskSymbolTip;
+                        strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。";
                     else
-                        strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是相对路径，format来源于cwd+getinfo拼接。" .. winDiskSymbolTip;
+                        strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是相对路径，format来源于cwd+getinfo拼接。";
                     end
-                    strTable[#strTable + 1] = "\nfilepath是VSCode通过获取到的文件正确路径 , 对比format和filepath，调整launch.json中CWD，或改变VSCode打开文件夹的位置。使format和filepath一致即可。";
+                    strTable[#strTable + 1] = "\nfilepath是VSCode通过获取到的文件正确路径 , 对比format和filepath，调整launch.json中CWD，或改变VSCode打开文件夹的位置。使format和filepath一致即可。\n如果format和filepath路径仅大小写不一致，设置launch.json中 pathCaseSensitivity:false 可忽略路径大小写";
                 end
             end
 
@@ -425,10 +427,10 @@ function this.doctor()
     if logLevel < 1 or consoleLogLevel < 1 then
         strTable[#strTable + 1] = "\n\n- 日志等级\n";
         if logLevel < 1 then
-            strTable[#strTable + 1] = "当前日志等级是" ..  logLevel .. ", 过低的日志等级会降低调试速度，建议调整launch.json中的logLevel选项";
+            strTable[#strTable + 1] = "当前日志等级是" ..  logLevel .. ", 会产生大量日志，降低调试速度。建议调整launch.json中logLevel:1";
         end
         if consoleLogLevel < 1 then
-            strTable[#strTable + 1] = "当前console日志等级是" ..  consoleLogLevel .. ", 过低的日志等级会降低调试速度，建议调整LuaPanda.lua头部的consoleLogLevel选项";
+            strTable[#strTable + 1] = "当前console日志等级是" ..  consoleLogLevel .. ", 过低的日志等级会降低调试速度，建议调整LuaPanda.lua文件头部consoleLogLevel=2";
         end
     end
     return table.concat(strTable);
