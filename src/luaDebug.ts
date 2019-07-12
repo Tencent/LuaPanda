@@ -511,6 +511,9 @@ export class LuaDebugSession extends LoggingDebugSession {
         }
 
         this._runtime.getVariable((arr, info) => {
+            if( info == undefined ){
+                info = new Array();
+            }
             const variables = new Array<DebugProtocol.Variable>();
             info.forEach(element => {
                 variables.push({

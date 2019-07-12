@@ -131,7 +131,7 @@ export class luaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["varRef"] = String(variableRef);
         arrSend["stackId"] = String(frameId);
-        dataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
+        dataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs, 3);
     }
 
     /**
@@ -199,10 +199,17 @@ export class luaDebugRuntime extends EventEmitter {
     }
 
     /**
-     * 	显示tip
+     * 	显示tip info
      */
     public showTip(tip: string) {
         vscode.window.showInformationMessage(tip);
+    }
+
+    /**
+     * 	显示tip error
+     */
+    public showError(tip: string) {
+        vscode.window.showErrorMessage(tip);
     }
 
     /**

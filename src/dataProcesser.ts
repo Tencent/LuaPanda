@@ -44,6 +44,17 @@ export class dataProcesser {
                 dataProcesser.getData(String(dt1));
             }
         }
+
+        //最后处理一下超时回调
+        for (let index = 0; index < dataProcesser.orderList.length; index++) {
+            const element = dataProcesser.orderList[index];
+            if ( element["timeOut"] && Date.now() > element["timeOut"] ){
+                dataProcesser._runtime.showError(" 回调超时!  id" + element["callbackId"]);
+                let cb = element["callback"];
+                cb(element["callbackArgs"]);
+                dataProcesser.orderList.splice(index, 1);
+            }
+        }
     }
 
     /**
@@ -78,17 +89,24 @@ export class dataProcesser {
             this.getDataJsonCatch  = "";
         }
         catch(e){
-            this.getDataJsonCatch = data + "|*|";
+            if(LuaDebugSession.isNeedB64EncodeStr){
+                dataProcesser._runtime.showError(" JSON  解析失败! " + data);
+                DebugLogger.AdapterInfo("[Adapter Error]: JSON  解析失败! " + data);
+            }else{
+                this.getDataJsonCatch = data + "|*|";
+            }
             return;
         }
 
         if (dataProcesser._runtime != null) {
             if (cmdInfo == null) {
-                DebugLogger.AdapterInfo("[Adapter Error]:json解析失败");
+                dataProcesser._runtime.showError("JSON 解析失败! no cmdInfo:" + data);
+                DebugLogger.AdapterInfo("[Adapter Error]:JSON解析失败  no cmdInfo:"+ data);
                 return;
             }
             if (cmdInfo["cmd"] == undefined) {
-                DebugLogger.AdapterInfo("[Adapter Warning]:json解析失败");
+                dataProcesser._runtime.showError("JSON 解析失败! no cmd:" + data);
+                DebugLogger.AdapterInfo("[Adapter Warning]:JSON 解析失败 no cmd:"+ data);
             }
 
             if (cmdInfo["callbackId"] != undefined && cmdInfo["callbackId"] != "0") {
@@ -118,6 +136,11 @@ export class dataProcesser {
                     return;
                 }
 
+                if (cmdInfo["cmd"] == "tipError") {
+                    dataProcesser._runtime.showError(cmdInfo["info"]["logInfo"]);
+                    return;
+                }
+
                 if (cmdInfo["cmd"] == "stopOnBreakpoint" || cmdInfo["cmd"] == "stopOnEntry" || cmdInfo["cmd"] == "stopOnStep" || cmdInfo["cmd"] == "stopOnStepIn" || cmdInfo["cmd"] == "stopOnStepOut") {
                     // 进入断点/step停止
                     let stackInfo = cmdInfo["stack"];
@@ -139,7 +162,7 @@ export class dataProcesser {
      * @param callbackFunc: 回调函数
      * @param callbackArgs: 回调参数
      */
-    public static commandToDebugger(cmd: string, sendObject: Object, callbackFunc = null, callbackArgs = null) {
+    public static commandToDebugger(cmd: string, sendObject: Object, callbackFunc = null, callbackArgs = null, timeOutSec = 0) {
         //生成随机数
         let max = 999999999;
         let min = 10;		//10以内是保留位
@@ -154,7 +177,7 @@ export class dataProcesser {
                 ranNum = Math.floor(Math.random() * (max - min + 1) + min);
                 //检查随机数唯一性
                 dataProcesser.orderList.forEach(element => {
-                    if (element == ranNum) {
+                    if (element["callbackId"] == ranNum) {
                         //若遍历后isSame依然是false，说明没有重合
                         isSame = true;
                     }
@@ -164,6 +187,10 @@ export class dataProcesser {
             let dic = new Object();
             dic["callbackId"] = ranNum;
             dic["callback"] = callbackFunc;
+            if( timeOutSec > 0){
+                dic["timeOut"] = Date.now() + timeOutSec * 1000; 
+            }
+
             if (callbackArgs != null) {
                 dic["callbackArgs"] = callbackArgs;
             }
