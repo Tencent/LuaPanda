@@ -2446,7 +2446,7 @@ function this.processExp(msgTable)
                 --表达式要有错误处理
                 xpcall(function() retString = f() end , function() retString = "输入错误指令。\n + 请检查指令是否正确\n + 指令仅能在[暂停在断点时]输入, 请不要在程序持续运行时输入"; var.isSuccess = false; end)
             else
-                retString = "指令执行错误。\n + 请检查指令是否正确\n + 如果希望观察[变量的值]或[表达式的返回结果]，请在表达式前前面加\"p \"\n + 如果仅希望执行一段lua代码，直接输入即可";
+                retString = "指令执行错误。\n + 请检查指令是否正确\n + 如果希望观察[变量的值]或[表达式的返回结果]，请在表达式前前面加\"p \"\n + 如果仅希望执行一段lua代码，不观察返回值，直接输入即可";
                 var.isSuccess = false;
             end
         end
