@@ -322,7 +322,7 @@ function this.doctor()
     local strTable = {};
     if debuggerVer ~= adapterVer then
         strTable[#strTable + 1] = "\n- 建议更新版本\nLuaPanda VSCode插件版本是" ..  adapterVer .. ", LuaPanda.lua文件版本是" ..  debuggerVer .. "。建议检查并更新到最新版本。";
-        strTable[#strTable + 1] = "\n更新方式   : https://github.com/Tencent/LuaPanda";
+        strTable[#strTable + 1] = "\n更新方式   : https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md";
         strTable[#strTable + 1] = "\nRelease版本: https://github.com/Tencent/LuaPanda/releases";
     end
     --plibdebug
