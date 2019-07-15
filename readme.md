@@ -35,7 +35,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 + v2.2.0
   
-  增加了`LuaPanda.doctor()` 命令，检查环境中的错误。
+  增加了`LuaPanda.doctor()` 命令，可以检查环境中的错误(需更新LuaPanda.lua和DebugTools.lua至2.2.0)。
   
   修复了VSCode请求变量但没有获取返回时卡住的问题。
   

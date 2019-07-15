@@ -420,6 +420,10 @@ function this.doctor()
             strTable[#strTable + 1] = "当前console日志等级是" ..  consoleLogLevel .. ", 过低的日志等级会降低调试速度，建议调整LuaPanda.lua文件头部consoleLogLevel=2";
         end
     end
+    
+    if #strTable == 0 then
+        strTable[#strTable + 1] = "未检测出问题";
+    end
     return table.concat(strTable);
 end
 
