@@ -393,7 +393,8 @@ export class LuaDebugSession extends LoggingDebugSession {
                 if (info.length == 0) {
                     //没有查到
                     arr[1].body = {
-                        result: 'nil',
+                        result: '未能查到变量的值',
+                        type: 'string',
                         variablesReference: 0
                     };
                 } else {
