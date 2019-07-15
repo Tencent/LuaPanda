@@ -18,9 +18,9 @@
 
 ## 文件路径大小写敏感的设置
 
-+ 如果在运行时获得的文件路径大小写和实际的文件不一致，可以设置`launch.json`中pathCaseSensitivity.true是大小写敏感。
++ 如果在运行时获得的文件路径大小写和实际的文件不一致，可以设置`launch.json`中pathCaseSensitivity 项为false。
 
-+ 如果运行时获得的路径和原始文件路径大小写不一致，设置此项为false
++ 大小写敏感设置是为了解决有些框架中传给lua虚拟机的路径被转换为了小写的，导致命中断点时路径无法匹配的问题。
 
 
 
@@ -28,7 +28,7 @@
 
 - 调试器自带日志模块，方便追踪问题。使用方法是切换到console的OUTPUT(输出)页卡, 选择 Adapter/log 或者 Debugger/log 就可以查看对应的日志。
 - 通常看Adapter就可以展示Adapter和Debugger的交互信息。
-- 如果需要更全面的日志，可以调整launch.json中的`logLevel:0`，再查看Debugger日志，可以输出每行执行到的文件信息。因日志较多，level设置为0可能会造成卡顿。
+- 如果需要更全面的日志，可以调整launch.json中的`logLevel:0`，再查看Debugger日志，可以输出每行执行到的文件信息。因日志较多，level设置为0可能会造成卡顿（0级日志主要用于调试器开发，使用时开1级日志就可以）。
 
 
 
@@ -75,15 +75,16 @@ format:   cwd + getinfo
 
 
 
-## 为什么执行到断点处无法停止
+## 执行到断点处无法停止
 
-通常遇到的情况是stop on entry时可以停止，但是后续的断点无法停止。
+通常遇到的情况是stop on entry时可以停止，但是后续或者子文件的断点无法停止。
 
-这种情况是**断点路径**和**当前文件format路径**对比不一致导致的。解决方法是
+这种情况是**断点路径**和**当前文件format路径**对比不一致导致的，因为用户环境多样，可使用下面方法定位问题：
 
 1. 打开launch.json的stopOnEntry
-2. 停止在stopOnEntry的位置。在调试控制台输入`LuaPanda.getCWD()`, 和`LuaPanda.getBreaks()`, 对比breaks中的路径和format路径是否完全一致
-3. 若不一致，通过修改launch.json中的大小写敏感，lua文件后缀，或是调整层级解决。
+2. 在断点未停的位置，保持断点并在源码中加入一行代码`LuaPanda.BP()`.
+3. 再次运行项目，让项目运行并停止在`LuaPanda.BP()` (此处也可能会报错找不到文件，不要停止调试，进行下一步)。
+4. 在控制台输入`LuaPanda.doctor()`, 查看给出的路径建议中 filepath和getinfo是否一致，根据具体情况调整直到二者一致即可。
 
 
 

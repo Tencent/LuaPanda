@@ -19,9 +19,6 @@ API:
     LuaPanda.getInfo()
         返回获取调试器信息。包括版本号，是否使用lib库，系统是否支持loadstring(load方法)
 
-    LuaPanda.help()
-        返回一些帮助信息。
-
     LuaPanda.doctor()
         返回对当前环境的诊断信息，提示可能存在的问题。
 
@@ -317,16 +314,6 @@ function this.getBaseInfo()
     if OSTypeErrTip ~= nil and OSTypeErrTip ~= '' then
         strTable[#strTable + 1] = '\n' ..OSTypeErrTip;
     end
-    return table.concat(strTable);
-end
-
---返回一些帮助信息
-function this.help()
-    local strTable = {};
-    strTable[#strTable + 1] = '\nFAQ:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/FAQ.md';
-    strTable[#strTable + 1] = '\n真机调试:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
-    strTable[#strTable + 1] = '\n升级指引:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
-    strTable[#strTable + 1] = '\n调试器原理:https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-on-phone.md';
     return table.concat(strTable);
 end
 

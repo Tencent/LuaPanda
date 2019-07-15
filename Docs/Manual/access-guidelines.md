@@ -21,19 +21,27 @@ lua调试器依赖于 **luasocket** 和 **规范的路径**，需验证这两点
 
 **测试方法**：在代码中加入`print(debug.traceback("debug test"))`, 查看打印的堆栈。
 
-如下打印出文件的绝对路径，测试通过。
+如下打印出文件的绝对路径，可以进行下一步
 ![absolute_path](../static/access_introduction/absolute_path.png)
 
-打印出的信息是一个相对路径(路径前可能带有@)，测试通过
+打印出的信息是一个相对路径(路径前可能带有@)，可进行下一步
 ![relatively_path](../static/access_introduction/relatively_path.png)
 
-打印出的路径包含在[string ]中，只要是符合上面的要求，是一个可以定位的路径，测试通过。
+打印出的路径包含在[string ]中，只要是符合上面的要求，是一个可以定位的路径，可进行下一步
 ![string_path](../static/access_introduction/string_path.png)
 
 下面案例测试不通过，原因是仅输出了文件名，而这些文件其实不在同一个目录下。调试器无法仅根据文件名确定文件位置。
 ![filename_path](../static/access_introduction/filename_path.png)
 
 
+
+更新:   lua中允许使用`require("a.b") `引用子目录中的文件，在标准lua库中，lua虚拟机会把路径转化为 a/b 传给调试器。
+
+但是有些开发框架没有做这样的转换，调试器会把收到的a.b当做一个文件处理。结果是导致调试进入require("a.b")的文件时，报找不到文件错误。
+
+这个问题的解决办法需要用户修改自身框架，保证`require("a.b") `调用文件时传给lua虚拟机的路径是a/b。
+
+或者参见  [issue #24](https://github.com/Tencent/LuaPanda/issues/24) , 在调试器中强转换路径中的. 为 /
 
 
 
@@ -86,23 +94,19 @@ launch.json 配置项中要修改的主要是luaFileExtension, 改成lua文件�
 
 ![cannot_find_file](../static/access_introduction/cannot_find_file.png)
 
-不要停止调试，直接在调试控制台中输入`LuaPanda.getCWD()`
+不要停止调试，在VSCode中找到报错中提到的文件，在其中任意位置打一个断点，之后在调试控制台中输入`LuaPanda.doctor()`
 
-![getcwd](../static/access_introduction/getcwd.png)
+LuaPanda.doctor() 是一个帮助用户检查错误的命令，可以进行路径分析，给出建议。
 
-输出结果中
+输出结果
 
-**cwd:** launch.json中用户设置的cwd路径
+![doctor](../static/access_introduction/doctor.png)
 
-**getinfo:** getinfo从lua虚拟机获得的路径。我们希望这个路径应该能指示出lua文件所在位置，但通常会获得一个相对路径。
+format是调试器拼接出的文件路径，filepath是文件真实存在的路径。
 
-**format:** 被debugger用来查找文件的最终路径。
+这里其中会告诉用户format路径来源，用户需要对比format和filepath路径，调整launch.json中cwd或者修改VSCode打开文件夹位置，使format和filepath保持一致，即可修复问题。
 
-**format的拼接规则**：如果getinfo是绝对路径，会直接使用它作为format路径查找文件。如果getinfo是相对路径，format 是 **cwd + getinfo 拼接的绝对路径**。
 
-+ 出现找不到文件提示，是 format 路径有误。看一下format路径是否多了或者缺少层级。如果是路径层级错了，调整cwd，可以增加路径层级或是/../保证拼接后的路径正确。
-
-+ 如果是format的文件后缀有误，按上面的说明修改launch.json中的文件后缀。
 
 
 
@@ -123,13 +127,47 @@ enjoy!
 
 LuaPanda 在PC上调试会默认使用 c hook，它是用c重写了debugger的核心hook部分，从而提高调试器的执行效率。 c hook会默认启用，无需单独接入。
 
-验证方式：停在断点处后，在调试控制台输入`LuaPanda.getInfo()`返回信息包含hookLib Ver，说明c hook已经启动，如下
+验证方式：停在断点处后，在调试控制台输入`LuaPanda.getInfo()`， 返回信息的BaseInfo会给出提示，如果c库已加载，还会给出版本号。
 
 ![getinfo](../static/access_introduction/getinfo.png)
 
-
+如果提示c库未能正确加载，可以使用`LuaPanda.doctor()`命令查看详细信息
 
 c hook的源码放置在工程中`Debugger/debugger_lib`中。以供参考
+
+
+
+# 调试器 API 介绍
+
+调试器提供了一些API，可以在调试控制台直接调用，以查看当前环境和定位问题。
+
+注意：调试控制台只能在运行到断点处才能执行命令
+
++ LuaPanda.getInfo()
+
+  获取完整的调试器当前信息。
+
+  Base Info : 系统基本信息
+
+  User Setting: 用户设置项
+
+  Path Info：路径相关和提示
+
+  Breaks Info: 断点列表
+
+  ![getinfo_complete](../static/access_introduction/getinfo_complete.png)
+
++ LuaPanda.doctor()
+
+  诊断工具，帮助用户诊断当前存在的问题。
+
+  ![doctor_complete](../static/access_introduction/doctor_complete.png)
+
++ LuaPanda.getBreaks()
+
+  打印所有断点信息(已包含在getInfo中)
+
+  ![get_breaks_complete](/Users/stuartmac/LuaPanda_out/Docs/static/access_introduction/get_breaks_complete.png)
 
 
 
@@ -143,39 +181,39 @@ c hook的源码放置在工程中`Debugger/debugger_lib`中。以供参考
 
 ```lua
 {
-    "version": "0.2.0",
+      "version": "0.2.0",
     "configurations": [
         {
+    				//正常调试配置
             "type": "lua",
             "request": "launch",
-            "name": "LuaPanda",	//配置名，正常调试
+            "internalConsoleOptions": "openOnFirstSessionStart",
+            "name": "LuaPanda",
             "program": "${workspaceFolder}",
-            "cwd": "${workspaceFolder}", //工作路径
-            "TempFilePath": "${workspaceFolder}",//临时文件存放路径
-            "luaFileExtension": "lua",//被调试文件后缀
-            "pathCaseSensitivity": true,//路径是否大小写敏感
-            "stopOnEntry": true,//是否在开始调试时停止
-            "connectionPort": 8818,//连接端口号，默认8818
-            "logLevel": 1, //日志等级
-        		"useCHook":true, //是否使用C lib库
-            "luaPath": ""		//执行lua文件时，lua命令的路径
+            "cwd": "${workspaceFolder}",
+            "pathCaseSensitivity": true,//路径大小写敏感
+            "docPathReplace": [],				//路径映射
+            "luaFileExtension": "",			//lua文件后缀
+            "connectionPort": 8818,			//连接端口号
+            "stopOnEntry": true,				//建立连接后自动停止
+            "useCHook": true,						//使用C调试库
+            "logLevel": 1								//日志等级，默认无需修改
         },
-    		{
+        {
+    				//单文件调试配置
             "type": "lua",
             "request": "launch",
             "internalConsoleOptions": "neverOpen",
-            "name": "LuaPanda-DebugFile", //配置名，调试单文件
+            "name": "LuaPanda-DebugFile",//单文件调试，请不要修改
             "program": "${workspaceFolder}",
             "cwd": "${workspaceFolder}",
-            "TempFilePath": "${workspaceFolder}",
-            "luaFileExtension": "",
             "pathCaseSensitivity": true,
+            "luaPath": "",							  //lua.exe所在位置	
+            "luaFileExtension": "",
             "connectionPort": 8818,
             "stopOnEntry": true,
             "useCHook": true,
-            "logLevel": 1,
-            "luaPath": "",	//执行lua文件时，lua命令的路径	
-            "packagePath": ["./doc1/?.lua"] //执行lua文件时，加入package.path的路径
+            "logLevel": 1
         }
     ]
 }
@@ -195,6 +233,16 @@ sluaunreal:lua
 
 **pathCaseSensitivity**：路径大小写敏感。如文件名是Test.lua ，执行此文件时getinfo获得的文件名是test.lua , 就需要把这个选项设置为false。否则路径因大小写不一致会查找不到文件。
 
+**docPathReplace**：路径映射。当执行的lua文件和VScode查看的lua文件位置不同时, 可以使用路径映射，主要用于真机调试。如
+
+`docPathReplace": ["A", "B"]`
+
+我们把目录分为A:运行路径 和 B:观察路径
+前提: 用户保证运行路径A 和观察路径B 的代码是完全相同的，否则调试时行号会错乱
+具体实现:
+调试器启动时会自动把 B 下的断点位置替换成 A, 以便运行时判断断点命中。
+命中断点后，用户把堆栈中 A 路径替换回 B ，便于VSCode展示文件给用户看
+
 **stopOnEntry**：调试器建立连接后立刻暂停，建议true。
 
 **connectionPort**：连接端口号。此处请保持和`require("LuaPanda").start("127.0.0.1",8818);` 中一致，否则无法建立网络连接。
@@ -208,24 +256,28 @@ sluaunreal:lua
 ### 2. LuaPanda.lua 文件头部
 
 ```lua
-local openAttachMode = true;            --是否开启attach模式。
+local openAttachMode = true;            
 local attachInterval = 1;               --attach间隔时间(s)
-local TCPSplitChar = "|*|";             --json协议分隔符
+local customGetSocketInstance = nil;    --支持用户实现一个自定义调用luasocket的函数，函数返回值必须是一个socket实例。例: function() return require("socket.core").tcp() end;
+local consoleLogLevel = 2;           --打印在控制台(print)的日志等级 0 : all/ 1: info/ 2: error.
+local connectTimeoutSec = 0.005;       --等待连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
 ```
 
 **openAttachMode**: attach模式开启后可以在任意时刻启动vscode连接调试。缺点是不调试时也会略降低lua执行效率(会不断进行attach请求)。**所以请不要把调试器放在正式环境大量外发**。
 
 **attachInterval**：attach请求间隔，默认1秒
 
-**TCPSplitChar**：网络请求的隔断符。因为TCP可能出现粘包，消息传输需要隔断符号，默认请不要修改。
+**customGetSocketInstance**：调试器的运行依赖luasocket， 用户可以实现这个函数，以便调试器能够顺利引用到luasocket。
+
+**consoleLogLevel** ： console日志等级，默认无需求改
+
+**connectTimeoutSec**：连接超时时间，如出现调试器连接不上VSCode时，可以改长一些，但不建议超过0.05
 
 
 
-# 调试器更新方法
-
-调试器会不断完善和扩充功能。当发布新版本后，VSCode 会推通知给用户。更新步骤：
-
-1. VSCode中更新插件
-2. 从git仓库中获取最新的 LuaPanda.lua, DebugTools.lua 文件，覆盖原文件即可
+# 调试器升级方法
 
 通常VSCode插件版本是向下兼容的，只更新VSCode插件也可正常使用，但无法体验最新特性。
+
+更新方法参阅文档 [update](https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md)
+

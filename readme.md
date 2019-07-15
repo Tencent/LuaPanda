@@ -31,7 +31,17 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 
 
-# 更新说明
+# 近期更新
+
++ v2.2.0
+  
+  增加了`LuaPanda.doctor()` 命令，检查环境中的错误。
+  
+  修复了VSCode请求变量但没有获取返回时卡住的问题。
+  
+  修复了c库在一些框架下无法正常运行，导致程序自动退出的问题。
+
+  
 
 + v2.1.0
   
@@ -40,10 +50,6 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
   优化了attach造成运行卡顿的问题。
   
   建议把LuaPanda.lua更新到最新版本。
-
-+ v2.0.6 
-  仅更新VSCode端，lua文件未做变更。
-  修复了调试中查询变量时，json通信量大导致的查询失败。
 
 
 
@@ -58,20 +64,15 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 
 
-# 项目介绍和接入文档
+# 接入和开发指引
 
-[项目介绍](./Docs/Manual/feature-introduction.md)	| [快速开始](./Docs/Manual/quick-use.md) | [接入指引](./Docs/Manual/access-guidelines.md) |  [真机调试](./Docs/Manual/debug-on-phone.md)  |  [FAQ](./Docs/Manual/FAQ.md)
+接入和使用文档
 
-我们正在补全文档，以方便接入和开发，我们也非常欢迎您可以帮助完善文档。
+[项目介绍](./Docs/Manual/feature-introduction.md)	| [快速试用指引](./Docs/Manual/quick-use.md) | [接入指引](./Docs/Manual/access-guidelines.md) |  [真机调试](./Docs/Manual/debug-on-phone.md)  | [单文件调试和运行](./Docs/Manual/debug-file.md) | [升级说明](./Docs/Manual/update.md) | [FAQ](./Docs/Manual/FAQ.md)
 
-更多文档请看[这里](./Docs/README.md)
+调试器开发文档
 
-
-
-
-# 快速开始
-
-试用LuaPanda请 [参阅快速开始文档](./Docs/Manual/quick-use.md) ，其中包含 slua , xlua ,slua-unreal 的快速使用方法
+[工程说明](./Development-instructions/project-description.md) 	|  [调试器开发指引](./Development-instructions/how_to_join.md) 
 
 
 

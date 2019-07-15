@@ -15,39 +15,40 @@
 ```json
 配置文件示例
 {
-    "version": "0.2.0",
+      "version": "0.2.0",
     "configurations": [
         {
+    				//正常调试配置
             "type": "lua",
             "request": "launch",
-            "name": "LuaPanda",	//配置名，正常调试
+            "internalConsoleOptions": "openOnFirstSessionStart",
+            "name": "LuaPanda",
             "program": "${workspaceFolder}",
-            "cwd": "${workspaceFolder}", //工作路径
-            "TempFilePath": "${workspaceFolder}",//临时文件存放路径
-            "luaFileExtension": "lua",//被调试文件后缀
-            "pathCaseSensitivity": true,//路径是否大小写敏感
-            "stopOnEntry": true,//是否在开始调试时停止
-            "connectionPort": 8818,//连接端口号，默认8818
-            "logLevel": 1, //日志等级
-        		"useCHook":true, //是否使用C lib库
-            "luaPath": ""		//执行lua文件时，lua命令的路径
+            "cwd": "${workspaceFolder}",
+            "pathCaseSensitivity": true,//路径大小写敏感
+            "docPathReplace": [],				//路径映射
+            "luaFileExtension": "",			//lua文件后缀
+            "connectionPort": 8818,			//连接端口号
+            "stopOnEntry": true,				//建立连接后自动停止
+            "useCHook": true,						//使用C调试库
+            "logLevel": 1								//日志等级，默认无需修改
         },
-    		{
+        {
+    				//单文件调试配置
             "type": "lua",
             "request": "launch",
             "internalConsoleOptions": "neverOpen",
-            "name": "LuaPanda-DebugFile", //配置名，调试单文件
+            "name": "LuaPanda-DebugFile",//单文件调试，请不要修改
             "program": "${workspaceFolder}",
             "cwd": "${workspaceFolder}",
-            "TempFilePath": "${workspaceFolder}",
-            "luaFileExtension": "",
             "pathCaseSensitivity": true,
+            "luaPath": "",							  //lua.exe所在位置
+						"packagePath": "",						//希望加入package.path的路径
+            "luaFileExtension": "",
             "connectionPort": 8818,
             "stopOnEntry": true,
             "useCHook": true,
-            "logLevel": 1,
-            "luaPath": "",	//执行lua文件时，lua命令的路径	
-            "packagePath": ["./doc1/?.lua"] //执行lua文件时，加入package.path的路径
+            "logLevel": 1
         }
     ]
 }
@@ -55,7 +56,7 @@
 
 
 
-相对于旧的配置文件，增加了LuaPanda-DebugFile选项，它可以用来调试单文件。
+相对于旧的配置文件，增加了单文件调试配置（LuaPanda-DebugFile）选项，它可以用来调试单文件。
 
 新增的配置项包括
 **luaPath**：lua命令路径，如果lua命令已经存在系统path中，可以不填。
@@ -76,7 +77,7 @@ VSCode 会启动一个新终端，执行当前打开的lua代码。
 
 ### 3. 调试单文件
 
-把调试选项切换至`LuaPanda-DebugFile`,  代码编辑窗口切换到待调试文件，运行。
+把调试选项切换至`LuaPanda-DebugFile`,  **代码编辑窗口切换到待调试文件**，运行。
 
 ![config_select](../static/config-select.png)
 

@@ -1,4 +1,4 @@
-## 快速使用
+## 快速试用
 
 注：VSCode的调试插件机制是: 当使用某个插件调试过一种语言时，会导致该语言的其他调试插件无法生效，请先禁用之前的调试插件并重新启动VSCode。
 
@@ -12,8 +12,8 @@
 
 1. **安装VSCode插件**：VSCode 商店搜索 LuaPanda，安装插件。
 2. **添加被调试文件**：创建一个文件夹，名为`luaDebugTest`，  其中放入被调试lua文件。
-3. **配置**：使用VSCode 打开 `luaDebugTest` 文件夹，切换到调试页卡（shitf + cmd(ctrl) + D），点击页面内的齿轮符号，选择 LuaPanda，会自动生成一张配置表。配置表默认不用修改。
-4. **开始调试**：  代码编辑面板中点开要调试的文件，配置项选择`LuaPanda-DebugFile`，点击VScode调试页卡下的绿色箭头。
+3. **配置**：使用VSCode 打开 `luaDebugTest` 文件夹，切换到调试页卡（shitf + cmd(ctrl) + D），点击页面内的齿轮符号，选择 LuaPanda，会自动生成一张配置表。检查配置表中的"luaPath", 填入lua.exe位置。
+4. **开始调试**：  **代码编辑面板中点开要调试的文件**，配置项选择`LuaPanda-DebugFile`，点击VSCode调试页卡下的绿色箭头，VSCode会拉起terminal ,并执行命令调试运行当前窗口的lua。VSCode有时会报窗口错误，请选择正确的文件，重复步骤4即可。
 
 
 
@@ -42,48 +42,3 @@
 2. **放入调试文件** 把/Debugger中的 `LuaPanda.lua, DebugTools.lua` 两个文件拷贝到slua-unreal 工程`sluaunreal/Content/Lua/`目录下
 3. **配置工程** 把`sluaunreal/Content`文件夹放入 VSCode , 点击 VSCode 调试选项卡下的齿轮图标，选择 LuaPanda。
 4. **开始调试** 在执行的lua代码中加入`require("LuaPanda").start("127.0.0.1",8818)` 。配置项选择`LuaPanda`， 点击 VSCode 的开始调试箭头，再运行ue4，在加入 require 的位置后会自动停止。之后可以打断点调试。
-
-
-
-### 附录：launch.json 配置表
-
-```json
-{
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "lua",
-            "request": "launch",
-            "name": "LuaPanda",	//配置名，正常调试
-            "program": "${workspaceFolder}",
-            "cwd": "${workspaceFolder}", //工作路径
-            "TempFilePath": "${workspaceFolder}",//临时文件存放路径
-            "luaFileExtension": "lua",//被调试文件后缀
-            "pathCaseSensitivity": true,//路径是否大小写敏感
-            "stopOnEntry": true,//是否在开始调试时停止
-            "connectionPort": 8818,//连接端口号，默认8818
-            "logLevel": 1, //日志等级
-        		"useCHook":true, //是否使用C lib库
-            "luaPath": ""		//执行lua文件时，lua命令的路径
-        },
-    		{
-            "type": "lua",
-            "request": "launch",
-            "internalConsoleOptions": "neverOpen",
-            "name": "LuaPanda-DebugFile", //配置名，调试单文件
-            "program": "${workspaceFolder}",
-            "cwd": "${workspaceFolder}",
-            "TempFilePath": "${workspaceFolder}",
-            "luaFileExtension": "",
-            "pathCaseSensitivity": true,
-            "connectionPort": 8818,
-            "stopOnEntry": true,
-            "useCHook": true,
-            "logLevel": 1,
-            "luaPath": "",	//执行lua文件时，lua命令的路径	
-            "packagePath": ["./doc1/?.lua"] //执行lua文件时，加入package.path的路径
-        }
-    ]
-}
-```
-

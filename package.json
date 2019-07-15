@@ -185,6 +185,7 @@
 						"cwd": "${workspaceFolder}",
 						"pathCaseSensitivity": true,
 						"luaPath" : "",
+						"packagePath": "",
 						"luaFileExtension": "",
 						"connectionPort": 8818,
 						"stopOnEntry": true,
