@@ -481,7 +481,7 @@ function this.getInfo()
     end
 
     strTable[#strTable + 1] = "\n\n- Breaks Info: \n";
-    strTable[#strTable + 1] = this.printTable(this.getBreaks());
+    strTable[#strTable + 1] = this.printTable(this.getBreaks(), "breaks");
     return table.concat(strTable);
 end
 
@@ -598,8 +598,8 @@ function this.getMsgTable(cmd ,callbackId)
     return msgTable;
 end
 
-function this.printTable(tab)
-    local sTable = tools.serializeTable(tab);
+function this.printTable(tab, name)
+    local sTable = tools.serializeTable(tab, name);
     return sTable;
 end
 ------------------------日志打印相关-------------------------
@@ -939,9 +939,15 @@ function this.dataProcess( dataStr )
                 --局部变量
                 if dataTable.info.stackId ~= nil and tonumber(dataTable.info.stackId) > 1 then
                     this.curStackId = tonumber(dataTable.info.stackId);
-                    local stackId = this.getSpecificFunctionStackLevel(currentCallStack[this.curStackId - 1].func); --去除偏移量
-                    local varTable = this.getVariable(stackId, true);
-                    msgTab.info = varTable;
+                    if type(currentCallStack[this.curStackId - 1]) ~= "table" or  type(currentCallStack[this.curStackId - 1].func) ~= "function" then
+                        local str = "getVariable getLocal currentCallStack " .. this.curStackId - 1   .. " Error\n" .. this.printTable(currentCallStack, "currentCallStack");
+                        this.printToVSCode(str, 2);
+                        msgTab.info = {};
+                    else
+                        local stackId = this.getSpecificFunctionStackLevel(currentCallStack[this.curStackId - 1].func); --去除偏移量
+                        local varTable = this.getVariable(stackId, true);
+                        msgTab.info = varTable;
+                    end
                 end
 
             elseif varRefNum >= 20000 and varRefNum < 30000 then
@@ -952,9 +958,14 @@ function this.dataProcess( dataStr )
                 --upValue
                 if dataTable.info.stackId ~= nil and tonumber(dataTable.info.stackId) > 1 then
                     this.curStackId = tonumber(dataTable.info.stackId);
-                    local stackId = tonumber(dataTable.info.stackId);
-                    local varTable = this.getUpValueVariable(currentCallStack[stackId - 1 ].func, true);
-                    msgTab.info = varTable;
+                    if type(currentCallStack[this.curStackId - 1]) ~= "table" or  type(currentCallStack[this.curStackId - 1].func) ~= "function" then
+                        local str = "getVariable getUpvalue currentCallStack " .. this.curStackId - 1   .. " Error\n" .. this.printTable(currentCallStack, "currentCallStack");
+                        this.printToVSCode(str, 2);
+                        msgTab.info = {};
+                    else
+                        local varTable = this.getUpValueVariable(currentCallStack[this.curStackId - 1 ].func, true);
+                        msgTab.info = varTable;
+                    end
                 end
             end
             this.sendMsg(msgTab);
@@ -2130,6 +2141,13 @@ function this.getWatchedVariable( varName , stackId , isFormatVariable )
     if tostring(varName) == nil or tostring(varName) == "" then
         return nil;
     end
+
+    if type(currentCallStack[stackId - 1]) ~= "table" or  type(currentCallStack[stackId - 1].func) ~= "function" then
+        local str = "getWatchedVariable currentCallStack " .. stackId - 1 .. " Error\n" .. this.printTable(currentCallStack, "currentCallStack");
+        this.printToVSCode(str, 2);
+        return nil;
+    end
+
     --orgname 记录原名字. 用来处理a.b.c的形式
     local orgname = varName;
     --支持a.b.c形式。切割varName
