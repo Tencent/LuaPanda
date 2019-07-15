@@ -37,7 +37,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
   
   增加了`LuaPanda.doctor()` 命令，可以检查环境中的错误(需更新LuaPanda.lua和DebugTools.lua至2.2.0)。
   
-  修复了VSCode请求变量但没有获取返回时卡住的问题。
+  修复了VSCode请求变量信息但在lua中发生错误，导致调试器卡住的问题。
   
   修复了c库在一些框架下无法正常运行，导致程序自动退出的问题。
 
@@ -72,7 +72,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 调试器开发文档
 
-[工程说明](./Development-instructions/project-description.md) 	|  [调试器开发指引](./Development-instructions/how_to_join.md) 
+[工程说明](./Docs/Development-instructions/project-description.md) 	|  [调试器开发指引](./Docs/Development-instructions/how_to_join.md) |  [特性简述](./Docs/Development-instructions/debugger-principle.md) 
 
 
 
