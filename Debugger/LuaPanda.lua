@@ -2442,11 +2442,7 @@ function this.processExp(msgTable)
                 expression = expression:sub(3);
                 expression = "return " .. expression;
             end
-            if expression:match(" ") == nil then
-                expression = "return " .. expression;
-            end
-
-            local f = debugger_loadString(expression);
+            local f = debugger_loadString(expression) or debugger_loadString("return " .. expression)
             --判断结果，如果表达式错误会返回nil
             if type(f) == "function" then
                 if _VERSION == "Lua 5.1" then
