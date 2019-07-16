@@ -18,7 +18,7 @@
       "version": "0.2.0",
     "configurations": [
         {
-    				//正常调试配置
+            //正常调试配置
             "type": "lua",
             "request": "launch",
             "internalConsoleOptions": "openOnFirstSessionStart",
@@ -34,7 +34,7 @@
             "logLevel": 1 //日志等级，默认无需修改
         },
         {
-    				//单文件调试配置
+            //单文件调试配置
             "type": "lua",
             "request": "launch",
             "internalConsoleOptions": "neverOpen",

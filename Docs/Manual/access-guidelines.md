@@ -37,6 +37,7 @@ lua调试器依赖于 **luasocket** 和 **规范的路径**，需验证这两点
 
 
 **更新说明**:   lua中允许使用`require("a.b") `引用子目录中的文件，在标准lua库中，lua虚拟机会把路径转化为 a/b 传给调试器。但是有些开发框架没有做这样的转换，调试器会把收到的a.b当做一个文件处理。结果是导致调试进入require("a.b")的文件时，报找不到文件错误。
+
 这个问题的解决办法需要用户修改自身框架，保证`require("a.b") `调用文件时传给lua虚拟机的路径是a/b。或者参见  [issue #24](https://github.com/Tencent/LuaPanda/issues/24) , 在调试器中强转换路径中的. 为 /
 
 
@@ -178,7 +179,7 @@ LuaPanda 在PC上调试会默认使用 c hook，它是用c重写了debugger的�
       "version": "0.2.0",
     "configurations": [
         {
-    				//正常调试配置
+            //正常调试配置
             "type": "lua",
             "request": "launch",
             "internalConsoleOptions": "openOnFirstSessionStart",
@@ -194,7 +195,7 @@ LuaPanda 在PC上调试会默认使用 c hook，它是用c重写了debugger的�
             "logLevel": 1 //日志等级，默认无需修改
         },
         {
-    				//单文件调试配置
+            //单文件调试配置
             "type": "lua",
             "request": "launch",
             "internalConsoleOptions": "neverOpen",
