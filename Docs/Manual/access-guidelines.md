@@ -31,17 +31,13 @@ lua调试器依赖于 **luasocket** 和 **规范的路径**，需验证这两点
 ![string_path](../static/access_introduction/string_path.png)
 
 下面案例测试不通过，原因是仅输出了文件名，而这些文件其实不在同一个目录下。调试器无法仅根据文件名确定文件位置。
+
 ![filename_path](../static/access_introduction/filename_path.png)
 
 
 
-更新:   lua中允许使用`require("a.b") `引用子目录中的文件，在标准lua库中，lua虚拟机会把路径转化为 a/b 传给调试器。
-
-但是有些开发框架没有做这样的转换，调试器会把收到的a.b当做一个文件处理。结果是导致调试进入require("a.b")的文件时，报找不到文件错误。
-
-这个问题的解决办法需要用户修改自身框架，保证`require("a.b") `调用文件时传给lua虚拟机的路径是a/b。
-
-或者参见  [issue #24](https://github.com/Tencent/LuaPanda/issues/24) , 在调试器中强转换路径中的. 为 /
+**更新说明**:   lua中允许使用`require("a.b") `引用子目录中的文件，在标准lua库中，lua虚拟机会把路径转化为 a/b 传给调试器。但是有些开发框架没有做这样的转换，调试器会把收到的a.b当做一个文件处理。结果是导致调试进入require("a.b")的文件时，报找不到文件错误。
+这个问题的解决办法需要用户修改自身框架，保证`require("a.b") `调用文件时传给lua虚拟机的路径是a/b。或者参见  [issue #24](https://github.com/Tencent/LuaPanda/issues/24) , 在调试器中强转换路径中的. 为 /
 
 
 
@@ -94,9 +90,7 @@ launch.json 配置项中要修改的主要是luaFileExtension, 改成lua文件�
 
 ![cannot_find_file](../static/access_introduction/cannot_find_file.png)
 
-不要停止调试，在VSCode中找到报错中提到的文件，在其中任意位置打一个断点，之后在调试控制台中输入`LuaPanda.doctor()`
-
-LuaPanda.doctor() 是一个帮助用户检查错误的命令，可以进行路径分析，给出建议。
+不要停止调试，在VSCode中找到报错中提到的文件，在其中任意位置打一个断点，之后在调试控制台中输入`LuaPanda.doctor()`。这是一个帮助用户检查错误的命令，可以进行路径分析，给出建议。
 
 输出结果
 
@@ -104,7 +98,7 @@ LuaPanda.doctor() 是一个帮助用户检查错误的命令，可以进行路�
 
 format是调试器拼接出的文件路径，filepath是文件真实存在的路径。
 
-这里其中会告诉用户format路径来源，用户需要对比format和filepath路径，调整launch.json中cwd或者修改VSCode打开文件夹位置，使format和filepath保持一致，即可修复问题。
+说明中会告诉用户format路径来源，用户需要对比format和filepath路径，调整launch.json中cwd或者修改VSCode打开文件夹位置，使format和filepath保持一致，即可修复问题。
 
 
 
@@ -131,9 +125,9 @@ LuaPanda 在PC上调试会默认使用 c hook，它是用c重写了debugger的�
 
 ![getinfo](../static/access_introduction/getinfo.png)
 
-如果提示c库未能正确加载，可以使用`LuaPanda.doctor()`命令查看详细信息
++ 如果提示c库未能正确加载，可以使用`LuaPanda.doctor()`命令查看详细信息
 
-c hook的源码放置在工程中`Debugger/debugger_lib`中。以供参考
++ c hook的源码放置在工程中`Debugger/debugger_lib`中。以供参考
 
 
 
@@ -167,7 +161,7 @@ c hook的源码放置在工程中`Debugger/debugger_lib`中。以供参考
 
   打印所有断点信息(已包含在getInfo中)
 
-  ![get_breaks_complete](/Users/stuartmac/LuaPanda_out/Docs/static/access_introduction/get_breaks_complete.png)
+  ![get_breaks_complete](../static/access_introduction/get_breaks_complete.png)
 
 
 
@@ -191,24 +185,24 @@ c hook的源码放置在工程中`Debugger/debugger_lib`中。以供参考
             "name": "LuaPanda",
             "program": "${workspaceFolder}",
             "cwd": "${workspaceFolder}",
-            "pathCaseSensitivity": true,//路径大小写敏感
-            "docPathReplace": [],				//路径映射
-            "luaFileExtension": "",			//lua文件后缀
-            "connectionPort": 8818,			//连接端口号
-            "stopOnEntry": true,				//建立连接后自动停止
-            "useCHook": true,						//使用C调试库
-            "logLevel": 1								//日志等级，默认无需修改
+            "pathCaseSensitivity": true, //路径大小写敏感
+            "docPathReplace": [], //路径映射
+            "luaFileExtension": "", //lua文件后缀
+            "connectionPort": 8818, //连接端口号
+            "stopOnEntry": true, //建立连接后自动停止
+            "useCHook": true, //使用C调试库
+            "logLevel": 1 //日志等级，默认无需修改
         },
         {
     				//单文件调试配置
             "type": "lua",
             "request": "launch",
             "internalConsoleOptions": "neverOpen",
-            "name": "LuaPanda-DebugFile",//单文件调试，请不要修改
+            "name": "LuaPanda-DebugFile", //单文件调试，请不要修改
             "program": "${workspaceFolder}",
             "cwd": "${workspaceFolder}",
             "pathCaseSensitivity": true,
-            "luaPath": "",							  //lua.exe所在位置	
+            "luaPath": "", //lua.exe所在位置	
             "luaFileExtension": "",
             "connectionPort": 8818,
             "stopOnEntry": true,

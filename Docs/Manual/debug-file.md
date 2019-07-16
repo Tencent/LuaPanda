@@ -26,12 +26,12 @@
             "program": "${workspaceFolder}",
             "cwd": "${workspaceFolder}",
             "pathCaseSensitivity": true,//路径大小写敏感
-            "docPathReplace": [],				//路径映射
-            "luaFileExtension": "",			//lua文件后缀
-            "connectionPort": 8818,			//连接端口号
-            "stopOnEntry": true,				//建立连接后自动停止
-            "useCHook": true,						//使用C调试库
-            "logLevel": 1								//日志等级，默认无需修改
+            "docPathReplace": [], //路径映射
+            "luaFileExtension": "", //lua文件后缀
+            "connectionPort": 8818, //连接端口号
+            "stopOnEntry": true, //建立连接后自动停止
+            "useCHook": true, //使用C调试库
+            "logLevel": 1 //日志等级，默认无需修改
         },
         {
     				//单文件调试配置
@@ -42,8 +42,8 @@
             "program": "${workspaceFolder}",
             "cwd": "${workspaceFolder}",
             "pathCaseSensitivity": true,
-            "luaPath": "",							  //lua.exe所在位置
-						"packagePath": "",						//希望加入package.path的路径
+            "luaPath": "", //lua.exe所在位置
+						"packagePath": "", //希望加入package.path的路径
             "luaFileExtension": "",
             "connectionPort": 8818,
             "stopOnEntry": true,

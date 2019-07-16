@@ -2,11 +2,13 @@
 
 调试器框架分为三部分
 
-+ VSCode 扩展 : https://marketplace.visualstudio.com/items?itemName=stuartwang.luapanda
++ VSCode 扩展。 下载地址 : https://marketplace.visualstudio.com/items?itemName=stuartwang.luapanda
 
-  如有更新，VSCode 会有提示。
+  如有更新，VSCode 会主动提示。
 
-+ lua文件 ： LuaPanda.lua，DebugTools.lua
++ lua文件。 下载地址：https://github.com/Tencent/LuaPanda/releases 
+
+  LuaPanda.lua，DebugTools.lua
 
   需要用户手动下载最新的文件，替换工程中原有文件。
 
