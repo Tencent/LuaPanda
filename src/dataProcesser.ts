@@ -49,7 +49,7 @@ export class dataProcesser {
         for (let index = 0; index < dataProcesser.orderList.length; index++) {
             const element = dataProcesser.orderList[index];
             if ( element["timeOut"] && Date.now() > element["timeOut"] ){
-                dataProcesser._runtime.showError(element["callbackId"] + " 请求超时! 详细请求信息可在 Adapter/log 中搜索此id查看");
+                // dataProcesser._runtime.showError(element["callbackId"] + " 请求超时! 详细请求信息可在 Adapter/log 中搜索此id查看");
                 let cb = element["callback"];
                 cb(element["callbackArgs"]);
                 dataProcesser.orderList.splice(index, 1);
