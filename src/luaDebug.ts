@@ -244,9 +244,31 @@ export class LuaDebugSession extends LoggingDebugSession {
         //单文件调试模式
         if(args.name == 'LuaPanda-DebugFile'){
             let activeWindow =  vscode.window.activeTextEditor;
-            if (activeWindow){  
-                //有活动的窗口
-                let pathArray = activeWindow.document.uri.fsPath.split(path.sep);
+            if (activeWindow){
+                let activeFileUri = '';
+                // 先判断当前活动窗口的 uri 是否有效
+                let activeScheme = activeWindow.document.uri.scheme;
+                if( activeScheme != "file" ){
+                    // 当前活动窗口不是file类型，遍历 visibleTextEditors，取出file类型的窗口
+                    let visableTextEditorArray = vscode.window.visibleTextEditors;
+                    for (const key in visableTextEditorArray) {
+                        const editor = visableTextEditorArray[key];
+                        let editScheme =  editor.document.uri.scheme;
+                        if(editScheme == "file"){
+                            activeFileUri = editor.document.uri.fsPath;
+                            break;
+                        }
+                    }
+                }else{
+                    // 使用 activeWindow
+                    activeFileUri = activeWindow.document.uri.fsPath
+                }
+                if(activeFileUri == ''){
+                    DebugLogger.DebuggerInfo("[Error]: adapter start file debug, but file Uri is empty string");
+                    return;
+                }
+
+                let pathArray = activeFileUri.split(path.sep);
                 let filePath = pathArray.join('/');
                 //直接运行
                 const terminal = vscode.window.createTerminal({
