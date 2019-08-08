@@ -181,11 +181,11 @@ export class LuaDebugSession extends LoggingDebugSession {
                     if (DVerArr.length == AVerArr.length && DVerArr.length == 3 ){
                         //比较大版本，大版本相差1就提示
                         if ( parseInt(AVerArr[0]) > parseInt(DVerArr[0]) ){
-                            this._runtime.showTip("调试器Lua文件版本很低, 建议升级至新版。获取帮助 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md ");
+                            this._runtime.showTip("调试器Lua文件版本过低, 建议升级至最新版本。获取帮助 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md ");
                         }
                         //比较小版本，小版本相差20就提示
-                        if ( (  parseInt(AVerArr[1]) - parseInt(DVerArr[1])  ) >= 20 ){
-                            this._runtime.showTip("调试器Lua文件较旧, 建议升级至最新版本。获取帮助 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md ");
+                        if ( (  parseInt(AVerArr[1]) - parseInt(DVerArr[1])  ) >= 3 ){
+                            this._runtime.showTip("调试器Lua文件版本较低, 建议升级至最新版本。获取帮助 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md ");
                         }
                     }
                 }

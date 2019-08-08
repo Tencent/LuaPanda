@@ -15,9 +15,13 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 # Tips
 
-+ 关于VSCode 1.33的兼容
++ 升级建议
 
-  更新 VScode 1.33 之后调试器可能出现断点无法停止的情况，如遇此问题，请从master分支中拉取最新的`LuaPanda.lua`文件，覆盖原有文件即可。
+  因 VSCode1.33 升级，LuaPanda 2.0.5 前版本无法在 VScode1.33 及更高版本中使用。建议大家在使用中如果遇到问题，把调试器的`LuaPanda.lua，DebugTools.lua`文件更新到最新。`LuaPanda.lua` 的版本可以在此文件头部查看。
+
+  下载地址：https://github.com/Tencent/LuaPanda/releases 
+
+  
 
 + 关于找不到`libpdebug`模块报错
 
@@ -33,6 +37,15 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 # 近期更新
 
++ v2.2.1
+  
+  小幅更新，优化了单文件调试。
+  
+  - 修复单文件调试 文件路径中的 \ 被当做转义符的问题
+  - 修复单文件调试 首次运行窗口报错的问题
+  
+
+  
 + v2.2.0
   
   增加了`LuaPanda.doctor()` 命令，可以检查环境中的错误(需更新LuaPanda.lua和DebugTools.lua至2.2.0)。
