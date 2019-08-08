@@ -46,7 +46,7 @@ local consoleLogLevel = 2;           --打印在控制台(print)的日志等级 
 local connectTimeoutSec = 0.005;       --等待连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
 --用户设置项END
 
-local debuggerVer = "2.2.0";                 --debugger版本号
+local debuggerVer = "2.2.1";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = require("DebugTools");     --引用的开源工具，包括json解析和table展开工具等
@@ -2437,12 +2437,13 @@ function this.processExp(msgTable)
         local expression = this.trim(tostring(msgTable.Expression));
         local isCmd = false;
         if isCmd == false then
-            --如果输入的是一个变量，加上return
+            --兼容旧版p 命令
             if expression:find("p ", 1, true) == 1 then
                 expression = expression:sub(3);
-                expression = "return " .. expression;
             end
-            local f = debugger_loadString(expression) or debugger_loadString("return " .. expression)
+
+            local expressionWithReturn = "return " .. expression;
+            local f = debugger_loadString(expressionWithReturn) or debugger_loadString(expression);
             --判断结果，如果表达式错误会返回nil
             if type(f) == "function" then
                 if _VERSION == "Lua 5.1" then
@@ -2453,7 +2454,7 @@ function this.processExp(msgTable)
                 --表达式要有错误处理
                 xpcall(function() retString = f() end , function() retString = "输入错误指令。\n + 请检查指令是否正确\n + 指令仅能在[暂停在断点时]输入, 请不要在程序持续运行时输入"; var.isSuccess = false; end)
             else
-                retString = "指令执行错误。\n + 请检查指令是否正确\n + 如果希望观察[变量的值]或[表达式的返回结果]，请在表达式前前面加\"p \"\n + 如果仅希望执行一段lua代码，不观察返回值，直接输入即可";
+                retString = "指令执行错误。\n + 请检查指令是否正确\n + 可以直接输入表达式，执行函数或变量名，并观察执行结果";
                 var.isSuccess = false;
             end
         end
