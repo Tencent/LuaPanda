@@ -65,11 +65,11 @@ Win  slua-unreal + lua5.3
 
 ![REPL-watch](../static/feature-introduction/REPL-watch.png)
 
-调试控制台，可以在断点处输入表达式
+调试控制台，可以在断点处输入表达式，执行函数，或者输入变量名观察它的值
 
 ![debug-console](../static/feature-introduction/debug-console.png)
 
-在需要查看的变量或者是表达式前加p , 即可返回输出结果，如上图。
+
 
 ### 支持attach模式
 

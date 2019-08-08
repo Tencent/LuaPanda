@@ -181,11 +181,11 @@ export class LuaDebugSession extends LoggingDebugSession {
                     if (DVerArr.length == AVerArr.length && DVerArr.length == 3 ){
                         //比较大版本，大版本相差1就提示
                         if ( parseInt(AVerArr[0]) > parseInt(DVerArr[0]) ){
-                            this._runtime.showTip("调试器Lua文件较旧, 建议升级至最新版本。获取帮助 https://github.com/Tencent/LuaPanda ");
+                            this._runtime.showTip("调试器Lua文件版本过低, 建议升级至最新版本。获取帮助 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md ");
                         }
                         //比较小版本，小版本相差20就提示
-                        if ( (  parseInt(AVerArr[1]) - parseInt(DVerArr[1])  ) >= 20 ){
-                            this._runtime.showTip("调试器Lua文件较旧, 建议升级至最新版本。获取帮助 https://github.com/Tencent/LuaPanda ");
+                        if ( (  parseInt(AVerArr[1]) - parseInt(DVerArr[1])  ) >= 3 ){
+                            this._runtime.showTip("调试器Lua文件版本较低, 建议升级至最新版本。获取帮助 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md ");
                         }
                     }
                 }
@@ -244,9 +244,32 @@ export class LuaDebugSession extends LoggingDebugSession {
         //单文件调试模式
         if(args.name == 'LuaPanda-DebugFile'){
             let activeWindow =  vscode.window.activeTextEditor;
-            if (activeWindow){  
-                //有活动的窗口
-                let filePath = activeWindow.document.uri.fsPath;
+            if (activeWindow){
+                let activeFileUri = '';
+                // 先判断当前活动窗口的 uri 是否有效
+                let activeScheme = activeWindow.document.uri.scheme;
+                if( activeScheme != "file" ){
+                    // 当前活动窗口不是file类型，遍历 visibleTextEditors，取出file类型的窗口
+                    let visableTextEditorArray = vscode.window.visibleTextEditors;
+                    for (const key in visableTextEditorArray) {
+                        const editor = visableTextEditorArray[key];
+                        let editScheme =  editor.document.uri.scheme;
+                        if(editScheme == "file"){
+                            activeFileUri = editor.document.uri.fsPath;
+                            break;
+                        }
+                    }
+                }else{
+                    // 使用 activeWindow
+                    activeFileUri = activeWindow.document.uri.fsPath
+                }
+                if(activeFileUri == ''){
+                    DebugLogger.DebuggerInfo("[Error]: adapter start file debug, but file Uri is empty string");
+                    return;
+                }
+
+                let pathArray = activeFileUri.split(path.sep);
+                let filePath = pathArray.join('/');
                 //直接运行
                 const terminal = vscode.window.createTerminal({
                     name: "Run Lua File (LuaPanda)",

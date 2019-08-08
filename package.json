@@ -1,7 +1,7 @@
 {
 	"name": "luapanda",
 	"displayName": "LuaPanda",
-	"version": "2.2.0",
+	"version": "2.2.1",
 	"publisher": "stuartwang",
 	"description": "lua debug adapters for VS Code.",
 	"author": {
@@ -156,7 +156,7 @@
 								"type": "array",
 								"description": "被调试文件和VSCode中加载文件路径不一致时，通过此项设置，完成路径替换。输入格式[\"被替换掉的路径\", \"新路径\"]",
 								"default": []
-							}	
+							}
 						}
 					}
 				},
@@ -184,7 +184,7 @@
 						"program": "${workspaceFolder}",
 						"cwd": "${workspaceFolder}",
 						"pathCaseSensitivity": true,
-						"luaPath" : "",
+						"luaPath": "",
 						"packagePath": [],
 						"luaFileExtension": "",
 						"connectionPort": 8818,
