@@ -169,7 +169,10 @@ function this.start(host, port)
 
     --尝试初次连接
     this.changeRunState(runState.DISCONNECT);
-    this.reGetSock();
+    if not this.reGetSock() then
+        this.printToConsole("[Error] Start debugger but get Socket fail , please install luasocket!", 2);
+        return;
+    end
     connectHost = host;
     connectPort = port;
     local sockSuccess = sock and sock:connect(connectHost, connectPort);
@@ -699,7 +702,8 @@ end
 -----------------------------------------------------------------------------
 -- 网络相关方法
 -----------------------------------------------------------------------------
---刷新socket
+-- 刷新socket
+-- @return true/false 刷新成功/失败
 function this.reGetSock()
     if sock ~= nil then
         pcall(function() sock:close() end);
@@ -718,6 +722,7 @@ function this.reGetSock()
                 sock:settimeout(connectTimeoutSec);      
             else
                 this.printToConsole("[Error] reGetSock fail", 2);
+                return false;
             end
        end
     else
@@ -725,6 +730,7 @@ function this.reGetSock()
         this.printToConsole("reGetSock ue4 success");
         sock:settimeout(connectTimeoutSec);
     end
+    return true;
 end
 
 -- 定时(以函数return为时机) 进行attach连接
