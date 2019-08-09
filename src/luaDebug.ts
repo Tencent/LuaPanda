@@ -25,7 +25,7 @@ export class LuaDebugSession extends LoggingDebugSession {
     public static isNeedB64EncodeStr: boolean = true;
     private static THREAD_ID = 1; 	  //调试器不支持多线程，硬编码THREAD_ID为1
     public static TCPPort = 0;			//和客户端连接的端口号，通过VScode的设置赋值
-    private static breakpointsArray; //在socket连接前临时保存断点的数组
+    private static breakpointsArray;  //在socket连接前临时保存断点的数组
     private static autoReconnect;
     private _configurationDone = new Subject();
     private _variableHandles = new Handles<string>(50000);//Handle编号从50000开始
@@ -341,6 +341,26 @@ export class LuaDebugSession extends LoggingDebugSession {
             breakpoints: vscodeBreakpoints
         };
 
+        // 更新记录数据中的断点
+        if (LuaDebugSession.breakpointsArray == undefined) {
+            LuaDebugSession.breakpointsArray = new Array();
+        }
+
+        let isbkPathExist = false;  //断点路径已经存在于断点列表中
+        for (var bkMap of LuaDebugSession.breakpointsArray) {
+            if (bkMap.bkPath == path) {
+                bkMap["bksArray"] = vscodeBreakpoints;
+                isbkPathExist = true;
+            }
+        }
+
+        if(!isbkPathExist){
+            let bk = new Object();
+            bk["bkPath"] = path;
+            bk["bksArray"] = vscodeBreakpoints;
+            LuaDebugSession.breakpointsArray.push(bk);
+        }
+
         if (dataProcesser._socket && LuaDebugSession.userConnectionFlag) {
             //已建立连接
             let callbackArgs = new Array();
@@ -352,21 +372,7 @@ export class LuaDebugSession extends LoggingDebugSession {
                 ins.sendResponse(arr[1]);//在收到debugger的返回后，通知VSCode, VSCode界面的断点会变成已验证
             }, callbackArgs);
         } else {
-            //未连接，记录断点
-            if (LuaDebugSession.breakpointsArray != undefined) {
-                for (var bkMap of LuaDebugSession.breakpointsArray) {
-                    if (bkMap.bkPath == path) {
-                        bkMap["bksArray"] = vscodeBreakpoints;
-                        this.sendResponse(response);
-                        return;
-                    }
-                }
-
-                let bk = new Object();
-                bk["bkPath"] = path;
-                bk["bksArray"] = vscodeBreakpoints;
-                LuaDebugSession.breakpointsArray.push(bk);
-            }
+            //未连接，直接返回
             this.sendResponse(response);
         }
     }
