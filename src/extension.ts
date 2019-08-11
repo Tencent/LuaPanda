@@ -79,6 +79,14 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             return ;
         }
 
+        if(!config.program){
+            config.program = '';
+        }
+
+        if(!config.args){
+            config.args = new Array<string>();
+        }
+
         if (!config.request) {
             vscode.window.showInformationMessage("请在launch中配置request方式!");
             config.request = 'launch';

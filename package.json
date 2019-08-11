@@ -84,9 +84,14 @@
 						"properties": {
 							"program": {
 								"type": "string",
-								"description": "Absolute path to a text file.",
+								"description": "随调试器启动的可执行文件路径",
 								"default": "${workspaceFolder}"
 							},
+							"args": {
+								"type": "array",
+								"description": "program 执行时需要的参数, 结构是一个字符串数组",
+								"default": []
+							},				
 							"trace": {
 								"type": "boolean",
 								"description": "Enable logging of the Debug Adapter Protocol.",
@@ -167,6 +172,7 @@
 						"internalConsoleOptions": "openOnFirstSessionStart",
 						"name": "LuaPanda",
 						"program": "${workspaceFolder}",
+						"args":[],
 						"cwd": "${workspaceFolder}",
 						"pathCaseSensitivity": true,
 						"docPathReplace": [],
@@ -181,7 +187,6 @@
 						"request": "launch",
 						"internalConsoleOptions": "neverOpen",
 						"name": "LuaPanda-DebugFile",
-						"program": "${workspaceFolder}",
 						"cwd": "${workspaceFolder}",
 						"pathCaseSensitivity": true,
 						"luaPath": "",

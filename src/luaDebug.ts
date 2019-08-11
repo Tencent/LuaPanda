@@ -304,6 +304,25 @@ export class LuaDebugSession extends LoggingDebugSession {
                 terminal.show();
             }
         }
+        else{
+            // 非单文件调试模式下，拉起program
+            let fs = require('fs');
+            if(fs.existsSync(args.program) && fs.statSync(args.program).isFile()){
+                //program 和 args 分开
+                const terminal = vscode.window.createTerminal({
+                    name: "Run program file (LuaPanda)",
+                    env: {}, 
+                });
+
+                let progaamCmdwithArgs = args.program;
+                for (const arg of args.args) {
+                    progaamCmdwithArgs = progaamCmdwithArgs + " " + arg;
+                }
+                
+                terminal.sendText(progaamCmdwithArgs , true);
+                terminal.show(); 
+            }
+        }
     }
 
     /**
