@@ -270,6 +270,7 @@ export class LuaDebugSession extends LoggingDebugSession {
 
                 let pathArray = activeFileUri.split(path.sep);
                 let filePath = pathArray.join('/');
+                filePath = '"' +  filePath + '"'; //给路径加上""
                 //直接运行
                 const terminal = vscode.window.createTerminal({
                     name: "Run Lua File (LuaPanda)",
