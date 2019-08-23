@@ -5,6 +5,7 @@ import * as Net from 'net';
 import { LuaDebugSession } from './luaDebug';
 import { DebugLogger } from './LogManager';
 import { StatusBarManager } from './StatusBarManager';
+import { Tools } from './Tools';
 
 export function activate(context: vscode.ExtensionContext) {
     //reloadWindow
@@ -45,37 +46,42 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             }
         }
 
+        // 不调试而直接运行当前文件
         if(config.noDebug){
-            let activeWindow =  vscode.window.activeTextEditor;
-            if (activeWindow){  
-                //有活动的窗口
-                let filePath = activeWindow.document.uri.fsPath;
-
-                let pathCMD = "'";
-                if(config.packagePath){
-                    for (let index = 0; index < config.packagePath.length; index++) {
-                        const joinPath = config.packagePath[index];
-                        pathCMD = pathCMD + joinPath + ";";
-                    }
-                }
-                pathCMD = pathCMD + "'";
-                //拼接命令
-                pathCMD = " \"package.path = " + pathCMD + ".. package.path;\" ";
-                let doFileCMD =  filePath;
-                let runCMD = pathCMD + doFileCMD;
-                const terminal = vscode.window.createTerminal({
-                    name: "Run Lua File (LuaPanda)",
-                    env: {}, 
-                });
-                let LuaCMD;
-                if(config.luaPath && config.luaPath != ''){
-                    LuaCMD = config.luaPath + " -e "
-                }else{
-                    LuaCMD = "lua -e ";
-                }
-                terminal.sendText( LuaCMD + runCMD , true);
-                terminal.show();
+            // 获取活跃窗口
+            let retObject = Tools.getVSCodeAvtiveFilePath();
+            if( retObject["retCode"] !== 0 ){
+                DebugLogger.DebuggerInfo(retObject["retMsg"]);
+                return;
             }
+            let filePath = retObject["filePath"];
+
+            const terminal = vscode.window.createTerminal({
+                name: "Run Lua File (LuaPanda)",
+                env: {}, 
+            });
+
+            // 把路径加入package.path
+            let path = require("path");
+            let pathCMD = "'";
+            let pathArr = path.dirname(__dirname).split( path.sep );
+            let stdPath =  pathArr.join('/');
+            pathCMD = pathCMD + stdPath + "/Debugger/?.lua;"
+            pathCMD = pathCMD + config.packagePath.join(';')
+            pathCMD = pathCMD + "'";
+            //拼接命令
+            pathCMD = " \"package.path = " + pathCMD + ".. package.path;\" ";
+            let doFileCMD =  filePath;
+            let runCMD = pathCMD + doFileCMD;
+
+            let LuaCMD;
+            if(config.luaPath && config.luaPath !== ''){
+                LuaCMD = config.luaPath + " -e "
+            }else{
+                LuaCMD = "lua -e ";
+            }
+            terminal.sendText( LuaCMD + runCMD , true);
+            terminal.show();
             return ;
         }
 
