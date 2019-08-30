@@ -4,6 +4,8 @@ import { DataProcesser } from './dataProcesser';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugLogger } from './LogManager';
 import { StatusBarManager } from './StatusBarManager';
+import { Tools } from './Tools';
+
 
 export interface LuaBreakpoint {
     id: number;
@@ -219,6 +221,8 @@ export class LuaDebugRuntime extends EventEmitter {
         stack.forEach(element => {
             let linenum: string = element.line;
             element.line = parseInt(linenum); //转为VSCode行号(int)
+            let getinfoPath : string = element.file;
+            element.file = Tools.checkFullPath(getinfoPath); 
         });
         //先保存堆栈信息，再发暂停请求
         this.breakStack = stack;

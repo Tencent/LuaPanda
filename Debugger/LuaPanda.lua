@@ -1387,13 +1387,13 @@ function this.getPath( info )
         isAbsolutePath = true;
     else
         isAbsolutePath = false;
-        if cwd ~= "" then
-            --查看filePath中是否包含cwd
-            local matchRes = string.find(filePath, cwd, 1, true);
-            if matchRes == nil then
-                retPath = cwd.."/"..filePath;
-            end
-        end
+        -- if cwd ~= "" then
+        --     --查看filePath中是否包含cwd
+        --     local matchRes = string.find(filePath, cwd, 1, true);
+        --     if matchRes == nil then
+        --         retPath = cwd.."/"..filePath;
+        --     end
+        -- end
     end
     retPath = this.genUnifiedPath(retPath);
     --放入Cache中缓存
@@ -1458,14 +1458,27 @@ function this.checkCurrentLayerisLua( checkLayer )
     return nil;
 end
 
+
 ------------------------断点处理-------------------------
+-- 断点路径处理
+-- @currentPath getinfo路径
+function this.compareBreakPath(currentPath)
+    for k,v in ipairs(breaks) do
+        if k:find(currentPath, 1, true) then
+            -- 如果是子串
+            return true, k;
+        end
+    end
+    return false, '';
+end
+
 -- 参数info是当前堆栈信息
 -- @info getInfo获取的当前调用信息
 function this.isHitBreakpoint( info )
-    local curPath = info.source;
     local curLine = tostring(info.currentline);
-    if breaks[curPath] ~= nil then
-        for k,v in ipairs(breaks[curPath]) do
+    local isPathHit, breakCompletePath = this.compareBreakPath(info.source);
+    if isPathHit then
+        for k,v in ipairs(breaks[completePath]) do
             if tostring(v["line"]) == tostring(curLine) then
                 -- type是TS中的枚举类型，其定义在BreakPoint.tx文件中
                 --[[

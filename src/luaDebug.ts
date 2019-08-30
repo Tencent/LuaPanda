@@ -134,6 +134,12 @@ export class LuaDebugSession extends LoggingDebugSession {
         //1. 配置初始化信息
         let os = require("os");
         let path = require("path");
+
+        //1.1.生成文件map
+        Tools.rebuildAcceptExtMap(args.luaFileExtension);
+        Tools.rebuildWorkspaceNamePathMap(args.currentWorkspacePath);
+        //------
+
         //去除out, Debugger/debugger_lib/plugins/Darwin/   libpdebug_版本号.so
         let clibPath = path.dirname(__dirname) + '/Debugger/debugger_lib/plugins/'
         let sendArgs = new Array();

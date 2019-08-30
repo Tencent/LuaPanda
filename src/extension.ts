@@ -102,6 +102,10 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             vscode.window.showInformationMessage("请在launch中配置cwd工作路径!");
             config.cwd = '${workspaceFolder}';
         }
+        
+        if(!config.currentWorkspacePath){
+            config.currentWorkspacePath = '${workspaceFolder}';
+        }
 
         if (!config.TempFilePath) {
             // vscode.window.showInformationMessage("请在launch中配置TempFilePath路径!");

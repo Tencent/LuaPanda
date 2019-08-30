@@ -1,7 +1,7 @@
 {
 	"name": "luapanda",
 	"displayName": "LuaPanda",
-	"version": "2.2.1",
+	"version": "2.2.5",
 	"publisher": "stuartwang",
 	"description": "lua debug adapters for VS Code.",
 	"author": {
@@ -41,7 +41,8 @@
 	"dependencies": {
 		"await-notify": "1.0.1",
 		"vscode-debugadapter": "1.27.0",
-		"vscode-debugprotocol": "1.27.0"
+		"vscode-debugprotocol": "1.27.0",
+		"path-reader": "^1.1.0"
 	},
 	"devDependencies": {
 		"@types/node": "7.0.55",
@@ -91,7 +92,7 @@
 								"type": "array",
 								"description": "program 执行时需要的参数, 结构是一个字符串数组",
 								"default": []
-							},				
+							},
 							"trace": {
 								"type": "boolean",
 								"description": "Enable logging of the Debug Adapter Protocol.",
@@ -161,6 +162,11 @@
 								"type": "array",
 								"description": "被调试文件和VSCode中加载文件路径不一致时，通过此项设置，完成路径替换。输入格式[\"被替换掉的路径\", \"新路径\"]",
 								"default": []
+							},
+							"currentWorkspacePath": {
+								"type": "string",
+								"description": "workspace路径",
+								"default": "${workspaceFolder}"
 							}
 						}
 					}
@@ -172,7 +178,7 @@
 						"internalConsoleOptions": "openOnFirstSessionStart",
 						"name": "LuaPanda",
 						"program": "${workspaceFolder}",
-						"args":[],
+						"args": [],
 						"cwd": "${workspaceFolder}",
 						"pathCaseSensitivity": true,
 						"docPathReplace": [],
@@ -187,7 +193,6 @@
 						"request": "launch",
 						"internalConsoleOptions": "neverOpen",
 						"name": "LuaPanda-DebugFile",
-						"cwd": "${workspaceFolder}",
 						"pathCaseSensitivity": true,
 						"luaPath": "",
 						"packagePath": [],
