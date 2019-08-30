@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { EventEmitter } from 'events';
-import { dataProcesser } from './dataProcesser';
+import { DataProcesser } from './dataProcesser';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugLogger } from './LogManager';
 import { StatusBarManager } from './StatusBarManager';
@@ -11,7 +11,7 @@ export interface LuaBreakpoint {
     verified: boolean;
 }
 
-export class luaDebugRuntime extends EventEmitter {
+export class LuaDebugRuntime extends EventEmitter {
     //当前读取的文件
     private _sourceFile: string;
     public get sourceFile() {
@@ -47,10 +47,10 @@ export class luaDebugRuntime extends EventEmitter {
      */
     public start(callback, callbackArgs, sendArgs) {
         let arrSend = new Object();
-        for (var key in sendArgs) {
+        for (let key in sendArgs) {
             arrSend[key] = String(sendArgs[key]);
         }
-        dataProcesser.commandToDebugger('initSuccess', arrSend, callback, callbackArgs);
+        DataProcesser.commandToDebugger('initSuccess', arrSend, callback, callbackArgs);
     }
 
     /**
@@ -62,7 +62,7 @@ export class luaDebugRuntime extends EventEmitter {
     public continue(callback, callbackArgs, event = 'continue') {
         DebugLogger.AdapterInfo("continue");
         let arrSend = new Object();
-        dataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
+        DataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -78,7 +78,7 @@ export class luaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["varName"] = String(varName);
         arrSend["stackId"] = String(frameId);
-        dataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
+        DataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -94,7 +94,7 @@ export class luaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["Expression"] = String(expression);
         arrSend["stackId"] = String(frameId);
-        dataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
+        DataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -114,7 +114,7 @@ export class luaDebugRuntime extends EventEmitter {
         arrSend["stackId"] = String(frameId);
         arrSend["newValue"] = String(newValue);
         arrSend["varName"] = String(name);
-        dataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
+        DataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -131,7 +131,7 @@ export class luaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["varRef"] = String(variableRef);
         arrSend["stackId"] = String(frameId);
-        dataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs, 3);
+        DataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs, 3);
     }
 
     /**
@@ -139,7 +139,7 @@ export class luaDebugRuntime extends EventEmitter {
      */
     public stopRun(callback, callbackArgs, event = 'stopRun') {
         let arrSend = new Object();
-        dataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
+        DataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -148,7 +148,7 @@ export class luaDebugRuntime extends EventEmitter {
     public step(callback, callbackArgs, event = 'stopOnStep') {
         DebugLogger.AdapterInfo("step:" + event);
         let arrSend = new Object();
-        dataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
+        DataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -156,7 +156,7 @@ export class luaDebugRuntime extends EventEmitter {
      */
     public luaGarbageCollect(event = "LuaGarbageCollect") {
         let arrSend = new Object();
-        dataProcesser.commandToDebugger(event, arrSend);
+        DataProcesser.commandToDebugger(event, arrSend);
     }
 
     /**
@@ -171,7 +171,7 @@ export class luaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["path"] = path;
         arrSend["bks"] = bks;
-        dataProcesser.commandToDebugger("setBreakPoint", arrSend, callback, callbackArgs);
+        DataProcesser.commandToDebugger("setBreakPoint", arrSend, callback, callbackArgs);
     }
 
     /**
