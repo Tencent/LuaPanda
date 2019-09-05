@@ -4,10 +4,10 @@ let path = require("path");
 let pathReader = require('path-reader');
 import { DebugLogger } from './LogManager';
 
-
 export class Tools {
     public static extMap = new Object();  // 可处理的文件后缀列表
     public static fileNameToPathMap;   // 文件名-路径Map
+    public static useAutoPathMode = false; 
 
     // 把传入的路径标准路径
     public static genUnifiedPath(beProcessPath) : string{
@@ -121,6 +121,10 @@ export class Tools {
 
     // 传入局部路径，返回完整路径
     public static checkFullPath( shortPath: string ): string{
+        if(this.useAutoPathMode === false){
+            return shortPath;
+        }
+
         let nameExtObject = this.getPathNameAndExt(shortPath);
         let fileName = nameExtObject['name'];
         let fullPath = this.fileNameToPathMap[fileName];
@@ -136,6 +140,8 @@ export class Tools {
                 return fullPath;
             }
         }
-        return '';
+        //最终没有找到，返回输入的地址
+        DebugLogger.showTips("调试器没有找到文件 " + shortPath + " , 请检查 launch.json 中后缀是否配置正确", 2);
+        return shortPath;
     }
 }

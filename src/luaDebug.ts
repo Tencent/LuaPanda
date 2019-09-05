@@ -135,9 +135,12 @@ export class LuaDebugSession extends LoggingDebugSession {
         let os = require("os");
         let path = require("path");
 
+        Tools.useAutoPathMode = !!args.autoPathMode;
         //1.1.生成文件map
-        Tools.rebuildAcceptExtMap(args.luaFileExtension);
-        Tools.rebuildWorkspaceNamePathMap(args.currentWorkspacePath);
+        if(Tools.useAutoPathMode === true){
+            Tools.rebuildAcceptExtMap(args.luaFileExtension);
+            Tools.rebuildWorkspaceNamePathMap(args.cwd);
+        }
         //------
 
         //去除out, Debugger/debugger_lib/plugins/Darwin/   libpdebug_版本号.so
@@ -157,6 +160,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         let pkg = require("../package.json");
         let adapterVersion = pkg.version;
         sendArgs["adapterVersion"] = String(adapterVersion);
+        sendArgs["autoPathMode"] = Tools.useAutoPathMode;
 
         if(args.docPathReplace instanceof Array && args.docPathReplace.length === 2 ){
             LuaDebugSession.replacePath = new Array( Tools.genUnifiedPath(String(args.docPathReplace[0])), Tools.genUnifiedPath(String(args.docPathReplace[1])));

@@ -119,6 +119,7 @@ local winDiskSymbolTip = "";
 local isAbsolutePath = false;
 local stopOnEntry;         --用户在VSCode端设置的是否打开stopOnEntry
 local userSetUseClib;    --用户在VSCode端设置的是否是用clib库
+local autoPathMode = false;
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
 local stepOutCounter = 0;       --STEPOVER out计数器
@@ -381,7 +382,9 @@ function this.doctor()
     if hookLib ~= nil then
         runSource = this.getPath(tostring(hookLib.get_last_source()));
     end
-    if runSource and runSource ~= "" then
+
+    -- 在精确路径模式下的路径错误检测
+    if not autoPathMode and runSource and runSource ~= "" then
         -- 读文件
         local isFileExist = this.fileExists(runSource);
         if not isFileExist then
@@ -449,6 +452,7 @@ function this.getInfo()
     strTable[#strTable + 1] = "consoleLogLevel:" .. consoleLogLevel .. ' | ';
     strTable[#strTable + 1] = "pathCaseSensitivity:" .. pathCaseSensitivity .. ' | ';
     strTable[#strTable + 1] = "attachMode:".. tostring(openAttachMode).. ' | ';
+    strTable[#strTable + 1] = "autoPathMode:".. tostring(autoPathMode).. ' | ';
 
     if userSetUseClib then
         strTable[#strTable + 1] = "useCHook:true";
@@ -464,10 +468,13 @@ function this.getInfo()
     strTable[#strTable + 1] = "clibPath: " .. tostring(clibPath) .. '\n';
     strTable[#strTable + 1] = "debugger: " .. this.getPath(DebuggerFileName) .. '\n';
     strTable[#strTable + 1] = this.getCWD();
-    if isAbsolutePath then
-        strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。" .. winDiskSymbolTip;
-    else
-        strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是相对路径，format来源于cwd+getinfo拼接。如format文件路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。也可以在format对应的文件下打一个断点，调整直到format和Breaks Info中断点路径完全一致。" .. winDiskSymbolTip;
+
+    if not autoPathMode then
+        if isAbsolutePath then
+            strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。" .. winDiskSymbolTip;
+        else
+            strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是相对路径，format来源于cwd+getinfo拼接。如format文件路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。也可以在format对应的文件下打一个断点，调整直到format和Breaks Info中断点路径完全一致。" .. winDiskSymbolTip;
+        end
     end
 
     if pathErrTip ~= nil and pathErrTip ~= '' then
@@ -986,6 +993,13 @@ function this.dataProcess( dataStr )
         cwd = this.genUnifiedPath(dataTable.info.cwd);
         --logLevel
         logLevel = tonumber(dataTable.info.logLevel) or 1;
+        --autoPathMode
+        if dataTable.info.autoPathMode == "true" then
+            autoPathMode = true;
+        else
+            autoPathMode = false;
+        end 
+
         --OS type
         if nil == OSType then
             --用户未主动设置OSType, 接收VSCode传来的数据
@@ -1051,7 +1065,7 @@ function this.dataProcess( dataStr )
                     hookLib = luapanda_chook;
                 else
                     if not(this.tryRequireClib("libpdebug", x64Path) or this.tryRequireClib("libpdebug", x86Path)) then
-                        this.printToVSCode("Require clib failed, use Lua to continue debug, use LuaPanda.getInfo() for more information.", 1);
+                        this.printToVSCode("Require clib failed, use Lua to continue debug, use LuaPanda.doctor() for more information.", 1);
                     end
                 end
             end
@@ -1387,13 +1401,13 @@ function this.getPath( info )
         isAbsolutePath = true;
     else
         isAbsolutePath = false;
-        -- if cwd ~= "" then
-        --     --查看filePath中是否包含cwd
-        --     local matchRes = string.find(filePath, cwd, 1, true);
-        --     if matchRes == nil then
-        --         retPath = cwd.."/"..filePath;
-        --     end
-        -- end
+        if autoPathMode == false and cwd ~= "" then
+            --查看filePath中是否包含cwd
+            local matchRes = string.find(filePath, cwd, 1, true);
+            if matchRes == nil then
+                retPath = cwd.."/"..filePath;
+            end
+        end
     end
     retPath = this.genUnifiedPath(retPath);
     --放入Cache中缓存
@@ -1476,7 +1490,17 @@ end
 -- @info getInfo获取的当前调用信息
 function this.isHitBreakpoint( info )
     local curLine = tostring(info.currentline);
-    local isPathHit, breakCompletePath = this.compareBreakPath(info.source);
+    local isPathHit = false, completePath;
+
+    if autoPathMode then
+        isPathHit, completePath = this.compareBreakPath(info.source);
+    else
+        completePath = info.source;
+        if breaks[completePath] then
+            isPathHit = true;
+        end
+    end
+
     if isPathHit then
         for k,v in ipairs(breaks[completePath]) do
             if tostring(v["line"]) == tostring(curLine) then

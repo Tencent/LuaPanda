@@ -86,7 +86,7 @@
 							"program": {
 								"type": "string",
 								"description": "随调试器启动的可执行文件路径",
-								"default": "${workspaceFolder}"
+								"default": ""
 							},
 							"args": {
 								"type": "array",
@@ -105,7 +105,7 @@
 							},
 							"cwd": {
 								"type": "string",
-								"description": "设置运行时的工程路径",
+								"description": "exactltPathMode : 拼接路径 | autoPathMode : workspace 路径",
 								"default": "${workspaceFolder}"
 							},
 							"isNeedB64EncodeStr": {
@@ -163,10 +163,10 @@
 								"description": "被调试文件和VSCode中加载文件路径不一致时，通过此项设置，完成路径替换。输入格式[\"被替换掉的路径\", \"新路径\"]",
 								"default": []
 							},
-							"currentWorkspacePath": {
-								"type": "string",
-								"description": "workspace路径",
-								"default": "${workspaceFolder}"
+							"autoPathMode": {
+								"type": "boolean",
+								"description": "是否使用自动路径模式",
+								"default": true
 							}
 						}
 					}
@@ -177,7 +177,7 @@
 						"request": "launch",
 						"internalConsoleOptions": "openOnFirstSessionStart",
 						"name": "LuaPanda",
-						"program": "${workspaceFolder}",
+						"program": "",
 						"args": [],
 						"cwd": "${workspaceFolder}",
 						"pathCaseSensitivity": true,
@@ -186,7 +186,8 @@
 						"connectionPort": 8818,
 						"stopOnEntry": true,
 						"useCHook": true,
-						"logLevel": 1
+						"logLevel": 1,
+						"autoPathMode": true
 					},
 					{
 						"type": "lua",

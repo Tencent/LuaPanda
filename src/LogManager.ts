@@ -24,4 +24,16 @@ export class DebugLogger {
             DebugLogger.Ainfo.appendLine(str);
         }
     }
+
+    public static showTips(str:string ,  level?:number){
+        if(level === 2 ){
+            vscode.window.showErrorMessage(str);
+        }
+        if(level === 1 ){
+            vscode.window.showWarningMessage(str);
+        }else{
+            vscode.window.showInformationMessage(str);
+        }
+        
+    }
 }
