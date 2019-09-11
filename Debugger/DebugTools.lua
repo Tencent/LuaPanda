@@ -298,6 +298,7 @@ function this.createJson()
                 startPos = decode_scanWhitespace(s,startPos+1)
             end
             assert(startPos<=stringLen, 'JSON String ended unexpectedly scanning array.')
+            local object
             object, startPos = json.decode(s,startPos)
             array[index] = object
             index = index + 1
