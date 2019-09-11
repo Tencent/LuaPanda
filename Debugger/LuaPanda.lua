@@ -131,7 +131,7 @@ local coroutineCreate;          --用来记录lua原始的coroutine.create函数
 local stopConnectTime = 0;      --用来临时记录stop断开连接的时间
 local isInMainThread;
 local receiveMsgTimer = 0;
-local pathFormatCache = {};
+local pathFormatCache = {};     --getinfo -> format
 local isUserSetClibPath = false;        --用户是否在本文件中自设了clib路径
 --5.1/5.3兼容
 if _VERSION == "Lua 5.1" then
@@ -686,6 +686,11 @@ function this.genUnifiedPath(path)
     return newpath;
 end
 
+-- 打印路径缓存
+function this.printPathCache()
+    return pathFormatCache;
+end
+
 function this.getPathFromCache(source)
     return  pathFormatCache[source];
 end
@@ -835,6 +840,11 @@ function this.dataProcess( dataStr )
 
         this.printToVSCode("setBreakPoint path:"..tostring(bkPath));
         breaks[bkPath] = dataTable.info.bks;
+        if autoPathMode then 
+            -- 自动路径模式下，要清除路径缓存中保存失败路径
+            pathFormatCache = {};
+        end
+
         --save
         for k, v in pairs(breaks) do
             if next(v) == nil then
@@ -1081,7 +1091,7 @@ function this.dataProcess( dataStr )
         if hookLib ~= nil then
             isUseHookLib = 1;
             --同步数据给c hook
-            hookLib.sync_config(logLevel, pathCaseSensitivity);
+            hookLib.sync_config(logLevel, pathCaseSensitivity, autoPathMode);
             hookLib.sync_tempfile_path(TempFilePath_luaString)
             hookLib.sync_cwd(cwd);
             hookLib.sync_file_ext(luaFileExtension);
@@ -1477,12 +1487,28 @@ end
 -- 断点路径处理
 -- @currentPath getinfo路径
 function this.compareBreakPath(currentPath)
-    for k,v in ipairs(breaks) do
+    if type(currentPath) ~= "string" then 
+        return false, '';
+    end
+
+    local pathFromCache = this.getPathFromCache(currentPath);
+    if pathFromCache ~= nil then
+        if pathFromCache == '' then 
+            return false, '';
+        else
+            return true, pathFromCache;
+        end
+    end
+
+    for k,v in pairs(breaks) do
         if k:find(currentPath, 1, true) then
             -- 如果是子串
+            this.setPathToCache(currentPath, k);
             return true, k;
         end
     end
+    --查不到也保存下来，避免反复查询
+    this.setPathToCache(currentPath, '');
     return false, '';
 end
 
@@ -1613,7 +1639,12 @@ function this.checkHasBreakpoint(fileName)
     end
     --当前文件中是否有断点
     if fileName ~= nil then
-        return breaks[fileName] ~= nil, hasBk;
+        if autoPathMode then
+            local isPathHit, breakCompletePath = this.compareBreakPath(fileName);
+            return isPathHit, hasBk;
+        else
+            return breaks[fileName] ~= nil, hasBk;
+        end
     else
         return hasBk;
     end
@@ -1836,7 +1867,7 @@ function this.real_hook_process(info)
     --在RUN时检查并改变状态
     if hookLib == nil then
         if currentRunState == runState.RUN and jumpFlag == false and currentHookState ~= hookState.DISCONNECT_HOOK then
-            local fileBP, G_BP =this.checkHasBreakpoint(lastRunFilePath);
+            local fileBP, G_BP = this.checkHasBreakpoint(lastRunFilePath);
             if fileBP == false then
                 --文件无断点
                 if G_BP == true then
@@ -1847,7 +1878,12 @@ function this.real_hook_process(info)
             else
                 --文件有断点
                 --判断函数内是否有断点
-                local funHasBP = this.checkfuncHasBreakpoint(lastRunFunction.linedefined, lastRunFunction.lastlinedefined, lastRunFilePath);
+                local completePath = lastRunFilePath;
+                if autoPathMode then
+                    local _, tempPath = this.compareBreakPath(lastRunFilePath);
+                    if tempPath ~= '' then completePath = tempPath end;
+                end
+                local funHasBP = this.checkfuncHasBreakpoint(lastRunFunction.linedefined, lastRunFunction.lastlinedefined, completePath);
                 if  funHasBP then
                     --函数定义范围内
                     this.changeHookState(hookState.ALL_HOOK);
