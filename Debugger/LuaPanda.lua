@@ -107,7 +107,7 @@ local logLevel = 1;             --日志等级all/info/error. 此设置对应的
 local variableRefIdx = 1;       --变量索引
 local variableRefTab = {};      --变量记录table
 local lastRunFilePath = "";     --最后执行的文件路径
-local pathCaseSensitivity = 1;  --路径是否发大小写敏感，这个选项接收VScode设置，请勿在此处更改
+local pathCaseSensitivity = true;  --路径是否发大小写敏感，这个选项接收VScode设置，请勿在此处更改
 local recvMsgQueue = {};        --接收的消息队列
 local coroutinePool = {};       --保存用户协程的队列
 local winDiskSymbolUpper = false;--设置win下盘符的大小写。以此确保从VSCode中传入的断点路径,cwd和从lua虚拟机获得的文件路径盘符大小写一致
@@ -450,7 +450,7 @@ function this.getInfo()
     -- strTable[#strTable + 1] = "luaFileExtension:" .. luaFileExtension .. ' | ';
     strTable[#strTable + 1] = "logLevel:" .. logLevel .. ' | ' ;
     strTable[#strTable + 1] = "consoleLogLevel:" .. consoleLogLevel .. ' | ';
-    strTable[#strTable + 1] = "pathCaseSensitivity:" .. pathCaseSensitivity .. ' | ';
+    strTable[#strTable + 1] = "pathCaseSensitivity:" .. tostring(pathCaseSensitivity) .. ' | ';
     strTable[#strTable + 1] = "attachMode:".. tostring(openAttachMode).. ' | ';
     strTable[#strTable + 1] = "autoPathMode:".. tostring(autoPathMode).. ' | ';
 
@@ -648,7 +648,7 @@ function this.genUnifiedPath(path)
         return nil;
     end
     --大小写不敏感时，路径全部转为小写
-    if pathCaseSensitivity == 0 then
+    if pathCaseSensitivity == false then
         path = string.lower(path);
     end
     --统一路径全部替换成/
@@ -1036,12 +1036,6 @@ function this.dataProcess( dataStr )
         else
             --用户自设clibPath
             isUserSetClibPath = true;
-        end
-
-        if  tostring(dataTable.info.pathCaseSensitivity) == "false" then
-            pathCaseSensitivity =  0;
-        else
-            pathCaseSensitivity =  1;
         end
 
         --查找c++的hook库是否存在
