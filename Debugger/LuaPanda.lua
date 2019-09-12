@@ -131,7 +131,8 @@ local coroutineCreate;          --用来记录lua原始的coroutine.create函数
 local stopConnectTime = 0;      --用来临时记录stop断开连接的时间
 local isInMainThread;
 local receiveMsgTimer = 0;
-local pathFormatCache = {};     --getinfo -> format
+local formatPathCache = {};     -- getinfo -> format
+local completePathCache = {};    --format -> complete
 local isUserSetClibPath = false;        --用户是否在本文件中自设了clib路径
 --5.1/5.3兼容
 if _VERSION == "Lua 5.1" then
@@ -247,7 +248,7 @@ function this.clearData()
     clibPath = nil;
     -- reset breaks
     breaks = {};
-    pathFormatCache = {};
+    formatPathCache = {};
     this.breaks = breaks;
     if hookLib ~= nil then
         hookLib.sync_breakpoints(); --清空断点信息
@@ -686,17 +687,20 @@ function this.genUnifiedPath(path)
     return newpath;
 end
 
--- 打印路径缓存
-function this.printPathCache()
-    return pathFormatCache;
+function this.getCacheCompletePath(source)
+    return  completePathCache[source];
 end
 
-function this.getPathFromCache(source)
-    return  pathFormatCache[source];
+function this.setCacheCompletePath(source, dest)
+    completePathCache[source] = dest;
 end
 
-function this.setPathToCache(source, dest)
-    pathFormatCache[source] = dest;
+function this.getCacheFormatPath(source)
+    return  formatPathCache[source];
+end
+
+function this.setCacheFormatPath(source, dest)
+    formatPathCache[source] = dest;
 end
 -----------------------------------------------------------------------------
 -- 内存相关
@@ -842,7 +846,7 @@ function this.dataProcess( dataStr )
         breaks[bkPath] = dataTable.info.bks;
         if autoPathMode then 
             -- 自动路径模式下，要清除路径缓存中保存失败路径
-            pathFormatCache = {};
+            completePathCache = {};
         end
 
         --save
@@ -1376,7 +1380,7 @@ function this.getPath( info )
         filePath = info.source;
     end
     --尝试从Cache中获取路径
-    local cachePath = this.getPathFromCache(filePath);
+    local cachePath = this.getCacheFormatPath(filePath);
     if cachePath~= nil and type(cachePath) == "string" then
         return cachePath;
     end
@@ -1415,7 +1419,7 @@ function this.getPath( info )
     end
     retPath = this.genUnifiedPath(retPath);
     --放入Cache中缓存
-    this.setPathToCache(originalPath, retPath);
+    this.setCacheFormatPath(originalPath, retPath);
     return retPath;
 end
 
@@ -1485,7 +1489,7 @@ function this.compareBreakPath(currentPath)
         return false, '';
     end
 
-    local pathFromCache = this.getPathFromCache(currentPath);
+    local pathFromCache = this.getCacheCompletePath(currentPath);
     if pathFromCache ~= nil then
         if pathFromCache == '' then 
             return false, '';
@@ -1497,12 +1501,12 @@ function this.compareBreakPath(currentPath)
     for k,v in pairs(breaks) do
         if k:find(currentPath, 1, true) then
             -- 如果是子串
-            this.setPathToCache(currentPath, k);
+            this.setCacheCompletePath(currentPath, k);
             return true, k;
         end
     end
     --查不到也保存下来，避免反复查询
-    this.setPathToCache(currentPath, '');
+    this.setCacheCompletePath(currentPath, '');
     return false, '';
 end
 

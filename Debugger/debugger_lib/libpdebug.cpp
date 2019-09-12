@@ -5,19 +5,20 @@
 // Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
 #include "libpdebug.h"
-
 #include <ctime>
 #include <list>
 #include <map>
 #include <string>
+#include <regex>
 
 //using namespace std;
 static int cur_run_state = 0;       //当前运行状态， c 和 lua 都可能改变这个状态，要保持同步
 static int cur_hook_state = 0;      //当前hook状态， c 和 lua 都可能改变这个状态
-static lua_Number logLevel = 1;            //日志等级（从lua同步）
-static lua_Number pathCaseSensitivity = 1; //大小写敏感标志位（从lua同步）
+static int logLevel = 1;            //日志等级（从lua同步）
+static int pathCaseSensitivity = 1; //大小写敏感标志位（从lua同步）
+static int autoPathMode = 0;        //自动路径标是否开启志位
+static int BPhit = 0;               //BP命中标志位
 static int stackdeep_counter = 0;   //step用的栈深度计数器
-static lua_Number BPhit = 0;               //BP命中标志位
 static char hookLog[1024] = { 0 };
 const char* debug_file_path;             //debugger的文件路径
 int debug_file_path_len;
@@ -33,8 +34,10 @@ int ar_def_line = 0;
 int ar_lastdef_line = 0;
 struct path_transfer_node;
 struct breakpoint;
-//路径缓存队列
-std::list<path_transfer_node*> path_cache_list;
+// 路径缓存队列 getinfo -> format
+std::list<path_transfer_node*> getinfo_to_format_cache;
+// 路径缓存队列 format -> complete
+std::list<path_transfer_node*> format_to_complete_cache;
 // 存放断点map，key为source
 std::map<std::string, std::map<int, breakpoint>> all_breakpoint_map;
 
@@ -222,7 +225,7 @@ int call_lua_function(lua_State *L, const char * lua_function_name, int retCount
 //lua层主动清除路径缓存
 extern "C" int clear_pathcache(lua_State *L)
 {
-    path_cache_list.clear();
+    getinfo_to_format_cache.clear();
     return 0;
 }
 
@@ -247,14 +250,15 @@ extern "C" int sync_bp_hit(lua_State *L) {
         return 0;
     }
 
-    BPhit = static_cast<int>(luaL_checknumber(L, 1));
+    BPhit = static_cast<int>(luaL_checkinteger(L, 1));
     return 0;
 }
 
 //同步设置 -- 日志等级, 是否debug代码段, 是否使用忽略大小写
 extern "C" int sync_config(lua_State *L) {
-    logLevel = static_cast<int>(luaL_checknumber(L, 1));
-    pathCaseSensitivity = static_cast<int>(luaL_checknumber(L, 2));
+    logLevel = static_cast<int>(luaL_checkinteger(L, 1));
+    pathCaseSensitivity = static_cast<int>(luaL_checkinteger(L, 2));
+    autoPathMode = static_cast<int>(luaL_checkinteger(L, 3));
     return 0;
 }
 
@@ -308,7 +312,7 @@ void sync_runstate_toLua(lua_State *L, int state) {
 
 //这个接口给lua调用，用来同步状态 lua->C
 extern "C" int lua_set_runstate(lua_State *L) {
-    cur_run_state = static_cast<int>(luaL_checknumber(L, 1));
+    cur_run_state = static_cast<int>(luaL_checkinteger(L, 1));
     return 0;
 }
 
@@ -333,7 +337,7 @@ void sethookstate(lua_State *L, int state){
 
 //这个接口给lua调用，用来同步hook状态 lua->C
 extern "C" int lua_set_hookstate(lua_State *L) {
-    cur_hook_state = static_cast<int>(luaL_checknumber(L, 1));
+    cur_hook_state = static_cast<int>(luaL_checkinteger(L, 1));
     sethookstate(L, cur_hook_state);
     return 0;
 }
@@ -355,7 +359,7 @@ const char* getPath(lua_State *L,const char* source){
     }
 
     //检查缓存
-    for(auto iter = path_cache_list.begin();iter != path_cache_list.end();iter++)
+    for(auto iter = getinfo_to_format_cache.begin();iter != getinfo_to_format_cache.end();iter++)
     {
         if(!strcmp((*iter)->src.c_str(), source)){
             return (*iter)->dst.c_str();
@@ -370,7 +374,7 @@ const char* getPath(lua_State *L,const char* source){
     const char* retSource = lua_tostring(L, -1);
     //加入缓存,返回
     path_transfer_node *nd = new path_transfer_node(source, retSource );
-    path_cache_list.push_back(nd);
+    getinfo_to_format_cache.push_back(nd);
 
     return retSource;
 }
@@ -389,6 +393,9 @@ extern "C" int sync_breakpoints(lua_State *L) {
     if (!lua_istable(L, -1)) {
         print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk get breaks error", 2);
         return -1;
+    }
+    if(autoPathMode){
+        format_to_complete_cache.clear();
     }
 
     //遍历breaks
@@ -460,16 +467,64 @@ extern "C" int sync_breakpoints(lua_State *L) {
     return 0;
 }
 
+// 根据文件名，从断点列表中获得完整路径，如无法获得完整路径，则返回当前路径
+// 为了提升效率，此处应有一个命中表cache，表中找不到默认为不命中。 当有新bk的时候需刷新命中表
+int compareBreakPath(const char **getInfoPath){
+    //遍历断点列表，做路径匹配
+    //检查缓存
+    for(auto iter = format_to_complete_cache.begin();iter != format_to_complete_cache.end();iter++)
+    {
+        if(!strcmp((*iter)->src.c_str(), *getInfoPath)){
+            //从cache中找到了
+            const char *completePath = (*iter)->dst.c_str();
+            if(!strcmp(completePath, "")){
+                return 0;
+            }
+            
+            getInfoPath = &(completePath);
+            return 1;
+        }
+    }
+    
+    std::map<std::string, std::map<int, struct breakpoint>>::iterator iter = all_breakpoint_map.begin();
+    while(iter != all_breakpoint_map.end()){
+        //curPath如果是断点路径的一部分，返回completePath
+        const char *s = (iter->first).c_str();
+        std::regex reg(*getInfoPath);
+        if(std::regex_search(s, reg)){
+            //命中
+            //缓存
+            path_transfer_node *nd = new path_transfer_node(*getInfoPath, s );
+            format_to_complete_cache.push_back(nd);
+            
+            getInfoPath = &(s);
+            return 1;
+        }
+        iter++;
+    }
+    
+    path_transfer_node *nd = new path_transfer_node(*getInfoPath, "");
+    format_to_complete_cache.push_back(nd);
+    return 0;
+}
+
 //断点命中判断
 int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
     print_to_vscode(L, "debug_ishit_bk\n");
     debug_auto_stack _tt(L);
 
-    std::map<std::string, std::map<int, struct breakpoint>>::const_iterator const_iter1 = all_breakpoint_map.find(std::string(getPath(L, curPath)));
+    const char *standardPath = getPath(L, curPath);
+    if(autoPathMode == 1){
+       if(compareBreakPath(&standardPath) == 0) return 0;
+    }
+
+    // 判断是否存在同名文件
+    std::map<std::string, std::map<int, struct breakpoint>>::const_iterator const_iter1 = all_breakpoint_map.find(std::string(standardPath));
     if (const_iter1 == all_breakpoint_map.end()) {
         return 0;
     }
 
+    // 根据是否存在相同行号
     std::map<int, struct breakpoint>::const_iterator const_iter2 = const_iter1->second.find(current_line);
     if (const_iter2 == const_iter1->second.end()) {
         return 0;
@@ -639,39 +694,32 @@ int checkHasBreakpoint(lua_State *L, const char * src1, int current_line, int sl
     //先检查行号，再置换路径
     const char *src = getPath(L, src1);
     if(!strcmp(src,"")){
-        return 3;
+        return ALL_HOOK;
     }
 
     if (all_breakpoint_map.empty() == true) {
         //没有断点
-        return 0;
+        return LITE_HOOK;
     }
 
-    std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
-    std::map<int, breakpoint>::iterator iter2;
-    for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
-        if (iter1->first == std::string(src)) {
-            //文件名命中 eline > sline
-            if(sline >= eline || sline <= 0 || eline <= 0){
-                return 3;
+    if(autoPathMode){
+        int isFileHasBreakpoint = compareBreakPath(&src);
+        if(isFileHasBreakpoint == 1 ){
+            //path中有断点
+            return ALL_HOOK;
+        }
+    }else{
+        std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
+        std::map<int, breakpoint>::iterator iter2;
+        for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
+            if (iter1->first == std::string(src)) {
+                return ALL_HOOK;
             }
-            //current_line不在sline和eline直接拿
-            if (current_line > eline || current_line < sline) {
-                return 3;
-            }
-            //breakpoint 行号在sline和eline之间
-            for (iter2 = iter1->second.begin(); iter2 != iter1->second.end(); ++iter2) {
-                int breakline = iter2->first;
-                if(breakline>sline && breakline<eline){
-                    return 3;
-                }
-            }
-            return 2;
         }
     }
-
-    //文件没有断点
-    return 1;
+    
+    //文件没有断点,MIDHOOK
+    return MID_HOOK;
 }
 
 void check_hook_state(lua_State *L, const char* source ,  int current_line, int def_line, int last_line ,int event){
