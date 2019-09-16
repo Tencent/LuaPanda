@@ -1012,8 +1012,14 @@ function this.dataProcess( dataStr )
             autoPathMode = true;
         else
             autoPathMode = false;
-        end 
+        end
 
+        if  dataTable.info.pathCaseSensitivity == "true" then
+            pathCaseSensitivity =  true;
+        else
+            pathCaseSensitivity =  false;
+        end
+ 
         --OS type
         if nil == OSType then
             --用户未主动设置OSType, 接收VSCode传来的数据
@@ -1638,7 +1644,7 @@ function this.checkHasBreakpoint(fileName)
     --当前文件中是否有断点
     if fileName ~= nil then
         if autoPathMode then
-            local isPathHit, breakCompletePath = this.compareBreakPath(fileName);
+            local isPathHit, _ = this.compareBreakPath(fileName);
             return isPathHit, hasBk;
         else
             return breaks[fileName] ~= nil, hasBk;
