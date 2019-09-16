@@ -691,28 +691,29 @@ int hook_process_code_section(lua_State *L, lua_Debug *ar){
 //检查函数中是否有断点。int check_has_breakpoint  0:全局无断点  , 1:全局有断点但本文件中无断点 , 2:本文件中有断点 , 3:函数中有断点
 int checkHasBreakpoint(lua_State *L, const char * src1, int current_line, int sline , int eline){
     debug_auto_stack tt(L);
-    //先检查行号，再置换路径
-    const char *src = getPath(L, src1);
+
+	const char *src = getPath(L, src1);
     if(!strcmp(src,"")){
+		// 路径完全一致
         return ALL_HOOK;
     }
 
-    if (all_breakpoint_map.empty() == true) {
-        //没有断点
+    if(all_breakpoint_map.empty() == true) {
+        // 全局没有断点
         return LITE_HOOK;
     }
 
     if(autoPathMode){
         int isFileHasBreakpoint = compareBreakPath(&src);
         if(isFileHasBreakpoint == 1 ){
-            //path中有断点
+            // 本文件中有断点
             return ALL_HOOK;
         }
     }else{
         std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
-        std::map<int, breakpoint>::iterator iter2;
         for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
             if (iter1->first == std::string(src)) {
+				// compare()
                 return ALL_HOOK;
             }
         }
@@ -728,12 +729,11 @@ void check_hook_state(lua_State *L, const char* source ,  int current_line, int 
     }
     if(cur_run_state == RUN && cur_hook_state != DISCONNECT_HOOK){
         int stats = checkHasBreakpoint(L, source, current_line, def_line, last_line);
-        if(stats == 0){
+        if(stats == LITE_HOOK){
             sethookstate(L, LITE_HOOK);
-        }else if(stats == 1){
+        }else if(stats == MID_HOOK){
             sethookstate(L, MID_HOOK);
-        }else if (stats == 3 || stats == 2){
-            //文件中有断点的状态设置为ALL hook
+        }else if (stats == ALL_HOOK){
             sethookstate(L, ALL_HOOK);
         }
 
