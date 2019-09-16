@@ -481,7 +481,7 @@ int compareBreakPath(const char **getInfoPath){
                 return 0;
             }
             
-            getInfoPath = &(completePath);
+            *getInfoPath = completePath;
             return 1;
         }
     }
@@ -497,7 +497,7 @@ int compareBreakPath(const char **getInfoPath){
             path_transfer_node *nd = new path_transfer_node(*getInfoPath, s );
             format_to_complete_cache.push_back(nd);
             
-            getInfoPath = &(s);
+            *getInfoPath = s;
             return 1;
         }
         iter++;
@@ -980,6 +980,7 @@ void general_find_function() {
     lua_pcall = (luaDLL_pcall)GetProcAddress(hInstLibrary, "lua_pcall");//501
     lua_tointeger = (luaDLL_tointeger)GetProcAddress(hInstLibrary, "lua_tointeger");//501
 #endif
+	luaL_checkinteger = (luaDLL_checkinteger)GetProcAddress(hInstLibrary, "luaL_checkinteger");
     lua_version = (luaDLL_version)GetProcAddress(hInstLibrary, "lua_version");
     lua_pushstring = (luaDLL_pushstring)GetProcAddress(hInstLibrary, "lua_pushstring");
     lua_gettop = (luaDLL_gettop)GetProcAddress(hInstLibrary, "lua_gettop");

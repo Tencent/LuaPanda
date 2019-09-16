@@ -1089,7 +1089,7 @@ function this.dataProcess( dataStr )
         if hookLib ~= nil then
             isUseHookLib = 1;
             --同步数据给c hook
-            hookLib.sync_config(logLevel, pathCaseSensitivity, autoPathMode);
+            hookLib.sync_config(logLevel, pathCaseSensitivity and 1 or 0, autoPathMode and 1 or 0);
             hookLib.sync_tempfile_path(TempFilePath_luaString)
             hookLib.sync_cwd(cwd);
             hookLib.sync_file_ext(luaFileExtension);

@@ -101,6 +101,7 @@ typedef struct luaL_Reg {
 typedef LUA_KCONTEXT lua_KContext;
 
 //lua function
+typedef lua_Integer(*luaDLL_checkinteger) (lua_State *L, int numArg);
 typedef void (*lua_Hook) (lua_State *L, lua_Debug *ar);
 typedef int (*lua_KFunction) (lua_State *L, int status, lua_KContext ctx);
 typedef const lua_Number *(*luaDLL_version)(lua_State *L);
@@ -133,6 +134,7 @@ typedef int (*luaDLL_getglobal)(lua_State *L, const char *name);
 typedef int (*luaDLL_pcallk)(lua_State *L, int nargs, int nresults, int msgh, lua_KContext ctx, lua_KFunction k);
 typedef int (*luaDLL_toboolean)(lua_State *L, int index);
 
+luaDLL_checkinteger luaL_checkinteger;
 luaDLL_version lua_version;
 luaDLL_gettop lua_gettop;
 luaDLL_pushstring lua_pushstring;
