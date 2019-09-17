@@ -141,7 +141,6 @@ export class LuaDebugSession extends LoggingDebugSession {
             Tools.rebuildAcceptExtMap(args.luaFileExtension);
             Tools.rebuildWorkspaceNamePathMap(args.cwd);
         }
-        //------
 
         //去除out, Debugger/debugger_lib/plugins/Darwin/   libpdebug_版本号.so
         let clibPath = path.dirname(__dirname) + '/Debugger/debugger_lib/plugins/'

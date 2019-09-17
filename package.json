@@ -175,13 +175,11 @@
 					{
 						"type": "lua",
 						"request": "launch",
-						"internalConsoleOptions": "openOnFirstSessionStart",
 						"name": "LuaPanda",
 						"program": "",
 						"args": [],
 						"cwd": "${workspaceFolder}",
 						"pathCaseSensitivity": true,
-						"docPathReplace": [],
 						"luaFileExtension": "",
 						"connectionPort": 8818,
 						"stopOnEntry": true,
@@ -192,7 +190,6 @@
 					{
 						"type": "lua",
 						"request": "launch",
-						"internalConsoleOptions": "neverOpen",
 						"name": "LuaPanda-DebugFile",
 						"pathCaseSensitivity": true,
 						"luaPath": "",

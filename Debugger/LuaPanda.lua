@@ -484,6 +484,8 @@ function this.getInfo()
         else
             strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是相对路径，format来源于cwd+getinfo拼接。如format文件路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。也可以在format对应的文件下打一个断点，调整直到format和Breaks Info中断点路径完全一致。" .. winDiskSymbolTip;
         end
+    else
+        strTable[#strTable + 1] = "\n说明:已开启autoPathMode自动路径模式，调试器会根据getinfo获得的文件名自动查找文件位置，请确保VSCode打开的工程中不存在同名lua文件。";
     end
 
     if pathErrTip ~= nil and pathErrTip ~= '' then

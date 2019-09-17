@@ -85,6 +85,17 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             return ;
         }
 
+        // 关于打开调试控制台的自动设置
+        if(config.name === "LuaPanda"){
+            if(!config.internalConsoleOptions){
+                config.internalConsoleOptions = "openOnFirstSessionStart";
+            }
+        }else if(config.name === "LuaPanda-DebugFile"){
+            if(!config.internalConsoleOptions){
+                config.internalConsoleOptions = "neverOpen";
+            }
+        }
+
         if(!config.program){
             config.program = '';
         }
