@@ -1021,22 +1021,18 @@ void load(lua_State* L) {
     while (bRet)
     {
 #if LUA_VERSION_NUM > 501
-        //find lua dll
-        void* interPtr = (luaDLL_version)GetProcAddress(mi.hModule, "GetLuaInterface");
-        if (interPtr == NULL) {
-        }
-        else {
+        // find slua-ue dll
+		dll_GetLuaInterface interPtr = (dll_GetLuaInterface)GetProcAddress(mi.hModule, "GetLuaInterface");
+        if (interPtr != NULL) {
             hInstLibrary = mi.hModule;
-            getInter = (dll_GetLuaInterface)GetProcAddress(hInstLibrary, "GetLuaInterface");
+            getInter = interPtr;
             Slua_UE_find_function();
             break;
         }
 #endif
-
-        void* versionPtr = (luaDLL_version)GetProcAddress(mi.hModule, "lua_version");
-        if (versionPtr == NULL) {
-        }
-        else {
+		// find general lua dll
+        void* versionPtr = (luaDLL_sethook)GetProcAddress(mi.hModule, "lua_sethook");
+        if (versionPtr != NULL) {
             hInstLibrary = mi.hModule;
             general_find_function();
             break;
