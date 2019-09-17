@@ -17,10 +17,10 @@ API:
         如果成功加入断点ret返回true，否则是nil
 
     LuaPanda.getInfo()
-        返回获取调试器信息。包括版本号，是否使用lib库，系统是否支持loadstring(load方法)
+        返回获取调试器信息。包括版本号，是否使用lib库，系统是否支持loadstring(load方法)。返回值类型string, 推荐在调试控制台中使用。
 
     LuaPanda.doctor()
-        返回对当前环境的诊断信息，提示可能存在的问题。
+        返回对当前环境的诊断信息，提示可能存在的问题。返回值类型string, 推荐在调试控制台中使用。
 
     LuaPanda.getCWD()
         用户可以调用或在调试控制台中输出这个函数，返回帮助设置CWD的路径。比如
@@ -30,12 +30,13 @@ API:
         cwd是vscode传来的配置路径。getinfo是通过getinfo获取到的正在运行的文件路径。format是经过 cwd + getinfo 整合后的格式化路径。
         format是传给VSCode的最终路径。
         如果format路径和文件真实路径不符，导致VSCode找不到文件，通过调整工程中launch.json的cwd，使format路径和真实路径一致。
+        返回值类型string, 推荐在调试控制台中使用。
 
     LuaPanda.getBreaks()
-        获取断点信息
+        获取断点信息，返回值类型string, 推荐在调试控制台中使用。
 
-    LuaPanda.printTable(table)
-        序列化打印table
+    LuaPanda.serializeTable(table)
+        把table序列化为字符串，返回值类型是string。
 ]]
 
 --用户设置项
@@ -46,7 +47,7 @@ local consoleLogLevel = 2;           --打印在控制台(print)的日志等级 
 local connectTimeoutSec = 0.005;       --等待连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
 --用户设置项END
 
-local debuggerVer = "2.2.1";                 --debugger版本号
+local debuggerVer = "2.2.20";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = require("DebugTools");     --引用的开源工具，包括json解析和table展开工具等
@@ -142,7 +143,7 @@ else
 end
 
 --用户在控制台输入信息的环境变量
-env = setmetatable({ }, {
+local env = setmetatable({ }, {
     __index = function( _ , varName )
         local ret =  this.getWatchedVariable( varName, _G.LuaPanda.curStackId , false);
         return ret;
@@ -267,6 +268,13 @@ function this.disconnect()
     if sock ~= nil then
         sock:close();
     end
+
+    if connectPort == nil or connectHost == nil then
+        --异常情况处理, 在调用LuaPanda.start()前首先调用了LuaPanda.disconnect()
+        this.printToConsole("[Warning] User call LuaPanda.disconnect() before set debug ip & port, please call LuaPanda.start() first!", 2);
+        return;
+    end
+
     this.reGetSock();
 end
 
@@ -483,7 +491,7 @@ function this.getInfo()
     end
 
     strTable[#strTable + 1] = "\n\n- Breaks Info: \n";
-    strTable[#strTable + 1] = this.printTable(this.getBreaks(), "breaks");
+    strTable[#strTable + 1] = this.serializeTable(this.getBreaks(), "breaks");
     return table.concat(strTable);
 end
 
@@ -600,7 +608,7 @@ function this.getMsgTable(cmd ,callbackId)
     return msgTable;
 end
 
-function this.printTable(tab, name)
+function this.serializeTable(tab, name)
     local sTable = tools.serializeTable(tab, name);
     return sTable;
 end
@@ -958,7 +966,7 @@ function this.dataProcess( dataStr )
                 if dataTable.info.stackId ~= nil and tonumber(dataTable.info.stackId) > 1 then
                     this.curStackId = tonumber(dataTable.info.stackId);
                     if type(currentCallStack[this.curStackId - 1]) ~= "table" or  type(currentCallStack[this.curStackId - 1].func) ~= "function" then
-                        local str = "getVariable getLocal currentCallStack " .. this.curStackId - 1   .. " Error\n" .. this.printTable(currentCallStack, "currentCallStack");
+                        local str = "getVariable getLocal currentCallStack " .. this.curStackId - 1   .. " Error\n" .. this.serializeTable(currentCallStack, "currentCallStack");
                         this.printToVSCode(str, 2);
                         msgTab.info = {};
                     else
@@ -977,7 +985,7 @@ function this.dataProcess( dataStr )
                 if dataTable.info.stackId ~= nil and tonumber(dataTable.info.stackId) > 1 then
                     this.curStackId = tonumber(dataTable.info.stackId);
                     if type(currentCallStack[this.curStackId - 1]) ~= "table" or  type(currentCallStack[this.curStackId - 1].func) ~= "function" then
-                        local str = "getVariable getUpvalue currentCallStack " .. this.curStackId - 1   .. " Error\n" .. this.printTable(currentCallStack, "currentCallStack");
+                        local str = "getVariable getUpvalue currentCallStack " .. this.curStackId - 1   .. " Error\n" .. this.serializeTable(currentCallStack, "currentCallStack");
                         this.printToVSCode(str, 2);
                         msgTab.info = {};
                     else
@@ -1012,8 +1020,14 @@ function this.dataProcess( dataStr )
             autoPathMode = true;
         else
             autoPathMode = false;
-        end 
+        end
 
+        if  dataTable.info.pathCaseSensitivity == "true" then
+            pathCaseSensitivity =  true;
+        else
+            pathCaseSensitivity =  false;
+        end
+ 
         --OS type
         if nil == OSType then
             --用户未主动设置OSType, 接收VSCode传来的数据
@@ -1638,7 +1652,7 @@ function this.checkHasBreakpoint(fileName)
     --当前文件中是否有断点
     if fileName ~= nil then
         if autoPathMode then
-            local isPathHit, breakCompletePath = this.compareBreakPath(fileName);
+            local isPathHit, _ = this.compareBreakPath(fileName);
             return isPathHit, hasBk;
         else
             return breaks[fileName] ~= nil, hasBk;
@@ -1995,7 +2009,7 @@ function this.changeCoroutineHookState(s)
 end
 -------------------------变量处理相关-----------------------------
 
---清空REPL的evn环境
+--清空REPL的env环境
 function this.clearEnv()
     if this.getTableMemberNum(env) > 0 then
         --清空env table
@@ -2003,7 +2017,7 @@ function this.clearEnv()
     end
 end
 
---返回REPL的evn环境
+--返回REPL的env环境
 function this.showEnv()
     return env;
 end
@@ -2211,7 +2225,7 @@ function this.getWatchedVariable( varName , stackId , isFormatVariable )
     end
 
     if type(currentCallStack[stackId - 1]) ~= "table" or  type(currentCallStack[stackId - 1].func) ~= "function" then
-        local str = "getWatchedVariable currentCallStack " .. stackId - 1 .. " Error\n" .. this.printTable(currentCallStack, "currentCallStack");
+        local str = "getWatchedVariable currentCallStack " .. stackId - 1 .. " Error\n" .. this.serializeTable(currentCallStack, "currentCallStack");
         this.printToVSCode(str, 2);
         return nil;
     end
@@ -2552,7 +2566,7 @@ function this.processExp(msgTable)
     elseif var.type == "string" then
         var.value = '"' ..retString.. '"';
     end
-    --string执行完毕后清空evn环境
+    --string执行完毕后清空env环境
     this.clearEnv();
     local retTab = {}
     table.insert(retTab ,var);
