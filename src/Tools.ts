@@ -130,11 +130,11 @@ export class Tools {
                     sameNameFileStr = "\n请注意VSCode打开工程中存在以下同名lua文件: \n";
                 }
                 sameNameFileStr = sameNameFileStr + " + " + completePath.join("\n + ") + "\n\n"
-                DebugLogger.showTips("\nVSCode打开工程中存在同名lua文件 " + nameKey + " , 详细信息请查看 OUTPUT - Debugger/log 日志",2)
             }
         }
 
         if(sameNameFileStr){
+            DebugLogger.showTips("\nVSCode打开工程中存在同名lua文件, 详细信息请查看VSCode控制台 OUTPUT - Debugger/log 日志",2)
             sameNameFileStr = sameNameFileStr + "在自动路径模式下，同名文件可能造成断点无法被正确识别。请修改VSCode打开的文件夹，确保其中没有同名文件。或者关闭launch.json中的autoPathMode, 改为手动配置路径。\n详细参考: https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/access-guidelines.md#第二步-路径规范\n"
             DebugLogger.DebuggerInfo(sameNameFileStr);
             DebugLogger.AdapterInfo(sameNameFileStr);
