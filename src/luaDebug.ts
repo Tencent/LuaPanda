@@ -140,6 +140,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         if(Tools.useAutoPathMode === true){
             Tools.rebuildAcceptExtMap(args.luaFileExtension);
             Tools.rebuildWorkspaceNamePathMap(args.cwd);
+            Tools.checkSameNameFile();
         }
 
         //去除out, Debugger/debugger_lib/plugins/Darwin/   libpdebug_版本号.so
@@ -245,6 +246,8 @@ export class LuaDebugSession extends LoggingDebugSession {
             });
         }).listen(LuaDebugSession.TCPPort, function () {
             DebugLogger.AdapterInfo("listening...");
+            DebugLogger.DebuggerInfo("listening...");
+
         });
         LuaDebugSession.isListening = true;
         LuaDebugSession.breakpointsArray = new Array();

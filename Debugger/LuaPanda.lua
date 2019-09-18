@@ -1530,7 +1530,7 @@ end
 -- @info getInfo获取的当前调用信息
 function this.isHitBreakpoint( info )
     local curLine = tostring(info.currentline);
-    local isPathHit = false, completePath;
+    local completePath, isPathHit = false, ;
 
     if autoPathMode then
         isPathHit, completePath = this.compareBreakPath(info.source);
