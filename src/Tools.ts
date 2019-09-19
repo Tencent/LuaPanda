@@ -91,21 +91,54 @@ export class Tools {
             processFilNum = processFilNum + 1;
             let fileNameKey = nameExtObject['name']; // key是文件名，不包含路径和文件后缀
             if(_fileNameToPathMap[fileNameKey]){
-                //冲突, 对应的key已有值（存在同名文件), 使用数组保存数据
-                let tempSaveValue = _fileNameToPathMap[fileNameKey];
-                let tempArray = new Array();
-                tempArray.push(tempSaveValue);
-                tempArray.push(workspaceFiles[processingFileIdx]);
-                _fileNameToPathMap[fileNameKey] = tempArray;
+                //存在同名文件
+                if(isArray(_fileNameToPathMap[fileNameKey])){
+                    _fileNameToPathMap[fileNameKey].push(workspaceFiles[processingFileIdx]);
+                }else if(typeof _fileNameToPathMap[fileNameKey] === "string"){
+                    //冲突, 对应的key已有值（存在同名文件), 使用数组保存数据
+                    let tempSaveValue = _fileNameToPathMap[fileNameKey];
+                    let tempArray = new Array();
+                    tempArray.push(tempSaveValue);
+                    tempArray.push(workspaceFiles[processingFileIdx]);
+                    _fileNameToPathMap[fileNameKey] = tempArray;
+                }
             }else{
                 _fileNameToPathMap[fileNameKey] = workspaceFiles[processingFileIdx]; 
             }
             // 显示进度
             let processingRate = Math.floor( processingFileIdx / workspaceFileCount * 100 );
-            DebugLogger.AdapterInfo(processingRate + "%  |  "  + fileNameKey + "   " +  _fileNameToPathMap[fileNameKey] )
+            let completePath = '';
+            if(isArray(_fileNameToPathMap[fileNameKey])){
+                completePath = _fileNameToPathMap[fileNameKey][_fileNameToPathMap[fileNameKey].length-1];
+            }else if(typeof _fileNameToPathMap[fileNameKey] === "string"){
+                completePath = _fileNameToPathMap[fileNameKey];
+            }
+            DebugLogger.AdapterInfo(processingRate + "%  |  "  + fileNameKey + "   " + completePath);
         }
         DebugLogger.AdapterInfo("文件Map刷新完毕，共计"+ workspaceFileCount +"个文件， 其中" + processFilNum + "个lua类型文件");
         this.fileNameToPathMap = _fileNameToPathMap;
+    }
+
+    // 检查同名文件
+    public static checkSameNameFile(){
+        let sameNameFileStr;
+        for (const nameKey in this.fileNameToPathMap) {
+            let completePath = this.fileNameToPathMap[nameKey]
+            if(isArray(completePath)){
+                //初始化语句
+                if(sameNameFileStr === undefined){
+                    sameNameFileStr = "\n请注意VSCode打开工程中存在以下同名lua文件: \n";
+                }
+                sameNameFileStr = sameNameFileStr + " + " + completePath.join("\n + ") + "\n\n"
+            }
+        }
+
+        if(sameNameFileStr){
+            DebugLogger.showTips("\nVSCode打开工程中存在同名lua文件, 详细信息请查看VSCode控制台 OUTPUT - Debugger/log 日志",2)
+            sameNameFileStr = sameNameFileStr + "在自动路径模式下，同名文件可能造成断点无法被正确识别。请修改VSCode打开的文件夹，确保其中没有同名文件。或者关闭launch.json中的autoPathMode, 改为手动配置路径。\n详细参考: https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/access-guidelines.md#第二步-路径规范\n"
+            DebugLogger.DebuggerInfo(sameNameFileStr);
+            DebugLogger.AdapterInfo(sameNameFileStr);
+        }
     }
 
     // 从URI分析出文件名和后缀
@@ -130,13 +163,14 @@ export class Tools {
         let fullPath = this.fileNameToPathMap[fileName];
         if(fullPath){
             if(isArray(fullPath)){
+                // 存在同名文件
                 for (const key in fullPath) {
                     const element = fullPath[key];
                     if(element.indexOf(shortPath)){
-                        return element;
+                        return element; // 这里固定返回第一个元素
                     }
                 }
-            }else if(typeof fullPath == "string"){
+            }else if(typeof fullPath === "string"){
                 return fullPath;
             }
         }
