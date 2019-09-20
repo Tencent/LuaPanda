@@ -125,6 +125,11 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
 
         if (!config.luaFileExtension) {
             config.luaFileExtension = '';
+        }else{
+            let firseLetter = config.luaFileExtension.substr(0, 1);
+            if(firseLetter === '.'){
+                config.luaFileExtension =  config.luaFileExtension.substr(1);
+            }
         }
 
         if (config.stopOnEntry == undefined) {
