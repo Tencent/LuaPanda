@@ -47,7 +47,7 @@ local consoleLogLevel = 2;           --打印在控制台(print)的日志等级 
 local connectTimeoutSec = 0.005;       --等待连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
 --用户设置项END
 
-local debuggerVer = "2.2.20";                 --debugger版本号
+local debuggerVer = "2.2.70";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = require("DebugTools");     --引用的开源工具，包括json解析和table展开工具等
@@ -133,7 +133,6 @@ local stopConnectTime = 0;      --用来临时记录stop断开连接的时间
 local isInMainThread;
 local receiveMsgTimer = 0;
 local formatPathCache = {};     -- getinfo -> format
-local completePathCache = {};    --format -> complete
 local isUserSetClibPath = false;        --用户是否在本文件中自设了clib路径
 --5.1/5.3兼容
 if _VERSION == "Lua 5.1" then
@@ -656,7 +655,7 @@ end
 --return:nil(error)/path
 function this.genUnifiedPath(path)
     if path == "" or path == nil then
-        return nil;
+        return "";
     end
     --大小写不敏感时，路径全部转为小写
     if pathCaseSensitivity == false then
@@ -695,14 +694,6 @@ function this.genUnifiedPath(path)
     end
 
     return newpath;
-end
-
-function this.getCacheCompletePath(source)
-    return  completePathCache[source];
-end
-
-function this.setCacheCompletePath(source, dest)
-    completePathCache[source] = dest;
 end
 
 function this.getCacheFormatPath(source)
@@ -851,20 +842,20 @@ function this.dataProcess( dataStr )
         this.printToVSCode("dataTable.cmd == setBreakPoint");
         local bkPath = dataTable.info.path;
         bkPath = this.genUnifiedPath(bkPath);
-
+        if autoPathMode then 
+            -- 自动路径模式下，仅保留文件名
+            bkPath = this.getFilenameFromPath(bkPath);
+        end
         this.printToVSCode("setBreakPoint path:"..tostring(bkPath));
         breaks[bkPath] = dataTable.info.bks;
-        if autoPathMode then 
-            -- 自动路径模式下，要清除路径缓存中保存失败路径
-            completePathCache = {};
-        end
 
-        --save
+        -- 当v为空时，从断点列表中去除文件
         for k, v in pairs(breaks) do
             if next(v) == nil then
                 breaks[k] = nil;
             end
         end
+
         --sync breaks to c
         if hookLib ~= nil then
             hookLib.sync_breakpoints();
@@ -1401,12 +1392,9 @@ function this.getPath( info )
         return cachePath;
     end
 
+    -- originalPath是getInfo的原始路径，后面用来填充缓存key
     local originalPath = filePath;
-    --如果路径头部有@,去除
-    if filePath:sub(1,1) == '@' then
-        filePath = filePath:sub(2);
-    end
-
+    
     --后缀处理
     if luaFileExtension ~= "" then
         --判断后缀中是否包含%1等魔法字符.用于从lua虚拟机获取到的路径含.的情况
@@ -1418,25 +1406,44 @@ function this.getPath( info )
         end
     end
 
-    --拼路径
-    local retPath = filePath;
-    --若在Mac下以/开头，或者在Win下以*:开头，说明是绝对路径，不需要再拼。
-    if filePath:sub(1,1) == [[/]] or filePath:sub(1,2):match("^%a:") then
-        isAbsolutePath = true;
-    else
-        isAbsolutePath = false;
-        if autoPathMode == false and cwd ~= "" then
-            --查看filePath中是否包含cwd
-            local matchRes = string.find(filePath, cwd, 1, true);
-            if matchRes == nil then
-                retPath = cwd.."/"..filePath;
+    if not autoPathMode then
+        --如果路径头部有@,去除
+        if filePath:sub(1,1) == '@' then
+            filePath = filePath:sub(2);
+        end
+
+        --绝对路径和相对路径的处理  |  若在Mac下以/开头，或者在Win下以*:开头，说明是绝对路径，不需要再拼。
+        if filePath:sub(1,1) == [[/]] or filePath:sub(1,2):match("^%a:") then
+            isAbsolutePath = true;
+        else
+            isAbsolutePath = false;
+            if cwd ~= "" then
+                --查看filePath中是否包含cwd
+                local matchRes = string.find(filePath, cwd, 1, true);
+                if matchRes == nil then
+                    filePath = cwd.."/"..filePath;
+                end
             end
         end
     end
-    retPath = this.genUnifiedPath(retPath);
+    filePath = this.genUnifiedPath(filePath);
+
+    if autoPathMode then
+        -- 自动路径模式下，只保留文件名
+        filePath = this.getFilenameFromPath(filePath)
+    end
     --放入Cache中缓存
-    this.setCacheFormatPath(originalPath, retPath);
-    return retPath;
+    this.setCacheFormatPath(originalPath, filePath);
+    return filePath;
+end
+
+--从路径中获取文件名
+function this.getFilenameFromPath(path)
+    if path == nil then 
+        return ''; 
+    end
+
+    return string.match(path, "([^/]*)$");
 end
 
 --获取当前函数的堆栈层级
@@ -1498,51 +1505,19 @@ end
 
 
 ------------------------断点处理-------------------------
--- 断点路径处理
--- @currentPath getinfo路径
-function this.compareBreakPath(currentPath)
-    if type(currentPath) ~= "string" then 
-        return false, '';
-    end
-
-    local pathFromCache = this.getCacheCompletePath(currentPath);
-    if pathFromCache ~= nil then
-        if pathFromCache == '' then 
-            return false, '';
-        else
-            return true, pathFromCache;
-        end
-    end
-
-    for k,v in pairs(breaks) do
-        if k:find(currentPath, 1, true) then
-            -- 如果是子串
-            this.setCacheCompletePath(currentPath, k);
-            return true, k;
-        end
-    end
-    --查不到也保存下来，避免反复查询
-    this.setCacheCompletePath(currentPath, '');
-    return false, '';
-end
-
 -- 参数info是当前堆栈信息
 -- @info getInfo获取的当前调用信息
 function this.isHitBreakpoint( info )
     local curLine = tostring(info.currentline);
-    local completePath, isPathHit = false;
-
-    if autoPathMode then
-        isPathHit, completePath = this.compareBreakPath(info.source);
-    else
-        completePath = info.source;
-        if breaks[completePath] then
-            isPathHit = true;
-        end
+    local breakpointPath = info.source;
+    local isPathHit = false;
+    
+    if breaks[breakpointPath] then
+        isPathHit = true;
     end
 
     if isPathHit then
-        for k,v in ipairs(breaks[completePath]) do
+        for k,v in ipairs(breaks[breakpointPath]) do
             if tostring(v["line"]) == tostring(curLine) then
                 -- type是TS中的枚举类型，其定义在BreakPoint.tx文件中
                 --[[
@@ -1644,7 +1619,7 @@ end
 -- 如果填写参数fileName  返回fileName中有无断点， 全局有无断点
 -- fileName为空，返回全局是否有断点
 function this.checkHasBreakpoint(fileName)
-    local hasBk = true;
+    local hasBk = false;
     --有无全局断点
     if next(breaks) == nil then
         hasBk = false;
@@ -1653,12 +1628,7 @@ function this.checkHasBreakpoint(fileName)
     end
     --当前文件中是否有断点
     if fileName ~= nil then
-        if autoPathMode then
-            local isPathHit, _ = this.compareBreakPath(fileName);
-            return isPathHit, hasBk;
-        else
-            return breaks[fileName] ~= nil, hasBk;
-        end
+        return breaks[fileName] ~= nil, hasBk;
     else
         return hasBk;
     end
@@ -1890,14 +1860,8 @@ function this.real_hook_process(info)
                     this.changeHookState(hookState.LITE_HOOK);
                 end
             else
-                --文件有断点
-                --判断函数内是否有断点
-                local completePath = lastRunFilePath;
-                if autoPathMode then
-                    local _, tempPath = this.compareBreakPath(lastRunFilePath);
-                    if tempPath ~= '' then completePath = tempPath end;
-                end
-                local funHasBP = this.checkfuncHasBreakpoint(lastRunFunction.linedefined, lastRunFunction.lastlinedefined, completePath);
+                --文件有断点, 判断函数内是否有断点
+                local funHasBP = this.checkfuncHasBreakpoint(lastRunFunction.linedefined, lastRunFunction.lastlinedefined, lastRunFilePath);
                 if  funHasBP then
                     --函数定义范围内
                     this.changeHookState(hookState.ALL_HOOK);

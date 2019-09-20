@@ -9,7 +9,6 @@
 #include <list>
 #include <map>
 #include <string>
-#include <regex>
 
 //using namespace std;
 static int cur_run_state = 0;       //当前运行状态， c 和 lua 都可能改变这个状态，要保持同步
@@ -36,8 +35,6 @@ struct path_transfer_node;
 struct breakpoint;
 // 路径缓存队列 getinfo -> format
 std::list<path_transfer_node*> getinfo_to_format_cache;
-// 路径缓存队列 format -> complete
-std::list<path_transfer_node*> format_to_complete_cache;
 // 存放断点map，key为source
 std::map<std::string, std::map<int, breakpoint>> all_breakpoint_map;
 
@@ -394,9 +391,6 @@ extern "C" int sync_breakpoints(lua_State *L) {
         print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk get breaks error", 2);
         return -1;
     }
-    if(autoPathMode){
-        format_to_complete_cache.clear();
-    }
 
     //遍历breaks
     all_breakpoint_map.clear();
@@ -467,57 +461,12 @@ extern "C" int sync_breakpoints(lua_State *L) {
     return 0;
 }
 
-// 根据文件名，从断点列表中获得完整路径，如无法获得完整路径，则返回当前路径
-// 为了提升效率，此处应有一个命中表cache，表中找不到默认为不命中。 当有新bk的时候需刷新命中表
-int compareBreakPath(const char **getInfoPath){
-    //遍历断点列表，做路径匹配
-    //检查缓存
-    for(auto iter = format_to_complete_cache.begin();iter != format_to_complete_cache.end();iter++)
-    {
-        if(!strcmp((*iter)->src.c_str(), *getInfoPath)){
-            //从cache中找到了
-            const char *completePath = (*iter)->dst.c_str();
-            if(!strcmp(completePath, "")){
-                return 0;
-            }
-            
-            *getInfoPath = completePath;
-            return 1;
-        }
-    }
-    
-    std::map<std::string, std::map<int, struct breakpoint>>::iterator iter = all_breakpoint_map.begin();
-    while(iter != all_breakpoint_map.end()){
-        //curPath如果是断点路径的一部分，返回completePath
-        const char *s = (iter->first).c_str();
-        std::regex reg(*getInfoPath);
-        if(std::regex_search(s, reg)){
-            //命中
-            //缓存
-            path_transfer_node *nd = new path_transfer_node(*getInfoPath, s );
-            format_to_complete_cache.push_back(nd);
-            
-            *getInfoPath = s;
-            return 1;
-        }
-        iter++;
-    }
-    
-    path_transfer_node *nd = new path_transfer_node(*getInfoPath, "");
-    format_to_complete_cache.push_back(nd);
-    return 0;
-}
-
 //断点命中判断
 int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
     print_to_vscode(L, "debug_ishit_bk\n");
     debug_auto_stack _tt(L);
 
     const char *standardPath = getPath(L, curPath);
-    if(autoPathMode == 1){
-       if(compareBreakPath(&standardPath) == 0) return 0;
-    }
-
     // 判断是否存在同名文件
     std::map<std::string, std::map<int, struct breakpoint>>::const_iterator const_iter1 = all_breakpoint_map.find(std::string(standardPath));
     if (const_iter1 == all_breakpoint_map.end()) {
@@ -703,19 +652,11 @@ int checkHasBreakpoint(lua_State *L, const char * src1, int current_line, int sl
         return LITE_HOOK;
     }
 
-    if(autoPathMode){
-        int isFileHasBreakpoint = compareBreakPath(&src);
-        if(isFileHasBreakpoint == 1 ){
-            // 本文件中有断点
+    std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
+    for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
+        if (iter1->first == std::string(src)) {
+            // compare()
             return ALL_HOOK;
-        }
-    }else{
-        std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
-        for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
-            if (iter1->first == std::string(src)) {
-				// compare()
-                return ALL_HOOK;
-            }
         }
     }
     
