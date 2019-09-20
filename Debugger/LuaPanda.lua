@@ -93,7 +93,6 @@ local DebuggerFileName = "";    --Debugger文件名(原始,未经path处理), �
 local DebuggerToolsName = "";
 local lastRunFunction = {};     --上一个执行过的函数。在有些复杂场景下(find,getcomponent)一行会挺两次
 local currentCallStack = {};    --获取当前调用堆栈信息
-local debugMode = false;        --是否开启调试模式
 local hitBP = false;            --BP()中的强制断点命中标记
 local TempFilePath_luaString = ""; --VSCode端配置的临时文件存放路径
 local connectHost;              --记录连接端IP
@@ -697,6 +696,7 @@ function this.genUnifiedPath(path)
 end
 
 function this.getCacheFormatPath(source)
+    if source == nil then return formatPathCache end;
     return  formatPathCache[source];
 end
 
@@ -1707,7 +1707,7 @@ function this.real_hook_process(info)
 
     --如果当前行在Debugger中，不做处理
     local matchRes = ((info.source == DebuggerFileName) or (info.source == DebuggerToolsName));
-    if matchRes == true and debugMode == false then
+    if matchRes == true then
         return;
     end
 
