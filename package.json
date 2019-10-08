@@ -1,7 +1,7 @@
 {
 	"name": "luapanda",
 	"displayName": "LuaPanda",
-	"version": "2.2.5",
+	"version": "2.3.0",
 	"publisher": "stuartwang",
 	"description": "lua debug adapters for VS Code.",
 	"author": {
