@@ -1406,12 +1406,12 @@ function this.getPath( info )
         end
     end
 
-    if not autoPathMode then
-        --如果路径头部有@,去除
-        if filePath:sub(1,1) == '@' then
-            filePath = filePath:sub(2);
-        end
+    --如果路径头部有@,去除
+    if filePath:sub(1,1) == '@' then
+        filePath = filePath:sub(2);
+    end
 
+    if not autoPathMode then
         --绝对路径和相对路径的处理  |  若在Mac下以/开头，或者在Win下以*:开头，说明是绝对路径，不需要再拼。
         if filePath:sub(1,1) == [[/]] or filePath:sub(1,2):match("^%a:") then
             isAbsolutePath = true;

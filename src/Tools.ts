@@ -158,6 +158,11 @@ export class Tools {
             return shortPath;
         }
 
+        //如果首字符是@，去除@
+        if('@' === shortPath.substr(0,1)){
+            shortPath = shortPath.substr(1);
+        }
+
         let nameExtObject = this.getPathNameAndExt(shortPath);
         let fileName = nameExtObject['name'];
         let fullPath = this.fileNameToPathMap[fileName];
