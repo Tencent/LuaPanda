@@ -15,7 +15,7 @@ static int cur_run_state = 0;       //当前运行状态， c 和 lua 都可能�
 static int cur_hook_state = 0;      //当前hook状态， c 和 lua 都可能改变这个状态
 static int logLevel = 1;            //日志等级（从lua同步）
 static int pathCaseSensitivity = 1; //大小写敏感标志位（从lua同步）
-static int autoPathMode = 0;        //自动路径标是否开启志位
+//static int autoPathMode = 0;        //自动路径标是否开启志位
 static int BPhit = 0;               //BP命中标志位
 static int stackdeep_counter = 0;   //step用的栈深度计数器
 static char hookLog[1024] = { 0 };
@@ -255,7 +255,7 @@ extern "C" int sync_bp_hit(lua_State *L) {
 extern "C" int sync_config(lua_State *L) {
     logLevel = static_cast<int>(luaL_checkinteger(L, 1));
     pathCaseSensitivity = static_cast<int>(luaL_checkinteger(L, 2));
-    autoPathMode = static_cast<int>(luaL_checkinteger(L, 3));
+//    autoPathMode = static_cast<int>(luaL_optinteger(L, 3, 0));
     return 0;
 }
 
