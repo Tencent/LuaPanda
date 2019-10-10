@@ -415,7 +415,7 @@ function this.doctor()
                     if isAbsolutePath then
                         strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。";
                     else
-                        strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是相对路径，format来源于cwd+getinfo拼接。";
+                        strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是相对路径，调试器运行依赖的绝对路径(format)是来源于cwd+getinfo拼接。";
                     end
                     strTable[#strTable + 1] = "\nfilepath是VSCode通过获取到的文件正确路径 , 对比format和filepath，调整launch.json中CWD，或改变VSCode打开文件夹的位置。使format和filepath一致即可。\n如果format和filepath路径仅大小写不一致，设置launch.json中 pathCaseSensitivity:false 可忽略路径大小写";
                 end
@@ -485,7 +485,7 @@ function this.getInfo()
         if isAbsolutePath then
             strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。" .. winDiskSymbolTip;
         else
-            strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是相对路径，format来源于cwd+getinfo拼接。如format文件路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。也可以在format对应的文件下打一个断点，调整直到format和Breaks Info中断点路径完全一致。" .. winDiskSymbolTip;
+            strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的路径(getinfo)是相对路径，调试器运行依赖的绝对路径(format)是来源于cwd+getinfo拼接。如format路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。也可以在format对应的文件下打一个断点，调整直到format和Breaks Info中断点路径完全一致。" .. winDiskSymbolTip;
         end
     else
         strTable[#strTable + 1] = "\n说明:已开启autoPathMode自动路径模式，调试器会根据getinfo获得的文件名自动查找文件位置，请确保VSCode打开的工程中不存在同名lua文件。";

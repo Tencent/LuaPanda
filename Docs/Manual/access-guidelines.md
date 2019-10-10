@@ -14,23 +14,42 @@ lua调试器依赖于 **luasocket** 和 **规范的路径**，需验证这两点
 
 
 
+### 第二步 路径说明
 
-### 第二步 路径规范
+**2.3.0增加了自动路径模式。开启后调试器会自动处理路径。用户只需保证VSCode打开的目录中不存在同名lua文件即可。当开启自动路径模式后，可跳过本节继续接入。**
 
-调试器运行需要从lua虚拟机中获取当前文件信息。所以要求工程debug.getinfo或debug.traceback能输出较为规范的路径，就是**绝对路径**或者**对于固定位置的相对路径**。目前的slua, xlua, slua-unreal框架都已经支持这个特性。但还是建议初期接入时做一下测试。
+launch.json文件中配置项 `"autoPathMode": true/false` 可以设置是否使用自动路径，无此配置项时默认关闭。
+
+#### 关于自动路径配置和手动配置的说明：
+
+调试器需要获得当前执行文件的绝对路径，以便做断点匹配和命中断点后打开对应文件。但是通过getinfo从lua虚拟机获取的路径可能是一个相对路径 ，调试器要把它转化为绝对路径。
+
+把相对路径转为绝对路径的方式有以下两种:
+
+1. 自动路径模式
+
+自动路径处理，原理是VSCode端在启动时扫描当前工程中的lua文件，创建[文件路径表]。当需要绝对路径时，把从 getinfo 获得的非完整路径在[文件路径表]中查询 ，就可以获得绝对路径。这种路径策略易于配置使用，也有利于真机调试。因为[文件路径表]的查询key是文件名，所以需要用户保证工程中不存在同名lua文件，否则断点可能会指向错误。
+
+2. 拼接路径模式
+
+本模式下会使用 cwd+getinfo 和 VSCode 传来的断点路径作对比，完全一致才算命中。这种策略比较准确，不会受到同名文件的干扰，但是配置较麻烦。如果希望手动配置路径或了解处理的细节，请继续阅读。
+
+调试器运行需要从lua虚拟机中获取当前文件信息。所以要求工程debug.getinfo或debug.traceback能输出较为规范的路径，就是**绝对路径**或者**对于固定位置的相对路径**。
 
 **测试方法**：在代码中加入`print(debug.traceback("debug test"))`, 查看打印的堆栈。
 
 如下打印出文件的绝对路径，可以进行下一步
 ![absolute_path](../static/access_introduction/absolute_path.png)
 
-打印出的信息是一个相对路径(路径前可能带有@)，可进行下一步
+打印出的信息是一个相对路径(路径前可能带有@)，这不会影响调试器工作，可进行下一步
 ![relatively_path](../static/access_introduction/relatively_path.png)
 
 打印出的路径包含在[string ]中，只要是符合上面的要求，是一个可以定位的路径，可进行下一步
 ![string_path](../static/access_introduction/string_path.png)
 
-下面案例测试不通过，原因是仅输出了文件名，而这些文件其实不在同一个目录下。调试器无法仅根据文件名确定文件位置。
+
+
+如果仅输出了文件名，而这些文件其实不在同一个目录下，如下面的案例。此时需要调试器根据文件名定位文件路径，必须开启自动路径功能（ launch.json 中设置 autoPathMode:true ），否则无法正常工作。
 
 ![filename_path](../static/access_introduction/filename_path.png)
 
@@ -54,15 +73,15 @@ lua调试器依赖于 **luasocket** 和 **规范的路径**，需验证这两点
 
 文件：`LuaPanda.lua`, `DebugTools.lua`
 
-下载位置：本git项目的 `Debugger` 目录下
+下载位置：github 的 `Debugger` 目录下
 
-把以上两个文件放在lua代码可以引用到的位置，并在用户代码中引用。
+把以上两个文件放在lua代码可以引用到的位置，并在用户代码中引用:
 
 ```
 require("LuaPanda").start("127.0.0.1",8818);
 ```
 
-*8818是默认端口号，如果需要修改，请同时修改launch.json的设置。
+*8818是默认端口号，如果需要修改，请同时修改launch.json的端口设置。
 
 
 
@@ -77,15 +96,16 @@ require("LuaPanda").start("127.0.0.1",8818);
 切换到VSCode的**调试选项卡**，点击齿轮，在弹出框中选择 LuaPanda (若无此选项说明以前用别的插件调试过lua , 要把先前用过的调试插件禁用)。会自动生成launch.json文件。
 ![vscode_debug_ui](../static/access_introduction/vscode_debug_ui.png)
 
-launch.json 配置项中要修改的主要是luaFileExtension, 改成lua文件使用的后缀就行。（比如xlua改为lua.txt, slua是txt），如果保持为空则尝试自动获取。
-各配置项鼠标悬停会有提示，可根据需要更改。
+launch.json 配置项中要修改的主要是luaFileExtension, 改成lua文件使用的后缀就行。（比如xlua改为lua.txt, slua是txt）。**各配置项鼠标悬停会有提示**，可根据需要更改。
 ![debug_config](../static/access_introduction/debug_config.png)
 
 
 
 **注：调试时提示找不到文件的处理**
 
-上面配置项中的`cwd`，其默认值`${workspaceFolder}`。${workspaceFolder}指的是VScode打开文件夹的路径。
+如果是自动路径模式，请检查lua后缀是否配置正确，以及VSCode打开的工程是否正确。
+
+如果是手动路径模式，请按如下步骤：
 
 如果开始调试时弹出了如下错误
 
@@ -100,8 +120,6 @@ launch.json 配置项中要修改的主要是luaFileExtension, 改成lua文件�
 format是调试器拼接出的文件路径，filepath是文件真实存在的路径。
 
 说明中会告诉用户format路径来源，用户需要对比format和filepath路径，调整launch.json中cwd或者修改VSCode打开文件夹位置，使format和filepath保持一致，即可修复问题。
-
-
 
 
 

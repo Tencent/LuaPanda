@@ -60,27 +60,6 @@ require("LuaPanda").start("pcIP"，8818)
 
 ### 关于真机调试的说明
 
-+ 当调试lua文件时，当前正在执行的文件路径是由lua虚拟机返回给调试器([http://www.lua.org/manual/5.3/manual.html#lua_getinfo](http://www.lua.org/manual/5.3/manual.html#lua_getinfo))。
-
-  调试器获得的路径可能是文件的绝对路径，也可能是相对路径。这取决于加载文件时传给lua虚拟机的文件路径。
-
-  如果调试器获得的是绝对路径，那么在命中断点时直接把这个路径传给VSCode。
-
-  如果是相对路径，调试器使用cwd+getinfo拼出完整路径，再传给VSCode。可以调整cwd，以确保拼出的路径是正确的。
-
-+ 如果调试器获得的绝对路径，或者拼接成的路径有偏差（参见 [issue #18](https://github.com/Tencent/LuaPanda/issues/18)），我们提供路径映射配置 docPathReplace
-
-  比如lua文件在pc上路径 		 C:/GameProcect/Assets/script/test.lua
-  放置在手机里，路径变成了 	/data/data/com.project.test/script/test.lua
-
-  在launch.json docPathReplace中设置
-
-  ```json
-  "docPathReplace": ["/data/data/com.project.test/"," C:/GameProcect/Assets/"]
-  ```
-
-  就可以完成路径映射，把运行环境的/data/data/com.project.test/script/test.lua映射到观察环境C:/GameProcect/Assets/script/test.lua
-
 + 安卓手机连接windows开启反向代理后，游戏运行会因为attach连接而卡顿。建议准备进行连接时再开反向代理，不需要调试时拔线或者使用下面命令解除反向代理
 
   ```
@@ -88,3 +67,31 @@ require("LuaPanda").start("pcIP"，8818)
   ```
 
   mac上无此现象。
+
+
+
+### 真机调试时的路径说明
+
++ 自动路径模式下，无需特别设置。
++ 如使用手动拼接路径，请参阅如下内容决定是否使用路径映射
+
+当调试lua文件时，当前正在执行的文件路径是由lua虚拟机返回给调试器([http://www.lua.org/manual/5.3/manual.html#lua_getinfo](http://www.lua.org/manual/5.3/manual.html#lua_getinfo))。
+
+调试器获得的路径可能是文件的绝对路径，也可能是相对路径。这取决于加载文件时传给lua虚拟机的文件路径。
+
+如果调试器获得的是绝对路径，那么在命中断点时直接把这个路径传给VSCode。
+
+如果是相对路径，调试器使用cwd+getinfo拼出完整路径，再传给VSCode。可以调整cwd，以确保拼出的路径是正确的。
+
+如果调试器获得的绝对路径，或者拼接成的路径有偏差（参见 [issue #18](https://github.com/Tencent/LuaPanda/issues/18)），我们提供路径映射配置 docPathReplace
+
+比如lua文件在pc上路径 		 C:/GameProcect/Assets/script/test.lua
+放置在手机里，路径变成了 	/data/data/com.project.test/script/test.lua
+
+在launch.json docPathReplace中设置
+
+```json
+"docPathReplace": ["/data/data/com.project.test/"," C:/GameProcect/Assets/"]
+```
+
+就可以完成路径映射，把运行环境的/data/data/com.project.test/script/test.lua映射到观察环境C:/GameProcect/Assets/script/test.lua
