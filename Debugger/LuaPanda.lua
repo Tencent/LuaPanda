@@ -302,7 +302,12 @@ end
 --返回版本号等配置
 function this.getBaseInfo()
     local strTable = {};
-    strTable[#strTable + 1] = "Lua Ver:" .. _VERSION .. " | adapterVer:" .. tostring(adapterVer) .. " | Debugger Ver:" .. tostring(debuggerVer);
+    local jitVer = "";
+    if jit and jit.version then
+        jitVer = "," .. tostring(jit.version);
+    end
+
+    strTable[#strTable + 1] = "Lua Ver:" .. _VERSION .. jitVer .." | adapterVer:" .. tostring(adapterVer) .. " | Debugger Ver:" .. tostring(debuggerVer);
     local moreInfoStr = "";
     if hookLib ~= nil then
         local clibVer, forluaVer = hookLib.sync_getLibVersion();
