@@ -78,6 +78,7 @@ export class Tools {
     //建立/刷新 工程下 文件名-路径Map
     // 评估执行效率，这个函数可以考虑应该区分同步，以优化体验
     public static rebuildWorkspaceNamePathMap(rootPath : string){
+        let beginMS = this.getCurrentMS();//启动时毫秒数
         let _fileNameToPathMap = new Array();      // 文件名-路径 cache
         let workspaceFiles = pathReader.files(rootPath, {sync:true});   //同步读取工程中所有文件名
         let workspaceFileCount = workspaceFiles.length;
@@ -115,8 +116,21 @@ export class Tools {
             }
             DebugLogger.AdapterInfo(processingRate + "%  |  "  + fileNameKey + "   " + completePath);
         }
-        DebugLogger.AdapterInfo("文件Map刷新完毕，共计"+ workspaceFileCount +"个文件， 其中" + processFilNum + "个lua类型文件");
+        let endMS = this.getCurrentMS();//文件分析结束时毫秒数
+        DebugLogger.AdapterInfo("文件Map刷新完毕，使用了" +  (endMS - beginMS) + "毫秒。检索了"+ workspaceFileCount +"个文件， 其中" + processFilNum + "个lua类型文件");
+        if(processFilNum <= 0){
+            DebugLogger.showTips("没有在工程中检索到lua文件。请检查launch.json文件中lua后缀是否配置正确, 以及VSCode打开的工程是否正确",2)
+            let noLuaFileTip = "[!] 没有在VSCode打开的工程中检索到lua文件，请进行如下检查\n 1. VSCode打开的文件夹是否正确 \n 2. launch.json 文件中 luaFileExtension 选项配置是否正确"
+            DebugLogger.DebuggerInfo(noLuaFileTip);
+            DebugLogger.AdapterInfo(noLuaFileTip);
+        }
         this.fileNameToPathMap = _fileNameToPathMap;
+    }
+
+    //获取当前毫秒数
+    public static getCurrentMS(){
+        var currentMS = new Date();//获取当前时间
+        return currentMS.getTime();
     }
 
     // 检查同名文件
@@ -134,8 +148,8 @@ export class Tools {
         }
 
         if(sameNameFileStr){
-            DebugLogger.showTips("\nVSCode打开工程中存在同名lua文件, 详细信息请查看VSCode控制台 OUTPUT - Debugger/log 日志",2)
-            sameNameFileStr = sameNameFileStr + "在自动路径模式下，同名文件可能造成断点无法被正确识别。请修改VSCode打开的文件夹，确保其中没有同名文件。或者关闭launch.json中的autoPathMode, 改为手动配置路径。\n详细参考: https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/access-guidelines.md#第二步-路径规范\n"
+            DebugLogger.showTips("\nVSCode打开工程中存在同名lua文件, 可能会影响调试器执行, 详细信息请查看VSCode控制台 OUTPUT - Debugger/log 日志",1)
+            sameNameFileStr = sameNameFileStr + "调试器在自动路径模式下，可能无法识别同名lua文件中的断点，导致打开错误的文件。请修改VSCode打开的文件夹，确保其中没有同名文件。或者关闭launch.json中的autoPathMode, 改为手动配置路径。\n详细参考: https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/access-guidelines.md#第二步-路径规范 \n"
             DebugLogger.DebuggerInfo(sameNameFileStr);
             DebugLogger.AdapterInfo(sameNameFileStr);
         }
@@ -180,7 +194,7 @@ export class Tools {
             }
         }
         //最终没有找到，返回输入的地址
-        DebugLogger.showTips("调试器没有找到文件 " + shortPath + " , 请检查 launch.json 中后缀是否配置正确", 2);
+        DebugLogger.showTips("调试器没有找到文件 " + shortPath + " 。 请检查launch.json文件中lua后缀是否配置正确, 以及VSCode打开的工程是否正确", 2);
         return shortPath;
     }
 }
