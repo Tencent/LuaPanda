@@ -183,20 +183,18 @@ export class LuaDebugSession extends LoggingDebugSession {
             //向debugger发送含配置项的初始化协议
             this._runtime.start((arr, info) => {
                 DebugLogger.AdapterInfo("已建立连接，发送初始化协议和断点信息!");
-                //设置标记位
+                //对luapanda.lua的版本控制，低于一定版本要提示升级
                 if (typeof info.debuggerVer == "string"){
                     //转数字
                     let DVerArr = info.debuggerVer.split(".");
                     let AVerArr = String(adapterVersion).split(".");
                     if (DVerArr.length === AVerArr.length && DVerArr.length === 3 ){
-                        //比较大版本，大版本相差1就提示
-                        if ( parseInt(AVerArr[0]) > parseInt(DVerArr[0]) ){
-                            this._runtime.showTip("调试器Lua文件版本过低, 建议升级至最新版本。获取帮助 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md ");
+                        //在adapter和debugger版本号长度相等的前提下，比较大版本，大版本 <2 或者 小版本 < 1 就提示. 2.1.0以下会提示
+                        if ( parseInt(DVerArr[0]) < 2 || parseInt(DVerArr[1]) < 1 ){
+                            DebugLogger.showTips("当前调试器的lua文件版本过低，可能无法正常使用，请升级到最新版本。帮助文档 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md ");
                         }
-                        //比较小版本，小版本相差20就提示
-                        if ( (  parseInt(AVerArr[1]) - parseInt(DVerArr[1])  ) >= 3 ){
-                            this._runtime.showTip("调试器Lua文件版本较低, 建议升级至最新版本。获取帮助 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md ");
-                        }
+                    }else{
+                        DebugLogger.showTips("调试器版本号异常:" + info.debuggerVer + ". 建议升级至最新版本。帮助文档 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md ", 1);
                     }
                 }
                 if (info.UseLoadstring === "1") {
@@ -514,9 +512,9 @@ export class LuaDebugSession extends LoggingDebugSession {
                     type: String(info.type),
                     variablesReference: parseInt(info.variablesReference)
                 };
-                this._runtime.showTip( info.tip );
+                DebugLogger.showTips( info.tip );
             }else{
-                this._runtime.showTip("变量赋值失败 [" + info.tip + "]" );
+                DebugLogger.showTips("变量赋值失败 [" + info.tip + "]" );
             }
             let ins = arr[0];
             ins.sendResponse(arr[1]);   
