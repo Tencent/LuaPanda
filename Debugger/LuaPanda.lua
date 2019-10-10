@@ -827,16 +827,19 @@ function this.dataProcess( dataStr )
         this.changeRunState(runState.STEPOVER);
         local msgTab = this.getMsgTable("stopOnStep", this.getCallbackId());
         this.sendMsg(msgTab);
+        this.changeHookState(hookState.ALL_HOOK);
 
     elseif dataTable.cmd == "stopOnStepIn" then
         this.changeRunState(runState.STEPIN);
         local msgTab = this.getMsgTable("stopOnStepIn", this.getCallbackId());
         this.sendMsg(msgTab);
+        this.changeHookState(hookState.ALL_HOOK);
 
     elseif dataTable.cmd == "stopOnStepOut" then
         this.changeRunState(runState.STEPOUT);
         local msgTab = this.getMsgTable("stopOnStepOut", this.getCallbackId());
         this.sendMsg(msgTab);
+        this.changeHookState(hookState.ALL_HOOK);
 
     elseif dataTable.cmd == "setBreakPoint" then
         this.printToVSCode("dataTable.cmd == setBreakPoint");
@@ -1399,9 +1402,9 @@ function this.getPath( info )
     if luaFileExtension ~= "" then
         --判断后缀中是否包含%1等魔法字符.用于从lua虚拟机获取到的路径含.的情况
         if string.find(luaFileExtension, "%%%d") then
-            filePath = string.gsub(filePath, "%.%w+$", luaFileExtension);
+            filePath = string.gsub(filePath, "%.[%w%.]+$", luaFileExtension);
         else
-            filePath = string.gsub(filePath, "%.%w+$", "");
+            filePath = string.gsub(filePath, "%.[%w%.]+$", "");
             filePath = filePath .. "." .. luaFileExtension;
         end
     end
