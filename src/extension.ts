@@ -119,7 +119,6 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
         }
 
         if (!config.TempFilePath) {
-            // vscode.window.showInformationMessage("请在launch中配置TempFilePath路径!");
             config.TempFilePath = '${workspaceFolder}';
         }
 
@@ -138,7 +137,6 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
         }
 
         if (config.pathCaseSensitivity == undefined) {
-            //vscode.window.showInformationMessage("请在launch中配置pathCaseSensitivity")
             config.pathCaseSensitivity = true;
         }
 

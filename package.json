@@ -177,15 +177,13 @@
 						"request": "launch",
 						"name": "LuaPanda",
 						"program": "",
-						"args": [],
 						"cwd": "${workspaceFolder}",
-						"pathCaseSensitivity": true,
 						"luaFileExtension": "",
 						"connectionPort": 8818,
 						"stopOnEntry": true,
 						"useCHook": true,
-						"logLevel": 1,
-						"autoPathMode": true
+						"autoPathMode": true,
+						"logLevel": 1
 					},
 					{
 						"type": "lua",
