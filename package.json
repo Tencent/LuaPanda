@@ -189,7 +189,6 @@
 						"type": "lua",
 						"request": "launch",
 						"name": "LuaPanda-DebugFile",
-						"pathCaseSensitivity": true,
 						"luaPath": "",
 						"packagePath": [],
 						"luaFileExtension": "",
