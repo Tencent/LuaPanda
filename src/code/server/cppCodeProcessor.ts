@@ -40,6 +40,7 @@ export class CppCodeProcessor {
 			(astNode) => {
 				let str = JSON.stringify(astNode, null, 2);
 				Logger.DebugLog(str);
+				this.parseAST2LuaCode(astNode);
 			}
 		)
 		.catch((e) => {
@@ -47,6 +48,152 @@ export class CppCodeProcessor {
 			Logger.ErrorLog(e);
 		});
 	}
+
+	private static parseAST2LuaCode(astNode: Node) {
+		let foundUCLASS: boolean = false;
+		astNode.children.forEach((child: Node) => {
+			if (child.type == 'comment') {
+				return;
+			}
+
+			if (child.type == 'expression_statement' && child.text.match(URegex.UCLASS)) {
+				// 标记找到UCLASS，即下一个Node。
+				foundUCLASS = true;
+				return;
+			}
+			if (foundUCLASS == true) {
+				let luaText = this.handleUCLASS(child);
+				foundUCLASS = false;
+				// TODO 写文件
+				Logger.DebugLog(luaText);
+			}
+		});
+	}
+
+	private static handleUCLASS(astNode: Node): string {
+		let luaText = '';
+		let className = '';
+		astNode.children.forEach((child: Node) => {
+			if (child.type == 'identifier') {
+				luaText += child.text + " = {}\n";
+				className = child.text;
+				return;
+			}
+			if (child.type == 'compound_statement') {
+				luaText += this.handleCompoundStatement(child, className);
+			}
+		});
+		return luaText;
+	}
+
+	private static handleCompoundStatement(astNode: Node, className: string): string {
+		let luaText = '';
+		let foundUFUNCTION = false;
+		let foundUPROPERTY = false;
+		astNode.children.forEach((child: Node) => {
+			if (child.type == 'comment') {
+				return;
+			}
+
+			if (foundUFUNCTION == true) {
+				luaText += this.handleUFUNCTION(child, className);
+				foundUFUNCTION = false;
+				return;
+			}
+			if (foundUPROPERTY == true) {
+				luaText += this.handleUPROPERTY(child, className);
+				foundUPROPERTY = false;
+				return;
+			}
+
+			if (child.type == 'expression_statement' && child.text.match(URegex.UFUNCTION)) {
+				foundUFUNCTION = true;
+				return;
+			}
+			if (child.type == 'expression_statement' && child.text.match(URegex.UPROPERTY)) {
+				foundUPROPERTY = true;
+				return;
+			}
+		});
+		return luaText;
+	}
+	private static handleUFUNCTION(astNode: Node, className: string): string {
+		let luaText = 'function ';
+
+		astNode.children.forEach((child: Node) => {
+			if (child.type == 'function_declarator') {
+				luaText += this.handleFunctionDeclarator(child, className);
+				return;
+			}
+		});
+		luaText += ' end\n';
+		return luaText;
+	}
+
+	private static handleFunctionDeclarator(astNode: Node, className: string): string {
+		let luaText = '';
+
+		astNode.children.forEach((child: Node) => {
+			if (child.type == 'identifier') {
+				luaText += className + '.' + child.text;
+				return;
+			}
+			if (child.type == 'parameter_list') {
+				luaText += this.handleParameterList(child, className);
+			}
+		});
+		luaText += ')';
+		return luaText;
+	}
+
+	private static handleParameterList(astNode: Node, className: string): string {
+		let luaText = '(';
+		let params: string[] = [];
+
+		astNode.children.forEach((child: Node) => {
+			if (child.type == 'parameter_declaration') {
+				child.children.forEach((child: Node) => {
+					if (child.type == 'identifier') {
+						params.push(child.text);
+					}
+				});
+			}
+		});
+		for (let i = 0; i < params.length; i++) {
+			if (i == 0) {
+				luaText += params[i];
+			} else {
+				luaText += ", " + params[i];
+			}
+		}
+		return luaText;
+	}
+
+	private static handleUPROPERTY(astNode: Node, className: string): string {
+		let luaText = '';
+
+		astNode.children.forEach((child: Node) => {
+			if (child.type == 'identifier') {
+				luaText += className + '.' + child.text + " = nil\n";
+				return;
+			}
+			if (child.type == 'init_declarator') {
+				child.children.forEach((child: Node) => {
+					if (child.type == 'identifier') {
+						luaText += className + '.' + child.text + " = nil\n";
+						return;
+					}
+				});
+				return;
+			}
+		});
+		return luaText;
+	}
+	private static parseNode(astNode: Node, luaObject: Object) {
+		let str = JSON.stringify(astNode, null, 2);
+
+	}
+
 
 	/**
 	 * 获取tree-sitter wasm文件目录
@@ -84,4 +231,10 @@ export class CppCodeProcessor {
 
 		return dir.files(dirPath, 'file', null, options);
 	}
+}
+
+class URegex {
+	public static UCLASS    = new RegExp(/\s*UCLASS\(.*\)/);
+	public static UFUNCTION = new RegExp(/\s*UFUNCTION\(.*\)/);
+	public static UPROPERTY = new RegExp(/\s*UPROPERTY\(.*\)/);
 }
