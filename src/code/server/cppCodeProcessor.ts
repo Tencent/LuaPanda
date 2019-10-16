@@ -74,15 +74,15 @@ export class CppCodeProcessor {
 				return;
 			}
 			if (foundUCLASS == true) {
-				let luaText = this.handleUCLASS(child);
+				let result = this.handleUCLASS(child);
 				foundUCLASS = false;
-				// TODO 写文件
-				Logger.DebugLog(luaText);
+				let filePath = path.join(this.cppCodeGenResPath, result.className + '.lua');
+				this.appendText2File(result.luaText, filePath);
 			}
 		});
 	}
 
-	private static handleUCLASS(astNode: Node): string {
+	private static handleUCLASS(astNode: Node): {luaText: string, className: string} {
 		let luaText = '';
 		let className = '';
 		astNode.children.forEach((child: Node) => {
@@ -95,7 +95,7 @@ export class CppCodeProcessor {
 				luaText += this.handleCompoundStatement(child, className);
 			}
 		});
-		return luaText;
+		return {luaText: luaText, className: className};
 	}
 
 	private static handleCompoundStatement(astNode: Node, className: string): string {
@@ -250,7 +250,8 @@ export class CppCodeProcessor {
 	 * @param filePath 文件路径，若不存在则创建，已存在则追加到文件末尾。
 	 */
 	private static appendText2File(text: string, filePath: string) {
-		this.makeBaseDirSync(filePath);
+		let dirPath = path.dirname(filePath);
+		this.makeDirSync(dirPath);
 		let options = {
 			flag: 'a'
 		};
@@ -269,15 +270,13 @@ export class CppCodeProcessor {
 		// }
 	}
 
-	private static makeBaseDirSync(filePath: string) {
-		let baseDir = path.dirname(filePath);
-		if (fs.existsSync(baseDir)) {
+	private static makeDirSync(dirPath: string) {
+		if (fs.existsSync(dirPath)) {
 			return;
 		}
-		let options = {
-			recursive: true
-		};
-		fs.mkdirSync(baseDir, options);
+		let baseDir = path.dirname(dirPath);
+		this.makeDirSync(baseDir);
+		fs.mkdirSync(dirPath);
 	}
 
 	/**
