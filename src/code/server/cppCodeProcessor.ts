@@ -255,19 +255,12 @@ export class CppCodeProcessor {
 		let options = {
 			flag: 'a'
 		};
-		fs.writeFile(filePath, text, options, function(err) {
-			if (err) {
-				Logger.ErrorLog("写入文件出错，filePath: " + filePath + ". err: ");
-				Logger.ErrorLog(err.name + ': ' + err.message);
-			}
-		});
-		// 同步接口
-		// try {
-		// 	fs.writeFileSync(filePath, text, options);
-		// } catch (e) {
-		// 	Logger.ErrorLog("写入文件出错，filePath: " + filePath);
-		// 	Logger.ErrorLog(e);
-		// }
+		try {
+			fs.writeFileSync(filePath, text, options);
+		} catch (e) {
+			Logger.ErrorLog('写入文件出错，filePath: ' + filePath + 'error: ');
+			Logger.ErrorLog(e);
+		}
 	}
 
 	private static makeDirSync(dirPath: string) {
