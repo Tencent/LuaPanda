@@ -235,17 +235,25 @@ export class CppCodeProcessor {
 	/**
 	 * 将文本写入指定文件。
 	 * @param text 要写入的文本。
-	 * @param filePath 文件路径，若不存在则创建，已存在则覆盖。
+	 * @param filePath 文件路径，若不存在则创建，已存在则追加到文件末尾。
 	 */
-	private static writeText2File(text: string, filePath: string) {
-		fs.writeFile(filePath, text, function(err) {
+	private static appendText2File(text: string, filePath: string) {
+		let options = {
+			flag: 'a'
+		};
+		fs.writeFile(filePath, text, options, function(err) {
 			if (err) {
 				Logger.ErrorLog("写入文件出错，filePath: " + filePath + ". err: ");
 				Logger.ErrorLog(err.name + ': ' + err.message);
 			}
 		});
-
-
+		// 同步接口
+		// try {
+		// 	fs.writeFileSync(filePath, text, options);
+		// } catch (e) {
+		// 	Logger.ErrorLog("写入文件出错，filePath: " + filePath);
+		// 	Logger.ErrorLog(e);
+		// }
 	}
 }
 
