@@ -100,7 +100,7 @@ connection.onInitialize((initPara: InitializeParams) => {
 	Tools.setInitPara(initPara);
 	Tools.setToolsConnection(connection);
 	Logger.connection = connection;
-	CppCodeProcessor.workspaceRootPath = initPara.rootPath;
+	CppCodeProcessor.setWorkspaceRootPath(initPara.rootPath);
 
 	Logger.DebugLog(Tools.getInitPara().rootPath);
 

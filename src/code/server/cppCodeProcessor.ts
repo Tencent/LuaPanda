@@ -12,9 +12,18 @@ import { Logger } from './LogManager';
 import * as Tools from './tools';
 
 export class CppCodeProcessor {
-	// workspace 根目录，server初始化时赋值。
-	public static workspaceRootPath: string | null;
+	// workspace 根目录，server初始化时设置。
+	private static workspaceRootPath: string | null;
+	private static cppCodeGenResPath: string;
 
+	/**
+	 * 设置工作空间根目录
+	 * @param workspaceRootPath 工作空间根目录。
+	 */
+	public static setWorkspaceRootPath(workspaceRootPath: string | null) {
+		this.workspaceRootPath = workspaceRootPath;
+		this.cppCodeGenResPath = path.join(this.workspaceRootPath, '.vscode/LuaAnalyzerRes/cpp');
+	}
 	/**
 	 * 将静态导出的C++代码处理成Lua table用于代码提示。
 	 * @param cppDir C++代码根目录。
