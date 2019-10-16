@@ -43,6 +43,7 @@ import { CodeEditor } from './codeEditor';
 import { CodeFormat } from './codeFormat';
 import { CodeLinting } from './codeLinting';
 import { CodeReference } from './codeReference';
+import { CppCodeProcessor } from './cppCodeProcessor';
 
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -99,6 +100,7 @@ connection.onInitialize((initPara: InitializeParams) => {
 	Tools.setInitPara(initPara);
 	Tools.setToolsConnection(connection);
 	Logger.connection = connection;
+	CppCodeProcessor.workspaceRootPath = initPara.rootPath;
 
 	Logger.DebugLog(Tools.getInitPara().rootPath);
 
@@ -285,7 +287,7 @@ documents.onDidOpen(file => {
 		}else{
 			// 处理新的后缀类型
 			createSybwithExt(ext, Tools.getInitPara().rootPath);
-			setTimeout(Tools.refresh_FileName_Uri_Cache, 0);	
+			setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
 		}
 	}
 });

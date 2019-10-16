@@ -12,6 +12,9 @@ import { Logger } from './LogManager';
 import * as Tools from './tools';
 
 export class CppCodeProcessor {
+	// workspace 根目录，server初始化时赋值。
+	public static workspaceRootPath: string | null;
+
 	/**
 	 * 将静态导出的C++代码处理成Lua table用于代码提示。
 	 * @param cppDir C++代码根目录。
