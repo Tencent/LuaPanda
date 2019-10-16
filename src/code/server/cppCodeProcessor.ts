@@ -238,6 +238,7 @@ export class CppCodeProcessor {
 	 * @param filePath 文件路径，若不存在则创建，已存在则追加到文件末尾。
 	 */
 	private static appendText2File(text: string, filePath: string) {
+		this.makeBaseDirSync(filePath);
 		let options = {
 			flag: 'a'
 		};
@@ -254,6 +255,17 @@ export class CppCodeProcessor {
 		// 	Logger.ErrorLog("写入文件出错，filePath: " + filePath);
 		// 	Logger.ErrorLog(e);
 		// }
+	}
+
+	private static makeBaseDirSync(filePath: string) {
+		let baseDir = path.dirname(filePath);
+		if (fs.existsSync(baseDir)) {
+			return;
+		}
+		let options = {
+			recursive: true
+		};
+		fs.mkdirSync(baseDir, options);
 	}
 }
 
