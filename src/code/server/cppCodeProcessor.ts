@@ -45,7 +45,7 @@ export class CppCodeProcessor {
 		)
 		.catch((e) => {
 			Logger.ErrorLog("Parse cpp file failed, filePath: " + filePath +" error: ");
-			Logger.ErrorLog(e);
+			Logger.ErrorLog(e.message);
 		});
 	}
 
