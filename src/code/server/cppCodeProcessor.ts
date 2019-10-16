@@ -278,15 +278,17 @@ export class CppCodeProcessor {
 	 * 删除目录，递归删除子目录。
 	 * @param dirPath 要删除的目录。
 	 */
-	private static rmdirSyncRecursive(dirPath: string) {
+	private static removeCppCodeGenRes(dirPath: string) {
 		if (fs.existsSync(dirPath)) {
 			let files = fs.readdirSync(dirPath);
 			files.forEach((file) => {
 				let currentPath = path.join(dirPath, file);
 				if (fs.statSync(currentPath).isDirectory()) {
-					this.rmdirSyncRecursive(currentPath);
+					this.removeCppCodeGenRes(currentPath);
 				} else {
 					fs.unlinkSync(currentPath);
+					// 删除preload symbol
+					CodeSymbol.refreshSinglePreLoadFile(currentPath);
 				}
 			});
 			fs.rmdirSync(dirPath);
