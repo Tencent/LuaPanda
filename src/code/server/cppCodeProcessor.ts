@@ -231,6 +231,22 @@ export class CppCodeProcessor {
 
 		return dir.files(dirPath, 'file', null, options);
 	}
+
+	/**
+	 * 将文本写入指定文件。
+	 * @param text 要写入的文本。
+	 * @param filePath 文件路径，若不存在则创建，已存在则覆盖。
+	 */
+	private static writeText2File(text: string, filePath: string) {
+		fs.writeFile(filePath, text, function(err) {
+			if (err) {
+				Logger.ErrorLog("写入文件出错，filePath: " + filePath + ". err: ");
+				Logger.ErrorLog(err.name + ': ' + err.message);
+			}
+		});
+
+
+	}
 }
 
 class URegex {
