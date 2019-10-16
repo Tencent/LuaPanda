@@ -267,6 +267,25 @@ export class CppCodeProcessor {
 		};
 		fs.mkdirSync(baseDir, options);
 	}
+
+	/**
+	 * 删除目录，递归删除子目录。
+	 * @param dirPath 要删除的目录。
+	 */
+	private static rmdirSyncRecursive(dirPath: string) {
+		if (fs.existsSync(dirPath)) {
+			let files = fs.readdirSync(dirPath);
+			files.forEach((file) => {
+				let currentPath = path.join(dirPath, file);
+				if (fs.statSync(currentPath).isDirectory()) {
+					this.rmdirSyncRecursive(currentPath);
+				} else {
+					fs.unlinkSync(currentPath);
+				}
+			});
+			fs.rmdirSync(dirPath);
+		}
+	}
 }
 
 class URegex {
