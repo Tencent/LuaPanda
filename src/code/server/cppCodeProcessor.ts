@@ -9,6 +9,7 @@ import dir = require('path-reader');
 import fs = require('fs');
 import { parseAst, Language, Node } from 'univac';
 import { Logger } from './LogManager';
+import { CodeSymbol } from './codeSymbol';
 import * as Tools from './tools';
 
 export class CppCodeProcessor {
@@ -78,6 +79,7 @@ export class CppCodeProcessor {
 				foundUCLASS = false;
 				let filePath = path.join(this.cppCodeGenResPath, result.className + '.lua');
 				this.appendText2File(result.luaText, filePath);
+				CodeSymbol.refreshSinglePreLoadFile(filePath);
 			}
 		});
 	}
