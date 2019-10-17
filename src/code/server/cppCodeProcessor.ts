@@ -39,7 +39,7 @@ export class CppCodeProcessor {
 	}
 
 	private static parseCppFile(filePath: string) {
-		let cppText = Tools.getFileContent(filePath);
+		let cppText = this.getCppCode(filePath);
 
 		let parseProcess: Promise<Node | undefined> = parseAst({
 			input: cppText,
@@ -60,6 +60,23 @@ export class CppCodeProcessor {
 			Logger.ErrorLog("Parse cpp file failed, filePath: " + filePath +" error: ");
 			Logger.ErrorLog(e.message);
 		});
+	}
+
+	/**
+	 * 获取文件内容，并对内容进行预处理。
+	 * 将 class XXX ClassName 替换为 class className
+	 * @param filePath 文件路径。
+	 */
+	private static getCppCode(filePath): string {
+		let content = Tools.getFileContent(filePath);
+
+		let regex = /\s*(class\s+\w+)\s+\w+.+/;
+		let result;
+		while ((result = regex.exec(content)) !== null) {
+			content = content.replace(result[1], 'class');
+		}
+
+		return content;
 	}
 
 	private static parseAST2LuaCode(astNode: Node) {
