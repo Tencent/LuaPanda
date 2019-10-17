@@ -287,8 +287,9 @@ export class CppCodeProcessor {
 					this.removeCppInterfaceIntelliSenseRes(currentPath);
 				} else {
 					fs.unlinkSync(currentPath);
+					// TODO 先清空文件内容，然后刷新symbol，再删除文件。
 					// 删除preload symbol
-					CodeSymbol.refreshSinglePreLoadFile(currentPath);
+					// CodeSymbol.refreshSinglePreLoadFile(currentPath);
 				}
 			});
 			fs.rmdirSync(dirPath);
