@@ -172,7 +172,7 @@ export class CppCodeProcessor {
 				foundUFUNCTION = true;
 				return;
 			}
-			if (child.type == 'declaration' && child.text.match(URegex.UPROPERTY)) {
+			if (child.type == 'field_declaration' && child.text.match(URegex.UPROPERTY)) {
 				foundUPROPERTY = true;
 				return;
 			}
@@ -322,6 +322,14 @@ export class CppCodeProcessor {
 					}
 				});
 				return;
+			}
+			if (child.type == 'pointer_declarator' || child.type == 'reference_declarator') {
+				child.children.forEach((child: Node) => {
+					if (child.type == 'field_identifier') {
+						luaText += className + '.' + child.text + " = nil\n";
+					}
+				});
+
 			}
 		});
 		return luaText;
