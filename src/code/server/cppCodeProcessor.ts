@@ -15,7 +15,7 @@ import * as Tools from './tools';
 export class CppCodeProcessor {
 	// workspace 根目录，server初始化时设置。
 	private static workspaceRootPath: string | null;
-	private static cppCodeGenResPath: string;
+	private static cppInterfaceIntelliSenseResPath: string | null;
 
 	/**
 	 * 设置工作空间根目录
@@ -23,7 +23,7 @@ export class CppCodeProcessor {
 	 */
 	public static setWorkspaceRootPath(workspaceRootPath: string | null) {
 		this.workspaceRootPath = workspaceRootPath;
-		this.cppCodeGenResPath = path.join(this.workspaceRootPath, '.vscode/LuaAnalyzerRes/cpp');
+		this.cppInterfaceIntelliSenseResPath = path.join(this.workspaceRootPath, '.vscode/LuaAnalyzer/IntelliSenseRes/UECppInterface');
 	}
 	/**
 	 * 将静态导出的C++代码处理成Lua table用于代码提示。
@@ -77,7 +77,7 @@ export class CppCodeProcessor {
 			if (foundUCLASS == true) {
 				let result = this.handleUCLASS(child);
 				foundUCLASS = false;
-				let filePath = path.join(this.cppCodeGenResPath, result.className + '.lua');
+				let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.className + '.lua');
 				this.appendText2File(result.luaText, filePath);
 				CodeSymbol.refreshSinglePreLoadFile(filePath);
 			}
@@ -278,13 +278,13 @@ export class CppCodeProcessor {
 	 * 删除目录，递归删除子目录。
 	 * @param dirPath 要删除的目录。
 	 */
-	private static removeCppCodeGenRes(dirPath: string) {
+	private static removeCppInterfaceIntelliSenseRes(dirPath: string) {
 		if (fs.existsSync(dirPath)) {
 			let files = fs.readdirSync(dirPath);
 			files.forEach((file) => {
 				let currentPath = path.join(dirPath, file);
 				if (fs.statSync(currentPath).isDirectory()) {
-					this.removeCppCodeGenRes(currentPath);
+					this.removeCppInterfaceIntelliSenseRes(currentPath);
 				} else {
 					fs.unlinkSync(currentPath);
 					// 删除preload symbol
