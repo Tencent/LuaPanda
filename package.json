@@ -139,7 +139,7 @@
 				"lua_analyzer.codeLinting.ignoreFolderRegularExpression": {
 					"scope": "resource",
 					"type": "string",
-					"default": ".*/res/lua/\\w+\\.lua;",
+					"default": ".*/res/lua/\\w+\\.lua;.*/LuaAnalyzer/IntelliSenseRes/;",
 					"description": "The regular expressions used to ignore files in some specific folders. Use semicolons to separate different regular expressions."
 				},
 				"lua_analyzer.codeLinting.ignoreErrorCode": {
