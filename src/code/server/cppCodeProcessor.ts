@@ -130,17 +130,17 @@ export class CppCodeProcessor {
 	private static handleUCLASS(astNode: Node): {luaText: string, className: string} {
 		let luaText = '';
 		let className = '';
+		let baseClass = [];
 
 		// class ClassName: public BaseClass
 		astNode.children.forEach((child: Node) => {
 			switch (child.type) {
 				case 'type_identifier':
-					luaText += child.text + " = {}\n";
 					className = child.text;
 					break;
 
 				case 'base_class_clause':
-					luaText += this.handleBaseClassClause(child, className);
+					baseClass = baseClass.concat(this.handleBaseClassClause(child, className));
 					break;
 
 				case 'field_declaration_list':
@@ -148,11 +148,25 @@ export class CppCodeProcessor {
 					break;
 			}
 		});
-		return {luaText: luaText, className: className};
+
+		let classDeclaration: string;
+		if (baseClass.length > 0) {
+			// 默认选取继承类中的第一个
+			classDeclaration = className + ' = {} ---@type ' + baseClass[0] + '\n';
+		} else {
+			classDeclaration = className + ' = {}\n';
+		}
+		return {luaText: classDeclaration + luaText, className: className};
 	}
 
-	private static handleBaseClassClause(astNode: Node, className: string): string {
-		return '';
+	private static handleBaseClassClause(astNode: Node, className: string): string[] {
+		let baseClass: string[] = [];
+		astNode.children.forEach((child: Node) => {
+			if (child.type == 'type_identifier') {
+				baseClass.push(child.text);
+			}
+		});
+		return baseClass;
 	}
 
 	private static handleDeclarationList(astNode: Node, className: string): string {
