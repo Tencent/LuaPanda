@@ -104,43 +104,22 @@ export class CppCodeProcessor {
 	private static handleUCLASS(astNode: Node): {luaText: string, className: string} {
 		let luaText = '';
 		let className = '';
-		let parseOutBaseClass: boolean = false;
+
+		// class ClassName: public BaseClass
 		astNode.children.forEach((child: Node) => {
+			if (child.type == 'type_identifier') {
+				luaText += child.text + " = {}\n";
+				className = child.text;
+				return;
+			}
 			if (child.type == 'base_class_clause') {
-				parseOutBaseClass = true;
+				luaText += this.handleBaseClassClause(child, className);
+			}
+			if (child.type == 'field_declaration_list') {
+				luaText += this.handleDeclarationList(child, className);
 			}
 		});
 
-		if (parseOutBaseClass == false) {
-			// class XXX ClassName: public BaseClass
-			astNode.children.forEach((child: Node) => {
-				if (child.type == 'identifier') {
-					luaText += child.text + " = {}\n";
-					className = child.text;
-					return;
-				}
-
-				if (child.type == 'compound_statement') {
-					luaText += this.handleCompoundStatement(child, className);
-				}
-			});
-		} else {
-			// class ClassName: public BaseClass
-			astNode.children.forEach((child: Node) => {
-				if (child.type == 'type_identifier') {
-					luaText += child.text + " = {}\n";
-					className = child.text;
-					return;
-				}
-				if (child.type == 'base_class_clause') {
-					luaText += this.handleBaseClassClause(child, className);
-				}
-				if (child.type == 'field_declaration_list') {
-					luaText += this.handleDeclarationList(child, className);
-				}
-			});
-
-		}
 		return {luaText: luaText, className: className};
 	}
 
@@ -180,37 +159,6 @@ export class CppCodeProcessor {
 		return luaText;
 	}
 
-	private static handleCompoundStatement(astNode: Node, className: string): string {
-		let luaText = '';
-		let foundUFUNCTION = false;
-		let foundUPROPERTY = false;
-		astNode.children.forEach((child: Node) => {
-			if (child.type == 'comment') {
-				return;
-			}
-
-			if (foundUFUNCTION == true) {
-				luaText += this.handleUFUNCTION(child, className);
-				foundUFUNCTION = false;
-				return;
-			}
-			if (foundUPROPERTY == true) {
-				luaText += this.handleUPROPERTY(child, className);
-				foundUPROPERTY = false;
-				return;
-			}
-
-			if (child.type == 'expression_statement' && child.text.match(URegex.UFUNCTION)) {
-				foundUFUNCTION = true;
-				return;
-			}
-			if (child.type == 'expression_statement' && child.text.match(URegex.UPROPERTY)) {
-				foundUPROPERTY = true;
-				return;
-			}
-		});
-		return luaText;
-	}
 	private static handleUFUNCTION(astNode: Node, className: string): string {
 		let luaText = 'function ';
 
@@ -334,11 +282,6 @@ export class CppCodeProcessor {
 		});
 		return luaText;
 	}
-	private static parseNode(astNode: Node, luaObject: Object) {
-		let str = JSON.stringify(astNode, null, 2);
-
-	}
-
 
 	/**
 	 * 获取tree-sitter wasm文件目录
