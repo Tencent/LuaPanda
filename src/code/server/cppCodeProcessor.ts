@@ -65,15 +65,30 @@ export class CppCodeProcessor {
 	/**
 	 * 获取文件内容，并对内容进行预处理。
 	 * 将 class XXX ClassName 替换为 class className
+	 * 去除宏 GENERATED_BODY
+	 * 去除宏 GENERATED_UCLASS_BODY
 	 * @param filePath 文件路径。
 	 */
 	private static getCppCode(filePath): string {
 		let content = Tools.getFileContent(filePath);
+		let regex: RegExp;
+		let result: RegExpExecArray | null;
 
-		let regex = /\s*(class\s+\w+)\s+\w+.+/;
-		let result;
+		// 将 class XXX ClassName 替换为 class className
+		regex = /\s*(class\s+\w+)\s+\w+.+/;
 		while ((result = regex.exec(content)) !== null) {
 			content = content.replace(result[1], 'class');
+		}
+
+		//去除宏 GENERATED_BODY
+		regex = URegex.GENERATED_BODY;
+		while ((result = regex.exec(content)) !== null) {
+			content = content.replace(result[1], '//');
+		}
+		//去除宏 GENERATED_UCLASS_BODY
+		regex = URegex.GENERATED_UCLASS_BODY;
+		while ((result = regex.exec(content)) !== null) {
+			content = content.replace(result[1], '//');
 		}
 
 		return content;
@@ -372,10 +387,10 @@ export class CppCodeProcessor {
 }
 
 class URegex {
-	public static UCLASS    = new RegExp(/\s*UCLASS\s*\(.*\)/);
-	public static UFUNCTION = new RegExp(/\s*UFUNCTION\s*\(.*\)/);
-	public static UPROPERTY = new RegExp(/\s*UPROPERTY\s*\(.*\)/);
+	public static UCLASS    = new RegExp(/\s*(UCLASS\s*\(.*\))/);
+	public static UFUNCTION = new RegExp(/\s*(UFUNCTION\s*\(.*\))/);
+	public static UPROPERTY = new RegExp(/\s*(UPROPERTY\s*\(.*\))/);
 
-	public static GENERATED_BODY        = new RegExp(/\s*GENERATED_BODY\s*\(.*\)/);
-	public static GENERATED_UCLASS_BODY = new RegExp(/\s*GENERATED_UCLASS_BODY\s*\(.*\)/);
+	public static GENERATED_BODY        = new RegExp(/\s*(GENERATED_BODY\s*\(.*\))/);
+	public static GENERATED_UCLASS_BODY = new RegExp(/\s*(GENERATED_UCLASS_BODY\s*\(.*\))/);
 }
