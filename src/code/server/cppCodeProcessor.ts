@@ -102,6 +102,16 @@ export class CppCodeProcessor {
 				return;
 			}
 
+			// 外层有namespace的情况
+			if (child.type == 'namespace_definition') {
+				child.children.forEach((child: Node) => {
+					if (child.type == 'declaration_list') {
+						this.parseAST2LuaCode(child);
+					}
+				});
+				return;
+			}
+
 			if (child.type == 'expression_statement' && child.text.match(URegex.UCLASS)) {
 				// 标记找到UCLASS，即下一个Node。
 				foundUCLASS = true;
