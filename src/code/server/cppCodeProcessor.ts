@@ -372,7 +372,10 @@ export class CppCodeProcessor {
 }
 
 class URegex {
-	public static UCLASS    = new RegExp(/\s*UCLASS\(.*\)/);
-	public static UFUNCTION = new RegExp(/\s*UFUNCTION\(.*\)/);
-	public static UPROPERTY = new RegExp(/\s*UPROPERTY\(.*\)/);
+	public static UCLASS    = new RegExp(/\s*UCLASS\s*\(.*\)/);
+	public static UFUNCTION = new RegExp(/\s*UFUNCTION\s*\(.*\)/);
+	public static UPROPERTY = new RegExp(/\s*UPROPERTY\s*\(.*\)/);
+
+	public static GENERATED_BODY        = new RegExp(/\s*GENERATED_BODY\s*\(.*\)/);
+	public static GENERATED_UCLASS_BODY = new RegExp(/\s*GENERATED_UCLASS_BODY\s*\(.*\)/);
 }
