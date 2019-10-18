@@ -30,6 +30,7 @@ export class CppCodeProcessor {
 	 * @param cppDir C++代码根目录。
 	 */
 	public static processCppDir(cppDir: string) {
+		this.removeCppInterfaceIntelliSenseRes(this.cppInterfaceIntelliSenseResPath);
 		let cppHeaderFiles = this.getCppHeaderFiles(cppDir);
 		let cppSourceFiles = this.getCppSourceFiles(cppDir);
 		// cppSourceFiles.forEach((filePath: string) => {
@@ -376,10 +377,11 @@ export class CppCodeProcessor {
 				if (fs.statSync(currentPath).isDirectory()) {
 					this.removeCppInterfaceIntelliSenseRes(currentPath);
 				} else {
-					fs.unlinkSync(currentPath);
-					// TODO 先清空文件内容，然后刷新symbol，再删除文件。
 					// 删除preload symbol
-					// CodeSymbol.refreshSinglePreLoadFile(currentPath);
+					// 先清空文件内容，然后刷新symbol，再删除文件。
+					fs.writeFileSync(currentPath, '');
+					CodeSymbol.refreshSinglePreLoadFile(currentPath);
+					fs.unlinkSync(currentPath);
 				}
 			});
 			fs.rmdirSync(dirPath);
