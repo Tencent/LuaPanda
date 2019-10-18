@@ -143,7 +143,8 @@ export class CppCodeProcessor {
 	}
 
 	private static handleDeclarationList(astNode: Node, className: string): string {
-		let luaText = '';
+		let uPropertys = '';
+		let uFunctions = '';
 		let foundUFUNCTION = false;
 		let foundUPROPERTY = false;
 		astNode.children.forEach((child: Node) => {
@@ -152,12 +153,12 @@ export class CppCodeProcessor {
 			}
 
 			if (foundUFUNCTION == true) {
-				luaText += this.handleUFUNCTION(child, className);
+				uFunctions += this.handleUFUNCTION(child, className);
 				foundUFUNCTION = false;
 				return;
 			}
 			if (foundUPROPERTY == true) {
-				luaText += this.handleUPROPERTY(child, className);
+				uPropertys += this.handleUPROPERTY(child, className);
 				foundUPROPERTY = false;
 				return;
 			}
@@ -171,7 +172,7 @@ export class CppCodeProcessor {
 				return;
 			}
 		});
-		return luaText;
+		return uPropertys + uFunctions;
 	}
 
 	private static handleUFUNCTION(astNode: Node, className: string): string {
