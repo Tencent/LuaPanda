@@ -133,19 +133,21 @@ export class CppCodeProcessor {
 
 		// class ClassName: public BaseClass
 		astNode.children.forEach((child: Node) => {
-			if (child.type == 'type_identifier') {
-				luaText += child.text + " = {}\n";
-				className = child.text;
-				return;
-			}
-			if (child.type == 'base_class_clause') {
-				luaText += this.handleBaseClassClause(child, className);
-			}
-			if (child.type == 'field_declaration_list') {
-				luaText += this.handleDeclarationList(child, className);
+			switch (child.type) {
+				case 'type_identifier':
+					luaText += child.text + " = {}\n";
+					className = child.text;
+					break;
+
+				case 'base_class_clause':
+					luaText += this.handleBaseClassClause(child, className);
+					break;
+
+				case 'field_declaration_list':
+					luaText += this.handleDeclarationList(child, className);
+					break;
 			}
 		});
-
 		return {luaText: luaText, className: className};
 	}
 
@@ -166,21 +168,13 @@ export class CppCodeProcessor {
 			if (foundUFUNCTION == true) {
 				uFunctions += this.handleUFUNCTION(child, className);
 				foundUFUNCTION = false;
-				return;
-			}
-			if (foundUPROPERTY == true) {
+			} else if (foundUPROPERTY == true) {
 				uPropertys += this.handleUPROPERTY(child, className);
 				foundUPROPERTY = false;
-				return;
-			}
-
-			if (child.type == 'declaration' && child.text.match(URegex.UFUNCTION)) {
+			} else if (child.type == 'declaration' && child.text.match(URegex.UFUNCTION)) {
 				foundUFUNCTION = true;
-				return;
-			}
-			if (child.type == 'field_declaration' && child.text.match(URegex.UPROPERTY)) {
+			} else if (child.type == 'field_declaration' && child.text.match(URegex.UPROPERTY)) {
 				foundUPROPERTY = true;
-				return;
 			}
 		});
 		return uPropertys + uFunctions;
@@ -190,18 +184,20 @@ export class CppCodeProcessor {
 		let luaText = 'function ';
 
 		astNode.children.forEach((child: Node) => {
-			if (child.type == 'function_declarator') {
-				luaText += this.handleFunctionDeclarator(child, className);
-				return;
-			}
-			// 函数返回类型为指针或引用
-			if (child.type == 'pointer_declarator' || child.type == 'reference_declarator') {
-				child.children.forEach((child: Node) => {
-					if (child.type == 'function_declarator') {
-						luaText += this.handleFunctionDeclarator(child, className);
-						return;
-					}
-				});
+			switch (child.type) {
+				case 'function_declarator':
+					luaText += this.handleFunctionDeclarator(child, className);
+					break;
+
+				// 函数返回类型为指针或引用，需要向内解一层
+				case 'pointer_declarator':
+				case 'reference_declarator':
+					child.children.forEach((child: Node) => {
+						if (child.type == 'function_declarator') {
+							luaText += this.handleFunctionDeclarator(child, className);
+						}
+					});
+					break;
 			}
 		});
 		luaText += ' end\n';
@@ -212,12 +208,15 @@ export class CppCodeProcessor {
 		let luaText = '';
 
 		astNode.children.forEach((child: Node) => {
-			if (child.type == 'identifier' || child.type == 'field_identifier') {
-				luaText += className + '.' + child.text;
-				return;
-			}
-			if (child.type == 'parameter_list') {
-				luaText += this.handleParameterList(child, className);
+			switch (child.type) {
+				case 'identifier':
+				case 'field_identifier':
+					luaText += className + '.' + child.text;
+					break;
+
+				case 'parameter_list':
+					luaText += this.handleParameterList(child, className);
+					break;
 			}
 		});
 		luaText += ')';
@@ -246,15 +245,18 @@ export class CppCodeProcessor {
 	private static handleParameterDeclaration(astNode: Node): string[] {
 		let params: string[] = [];
 		astNode.children.forEach((child: Node) => {
-			if (child.type == 'reference_declarator') {
-				params.push(this.handleReferenceDeclarator(child));
-				return;
-			}
-			if (child.type == 'pointer_declarator') {
-				params.push(this.handlePointerDeclarator(child));
-			}
-			if (child.type == 'identifier') {
-				params.push(child.text);
+			switch (child.type) {
+				case 'reference_declarator':
+					params.push(this.handleReferenceDeclarator(child));
+					break;
+
+				case 'pointer_declarator':
+					params.push(this.handlePointerDeclarator(child));
+					break;
+
+				case 'identifier':
+					params.push(child.text);
+					break;
 			}
 		});
 
@@ -285,26 +287,28 @@ export class CppCodeProcessor {
 		let luaText = '';
 
 		astNode.children.forEach((child: Node) => {
-			if (child.type == 'identifier' || child.type == 'field_identifier') {
-				luaText += className + '.' + child.text + " = nil\n";
-				return;
-			}
-			if (child.type == 'init_declarator') {
-				child.children.forEach((child: Node) => {
-					if (child.type == 'identifier') {
-						luaText += className + '.' + child.text + " = nil\n";
-						return;
-					}
-				});
-				return;
-			}
-			if (child.type == 'pointer_declarator' || child.type == 'reference_declarator') {
-				child.children.forEach((child: Node) => {
-					if (child.type == 'field_identifier') {
-						luaText += className + '.' + child.text + " = nil\n";
-					}
-				});
+			switch (child.type) {
+				case 'identifier':
+				case 'field_identifier':
+					luaText += className + '.' + child.text + " = nil\n";
+					break;
 
+				case 'init_declarator':
+					child.children.forEach((child: Node) => {
+						if (child.type == 'identifier') {
+							luaText += className + '.' + child.text + " = nil\n";
+						}
+					});
+					break;
+
+				case 'pointer_declarator':
+				case 'reference_declarator':
+					child.children.forEach((child: Node) => {
+						if (child.type == 'field_identifier') {
+							luaText += className + '.' + child.text + " = nil\n";
+						}
+					});
+					break;
 			}
 		});
 		return luaText;
