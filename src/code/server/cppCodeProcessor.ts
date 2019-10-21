@@ -187,7 +187,7 @@ export class CppCodeProcessor {
 			} else if (foundUPROPERTY == true) {
 				uPropertys += this.handleUPROPERTY(child, className);
 				foundUPROPERTY = false;
-			} else if (child.type == 'declaration' && child.text.match(URegex.UFUNCTION)) {
+			} else if ((child.type == 'field_declaration' || child.type == 'declaration') && child.text.match(URegex.UFUNCTION)) {
 				foundUFUNCTION = true;
 			} else if ((child.type == 'field_declaration' || child.type == 'declaration') && child.text.match(URegex.UPROPERTY)) {
 				foundUPROPERTY = true;
