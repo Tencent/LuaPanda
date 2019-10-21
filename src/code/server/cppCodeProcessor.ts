@@ -131,6 +131,7 @@ export class CppCodeProcessor {
 		let luaText = '';
 		let className = '';
 		let baseClass = [];
+		let declarationList: {uPropertys: string, uFunctions: string} = {uPropertys: '', uFunctions: ''};
 
 		// class ClassName: public BaseClass
 		astNode.children.forEach((child: Node) => {
@@ -144,10 +145,11 @@ export class CppCodeProcessor {
 					break;
 
 				case 'field_declaration_list':
-					luaText += this.handleDeclarationList(child, className);
+					declarationList = this.handleDeclarationList(child, className);
 					break;
 			}
 		});
+		luaText = declarationList.uPropertys + declarationList.uFunctions;
 
 		let classDeclaration: string;
 		if (baseClass.length > 0) {
@@ -169,7 +171,7 @@ export class CppCodeProcessor {
 		return baseClass;
 	}
 
-	private static handleDeclarationList(astNode: Node, className: string): string {
+	private static handleDeclarationList(astNode: Node, className: string): {uPropertys: string, uFunctions: string} {
 		let uPropertys = '';
 		let uFunctions = '';
 		let foundUFUNCTION = false;
@@ -189,9 +191,13 @@ export class CppCodeProcessor {
 				foundUFUNCTION = true;
 			} else if ((child.type == 'field_declaration' || child.type == 'declaration') && child.text.match(URegex.UPROPERTY)) {
 				foundUPROPERTY = true;
+			} else if (child.type == 'preproc_if' || child.type == 'preproc_ifdef') {
+				let declarationList = this.handleDeclarationList(child, className);
+				uPropertys += declarationList.uPropertys;
+				uFunctions += declarationList.uFunctions;
 			}
 		});
-		return uPropertys + uFunctions;
+		return {uPropertys: uPropertys, uFunctions: uFunctions};
 	}
 
 	private static handleUFUNCTION(astNode: Node, className: string): string {
