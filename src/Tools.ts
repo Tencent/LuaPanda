@@ -8,6 +8,7 @@ export class Tools {
     public static extMap = new Object();  // 可处理的文件后缀列表
     public static fileNameToPathMap;   // 文件名-路径Map
     public static useAutoPathMode = false; 
+    public static pathCaseSensitivity = false; 
 
     // 把传入的路径标准路径
     public static genUnifiedPath(beProcessPath) : string{
@@ -179,7 +180,19 @@ export class Tools {
 
         let nameExtObject = this.getPathNameAndExt(shortPath);
         let fileName = nameExtObject['name'];
-        let fullPath = this.fileNameToPathMap[fileName];
+        
+        let fullPath;
+        if(this.pathCaseSensitivity){
+            fullPath = this.fileNameToPathMap[fileName];
+        }else{
+            for (const keyPath in this.fileNameToPathMap) {
+                if(keyPath.toLowerCase() === fileName){
+                    fullPath = this.fileNameToPathMap[keyPath];
+                    break;
+                }
+            }
+        }
+
         if(fullPath){
             if(isArray(fullPath)){
                 // 存在同名文件

@@ -136,6 +136,8 @@ export class LuaDebugSession extends LoggingDebugSession {
         let path = require("path");
 
         Tools.useAutoPathMode = !!args.autoPathMode;
+        Tools.pathCaseSensitivity = !!args.pathCaseSensitivity;
+
         //1.1.生成文件map
         if(Tools.useAutoPathMode === true){
             Tools.rebuildAcceptExtMap(args.luaFileExtension);

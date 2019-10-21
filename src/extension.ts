@@ -109,12 +109,10 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
         }
 
         if (!config.request) {
-            vscode.window.showInformationMessage("请在launch中配置request方式!");
             config.request = 'launch';
         }
 
         if (!config.cwd) {
-            vscode.window.showInformationMessage("请在launch中配置cwd工作路径!");
             config.cwd = '${workspaceFolder}';
         }
 
@@ -132,7 +130,6 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
         }
 
         if (config.stopOnEntry == undefined) {
-            vscode.window.showInformationMessage("请在launch中配置是否stopOnEntry")
             config.stopOnEntry = true;
         }
 
