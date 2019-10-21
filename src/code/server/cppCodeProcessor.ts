@@ -68,6 +68,7 @@ export class CppCodeProcessor {
 	 * 将 class XXX ClassName 替换为 class className
 	 * 去除宏 GENERATED_BODY
 	 * 去除宏 GENERATED_UCLASS_BODY
+	 * 去除宏 DEPRECATED
 	 * @param filePath 文件路径。
 	 */
 	private static getCppCode(filePath): string {
@@ -88,6 +89,11 @@ export class CppCodeProcessor {
 		}
 		//去除宏 GENERATED_UCLASS_BODY
 		regex = URegex.GENERATED_UCLASS_BODY;
+		while ((result = regex.exec(content)) !== null) {
+			content = content.replace(result[1], '//');
+		}
+		//去除宏 DEPRECATED
+		regex = URegex.DEPRECATED;
 		while ((result = regex.exec(content)) !== null) {
 			content = content.replace(result[1], '//');
 		}
@@ -430,4 +436,5 @@ class URegex {
 
 	public static GENERATED_BODY        = new RegExp(/\s*(GENERATED_BODY\s*\(.*\))/);
 	public static GENERATED_UCLASS_BODY = new RegExp(/\s*(GENERATED_UCLASS_BODY\s*\(.*\))/);
+	public static DEPRECATED            = new RegExp(/\s*(DEPRECATED\s*\(.*\))/);
 }
