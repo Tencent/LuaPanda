@@ -68,6 +68,7 @@ export class CppCodeProcessor {
 	 * 将 class XXX ClassName 替换为 class className
 	 * 去除宏 GENERATED_BODY
 	 * 去除宏 GENERATED_UCLASS_BODY
+	 * 去除宏 GENERATED_USTRUCT_BODY
 	 * 去除宏 DEPRECATED
 	 * @param filePath 文件路径。
 	 */
@@ -92,6 +93,11 @@ export class CppCodeProcessor {
 		while ((result = regex.exec(content)) !== null) {
 			content = content.replace(result[1], '//');
 		}
+		//去除宏 GENERATED_USTRUCT_BODY
+		regex = URegex.GENERATED_USTRUCT_BODY;
+		while ((result = regex.exec(content)) !== null) {
+			content = content.replace(result[1], '//');
+		}
 		//去除宏 DEPRECATED
 		regex = URegex.DEPRECATED;
 		while ((result = regex.exec(content)) !== null) {
@@ -103,6 +109,7 @@ export class CppCodeProcessor {
 
 	private static parseAST2LuaCode(astNode: Node) {
 		let foundUCLASS: boolean = false;
+		let foundUSTRUCT: boolean = false;
 		astNode.children.forEach((child: Node) => {
 			if (child.type == 'comment') {
 				return;
@@ -123,10 +130,21 @@ export class CppCodeProcessor {
 				foundUCLASS = true;
 				return;
 			}
+			if (child.type == 'expression_statement' && child.text.match(URegex.USTRUCT)) {
+				foundUSTRUCT = true;
+				return;
+			}
 			if (foundUCLASS == true) {
 				let result = this.handleUCLASS(child);
 				foundUCLASS = false;
 				let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.className + '.lua');
+				this.appendText2File(result.luaText, filePath);
+				CodeSymbol.refreshSinglePreLoadFile(filePath);
+			}
+			if (foundUSTRUCT == true) {
+				let result = this.handleUSTRUCT(child);
+				foundUSTRUCT= false;
+				let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.structName + '.lua');
 				this.appendText2File(result.luaText, filePath);
 				CodeSymbol.refreshSinglePreLoadFile(filePath);
 			}
@@ -165,6 +183,29 @@ export class CppCodeProcessor {
 			classDeclaration = className + ' = {}\n';
 		}
 		return {luaText: classDeclaration + luaText, className: className};
+	}
+
+	private static handleUSTRUCT(astNode: Node): {luaText: string, structName: string} {
+		let luaText = '';
+		let structName = '';
+		let declarationList: {uPropertys: string, uFunctions: string} = {uPropertys: '', uFunctions: ''};
+
+		astNode.children.forEach((child: Node) => {
+			switch (child.type) {
+				case 'type_identifier':
+					structName = child.text;
+					break;
+
+				case 'field_declaration_list':
+					declarationList = this.handleDeclarationList(child, structName);
+					break;
+			}
+		});
+		luaText = declarationList.uPropertys + declarationList.uFunctions;
+
+		let structDeclaration: string;
+		structDeclaration = structName + ' = {}\n';
+		return {luaText: structDeclaration + luaText, structName: structName};
 	}
 
 	private static handleBaseClassClause(astNode: Node, className: string): string[] {
@@ -431,10 +472,12 @@ export class CppCodeProcessor {
 
 class URegex {
 	public static UCLASS    = new RegExp(/\s*(UCLASS\s*\(.*\))/);
+	public static USTRUCT   = new RegExp(/\s*(USTRUCT\s*\(.*\))/);
 	public static UFUNCTION = new RegExp(/\s*(UFUNCTION\s*\(.*\))/);
 	public static UPROPERTY = new RegExp(/\s*(UPROPERTY\s*\(.*\))/);
 
-	public static GENERATED_BODY        = new RegExp(/\s*(GENERATED_BODY\s*\(.*\))/);
-	public static GENERATED_UCLASS_BODY = new RegExp(/\s*(GENERATED_UCLASS_BODY\s*\(.*\))/);
-	public static DEPRECATED            = new RegExp(/\s*(DEPRECATED\s*\(.*\))/);
+	public static GENERATED_BODY         = new RegExp(/\s*(GENERATED_BODY\s*\(.*\))/);
+	public static GENERATED_UCLASS_BODY  = new RegExp(/\s*(GENERATED_UCLASS_BODY\s*\(.*\))/);
+	public static GENERATED_USTRUCT_BODY = new RegExp(/\s*(GENERATED_USTRUCT_BODY\s*\(.*\))/);
+	public static DEPRECATED             = new RegExp(/\s*(DEPRECATED\s*\(.*\))/);
 }
