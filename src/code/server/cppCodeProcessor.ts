@@ -115,33 +115,25 @@ export class CppCodeProcessor {
 				return;
 			}
 
-			// 外层有namespace的情况
 			if (child.type == 'namespace_definition') {
+				// 外层有namespace的情况
 				child.children.forEach((child: Node) => {
 					if (child.type == 'declaration_list') {
 						this.parseAST2LuaCode(child);
 					}
 				});
-				return;
-			}
-
-			if (child.type == 'expression_statement' && child.text.match(URegex.UCLASS)) {
+			} else if (child.type == 'expression_statement' && child.text.match(URegex.UCLASS)) {
 				// 标记找到UCLASS，即下一个Node。
 				foundUCLASS = true;
-				return;
-			}
-			if (child.type == 'expression_statement' && child.text.match(URegex.USTRUCT)) {
+			} else if (child.type == 'expression_statement' && child.text.match(URegex.USTRUCT)) {
 				foundUSTRUCT = true;
-				return;
-			}
-			if (foundUCLASS == true) {
+			} else if (foundUCLASS == true) {
 				let result = this.handleUCLASS(child);
 				foundUCLASS = false;
 				let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.className + '.lua');
 				this.appendText2File(result.luaText, filePath);
 				CodeSymbol.refreshSinglePreLoadFile(filePath);
-			}
-			if (foundUSTRUCT == true) {
+			} else if (foundUSTRUCT == true) {
 				let result = this.handleUSTRUCT(child);
 				foundUSTRUCT= false;
 				let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.structName + '.lua');
