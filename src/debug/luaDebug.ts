@@ -17,10 +17,12 @@ import { LuaDebugRuntime, LuaBreakpoint } from './luaDebugRuntime';
 const { Subject } = require('await-notify');
 import * as Net from 'net';
 import { DataProcesser } from './dataProcesser';
-import { DebugLogger } from './LogManager';
-import { StatusBarManager } from './StatusBarManager';
-import { LineBreakpoint, ConditionBreakpoint, LogPoint } from './BreakPoint';
-import { Tools } from './Tools';
+import { DebugLogger } from '../common/logManager';
+import { StatusBarManager } from '../common/statusBarManager';
+import { LineBreakpoint, ConditionBreakpoint, LogPoint } from './breakpoint';
+import { Tools } from '../common/tools';
+import { UpdateManager } from './updateManager';
+
 export class LuaDebugSession extends LoggingDebugSession {
     public static isNeedB64EncodeStr: boolean = true;
     private static THREAD_ID = 1; 	  //调试器不支持多线程，硬编码THREAD_ID为1
@@ -138,15 +140,18 @@ export class LuaDebugSession extends LoggingDebugSession {
         Tools.useAutoPathMode = !!args.autoPathMode;
         Tools.pathCaseSensitivity = !!args.pathCaseSensitivity;
 
-        //1.1.生成文件map
         if(Tools.useAutoPathMode === true){
             Tools.rebuildAcceptExtMap(args.luaFileExtension);
             Tools.rebuildWorkspaceNamePathMap(args.cwd);
             Tools.checkSameNameFile();
         }
 
-        //去除out, Debugger/debugger_lib/plugins/Darwin/   libpdebug_版本号.so
-        let clibPath = path.dirname(__dirname) + '/Debugger/debugger_lib/plugins/'
+        // 普通模式下才需要检查升级，单文件调试不用
+        if(args.name === 'LuaPanda'){      
+            UpdateManager.checkIfLuaPandaNeedUpdate();
+        }
+
+        // 去除out, Debugger/debugger_lib/plugins/Darwin/   libpdebug_版本号.so
         let sendArgs = new Array();
         sendArgs["stopOnEntry"] = !!args.stopOnEntry;
         sendArgs["luaFileExtension"] = args.luaFileExtension;
@@ -157,11 +162,9 @@ export class LuaDebugSession extends LoggingDebugSession {
         sendArgs["debugMode"] = args.DebugMode;
         sendArgs["pathCaseSensitivity"] = args.pathCaseSensitivity;
         sendArgs["OSType"] = os.type();
-        sendArgs["clibPath"] = clibPath;
+        sendArgs["clibPath"] = Tools.getClibPathInExtension();
         sendArgs["useCHook"] = args.useCHook;
-        let pkg = require("../package.json");
-        let adapterVersion = pkg.version;
-        sendArgs["adapterVersion"] = String(adapterVersion);
+        sendArgs["adapterVersion"] = String(Tools.adapterVersion);
         sendArgs["autoPathMode"] = Tools.useAutoPathMode;
 
         if(args.docPathReplace instanceof Array && args.docPathReplace.length === 2 ){
@@ -189,7 +192,7 @@ export class LuaDebugSession extends LoggingDebugSession {
                 if (typeof info.debuggerVer == "string"){
                     //转数字
                     let DVerArr = info.debuggerVer.split(".");
-                    let AVerArr = String(adapterVersion).split(".");
+                    let AVerArr = String(Tools.adapterVersion).split(".");
                     if (DVerArr.length === AVerArr.length && DVerArr.length === 3 ){
                         //在adapter和debugger版本号长度相等的前提下，比较大版本，大版本 <2 或者 小版本 < 1 就提示. 2.1.0以下会提示
                         if ( parseInt(DVerArr[0]) < 2 || parseInt(DVerArr[1]) < 1 ){
@@ -270,8 +273,8 @@ export class LuaDebugSession extends LoggingDebugSession {
 
             // 把路径加入package.path
             let pathCMD = "'";
-            let pathArr = path.dirname(__dirname).split( path.sep );
-            let stdPath =  pathArr.join('/');
+            let pathArr = Tools.VSCodeExtensionPath.split( path.sep );
+            let stdPath = pathArr.join('/');
             pathCMD = pathCMD + stdPath + "/Debugger/?.lua;"
             pathCMD = pathCMD + args.packagePath.join(';')
             pathCMD = pathCMD + "'";

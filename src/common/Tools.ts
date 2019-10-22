@@ -1,16 +1,56 @@
 import * as vscode from 'vscode';
+import { DebugLogger } from './logManager';
+import * as fs from "fs";
 import { isArray } from 'util';
 let path = require("path");
 let pathReader = require('path-reader');
-import { DebugLogger } from './LogManager';
 
 export class Tools {
     public static extMap = new Object();  // 可处理的文件后缀列表
-    public static fileNameToPathMap;   // 文件名-路径Map
+    public static fileNameToPathMap;   // 文件名-路径 Map
     public static useAutoPathMode = false; 
     public static pathCaseSensitivity = false; 
+    public static adapterVersion;  //赋值放在了插件初始化时
+    public static VSCodeOpenedFolder;   // VSCode当前打开的用户工程路径。打开文件夹后，由languageServer赋值
+    public static luapandaPathInUserProj;   // 用户工程中luapanda文件所在的路径，它在调试器启动时赋值。但也可能工程中不存在luapanda文件导致路径为空
+    public static VSCodeExtensionPath;  // VSCode插件所在路径，插件初始化时就会被赋值
+    
+    // 路径相关函数
+    // 获取扩展中预置的lua文件位置
+    public static getLuaPathInExtension() : string{
+        let luaPathInVSCodeExtension = this.VSCodeExtensionPath + "/Debugger/LuaPanda.lua";
+        return luaPathInVSCodeExtension;
+    }
 
-    // 把传入的路径标准路径
+    // 获取扩展中预置的lua文件位置
+    public static getClibPathInExtension() : string{
+        let ClibPathInVSCodeExtension = this.VSCodeExtensionPath + "/Debugger/debugger_lib/plugins/";
+        return ClibPathInVSCodeExtension;
+    }
+
+    // 读文本文件内容
+    // @path 文件路径
+    // @return 文件内容
+    public static readFileContent(path: string): string {
+        if(path === '' || path == undefined){
+            return '';
+        }
+        let data = fs.readFileSync(path);
+        let dataStr = data.toString();
+        return dataStr;
+    }
+
+    // 写文件内容
+    // @path 文件路径
+    // @return 文件内容
+    public static writeFileContent(path: string, content:string) {
+        if(path === '' || path == undefined){
+            return;
+        }
+        fs.writeFileSync(path, content);
+    }
+
+    // 把传入的路径转为标准路径
     public static genUnifiedPath(beProcessPath) : string{
         //全部使用 /
         beProcessPath = beProcessPath.replace(/\\/g, '/');
@@ -76,8 +116,7 @@ export class Tools {
         }
     }
 
-    //建立/刷新 工程下 文件名-路径Map
-    // 评估执行效率，这个函数可以考虑应该区分同步，以优化体验
+    // 建立/刷新 工程下文件名-路径Map
     public static rebuildWorkspaceNamePathMap(rootPath : string){
         let beginMS = this.getCurrentMS();//启动时毫秒数
         let _fileNameToPathMap = new Array();      // 文件名-路径 cache
@@ -128,13 +167,13 @@ export class Tools {
         this.fileNameToPathMap = _fileNameToPathMap;
     }
 
-    //获取当前毫秒数
+    // 获取当前毫秒数
     public static getCurrentMS(){
-        var currentMS = new Date();//获取当前时间
+        let currentMS = new Date();//获取当前时间
         return currentMS.getTime();
     }
 
-    // 检查同名文件
+    // 检查同名文件, 如果存在，通过日志输出
     public static checkSameNameFile(){
         let sameNameFileStr;
         for (const nameKey in this.fileNameToPathMap) {
@@ -159,7 +198,7 @@ export class Tools {
     // 从URI分析出文件名和后缀
     public static getPathNameAndExt(UriOrPath): Object{
         let name_and_ext = path.basename(UriOrPath).split('.');
-        let name = name_and_ext[0];								  //文件名
+        let name = name_and_ext[0];								                      //文件名
         let ext = name_and_ext[1] || '';											  //文件后缀
         for (let index = 2; index < name_and_ext.length; index++) {
             ext = ext + '.' + name_and_ext[index];

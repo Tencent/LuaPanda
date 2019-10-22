@@ -1,6 +1,6 @@
 import { LuaDebugRuntime } from './luaDebugRuntime';
 import { Socket } from 'net';
-import { DebugLogger } from './LogManager';
+import { DebugLogger } from '../common/logManager';
 import { LuaDebugSession } from './luaDebug';
 
 //网络收发消息，记录回调

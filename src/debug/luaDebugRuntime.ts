@@ -2,9 +2,9 @@ import * as vscode from 'vscode';
 import { EventEmitter } from 'events';
 import { DataProcesser } from './dataProcesser';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { DebugLogger } from './LogManager';
-import { StatusBarManager } from './StatusBarManager';
-import { Tools } from './Tools';
+import { DebugLogger } from '../common/logManager';
+import { StatusBarManager } from '../common/statusBarManager';
+import { Tools } from '../common/tools';
 
 
 export interface LuaBreakpoint {

@@ -4,13 +4,24 @@
 		{
 			"type": "extensionHost",
 			"request": "launch",
-			"name": "LuaPandaExtension",
+			"name": "Launch Client",
 			"runtimeExecutable": "${execPath}",
-			"args": [
-				"--extensionDevelopmentPath=${workspaceFolder}"
-			],
-			"outFiles": [ "${workspaceFolder}/out/**/*.js" ]
-
+			"args": ["--extensionDevelopmentPath=${workspaceRoot}"],
+			"outFiles": ["${workspaceRoot}/out/**/*.js", "${workspaceRoot}/out/common/*.js"]
+		},
+		{
+			"type": "node",
+			"request": "attach",
+			"name": "Attach to Server",
+			"port": 6009,
+			"restart": true,
+			"outFiles": ["${workspaceRoot}/out/code/server/**/*.js"]
+		}
+	],
+	"compounds": [
+		{
+			"name": "Client + Server",
+			"configurations": ["Launch Client", "Attach to Server"]
 		}
 	]
 }

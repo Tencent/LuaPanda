@@ -2,36 +2,127 @@
 import * as vscode from 'vscode';
 import * as Net from 'net';
 
-import { LuaDebugSession } from './luaDebug';
-import { DebugLogger } from './LogManager';
-import { StatusBarManager } from './StatusBarManager';
-import { Tools } from './Tools';
+import * as path from 'path';
+import { LuaDebugSession } from './debug/luaDebug';
+import { DebugLogger } from './common/logManager';
+import { StatusBarManager } from './common/statusBarManager';
+import { Tools } from './common/tools';
+import {
+	LanguageClient,
+	LanguageClientOptions,
+	ServerOptions,
+	TransportKind
+} from 'vscode-languageclient';
+import { workspace, ExtensionContext } from 'vscode';
+import { VisualSetting } from './debug/visualSetting'
+let client: LanguageClient;
 
-export function activate(context: vscode.ExtensionContext) {
-    //reloadWindow
+export function activate(context: ExtensionContext) {
+    // reloadWindow
     let reloadWindow = vscode.commands.registerCommand('luapanda.reloadLuaDebug', function () {
         vscode.commands.executeCommand("workbench.action.reloadWindow")
     });
     context.subscriptions.push(reloadWindow);
-    //force garbage collect
+    // force garbage collect
     let LuaGarbageCollect = vscode.commands.registerCommand('luapanda.LuaGarbageCollect', function () {
         LuaDebugSession.getInstance().LuaGarbageCollect();
         vscode.window.showInformationMessage('Lua Garbage Collect!');
     });
     context.subscriptions.push(LuaGarbageCollect);
 
+    let openSettingsPage = vscode.commands.registerCommand('luapanda.openSettingsPage', function () {
+        // 和VSCode的交互
+        let panel: vscode.WebviewPanel = vscode.window.createWebviewPanel(
+			'LuaPanda Setting',
+			'LuaPanda 项目配置',
+			vscode.ViewColumn.One,
+			{
+                retainContextWhenHidden: true,
+				enableScripts: true
+			}
+        );
+        
+		panel.webview.html = Tools.readFileContent(Tools.VSCodeExtensionPath + '/res/web/settings.html');
+		// Handle messages from the webview
+		panel.webview.onDidReceiveMessage(message => {
+			VisualSetting.getWebMessage(message)
+		},
+			undefined,
+			context.subscriptions
+        );
+        // 读入配置
+        VisualSetting.setLaunchToWeb(panel.webview);
+    });
+    context.subscriptions.push(openSettingsPage);
+
     const provider = new LuaConfigurationProvider()
     context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('lua', provider));
     context.subscriptions.push(provider);
-    //init log
+
+    // 公共变量赋值
+    let pkg = require( context.extensionPath + "/package.json");
+    Tools.adapterVersion = pkg.version;
+    Tools.VSCodeExtensionPath = context.extensionPath;
+    // init log
     DebugLogger.init();
     StatusBarManager.init();
+
+    // language server 相关
+	// The server is implemented in node
+	let serverModule = context.asAbsolutePath(
+		path.join('out', 'code', 'server', 'server.js')
+	);
+	// The debug options for the server
+	// --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
+	let debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
+
+	// If the extension is launched in debug mode then the debug server options are used
+	// Otherwise the run options are used
+	let serverOptions: ServerOptions = {
+		run: { module: serverModule, transport: TransportKind.ipc },
+		debug: {
+			module: serverModule,
+			transport: TransportKind.ipc,
+			options: debugOptions
+		}
+	};
+
+	// Options to control the language client
+	let clientOptions: LanguageClientOptions = {
+		// Register the server for plain text documents
+		documentSelector: [{ scheme: 'file', language: 'lua' }],
+		synchronize: {
+			// Notify the server about file changes to '.clientrc files contained in the workspace
+			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
+		}
+	};
+
+	// Create the language client and start the client.
+	client = new LanguageClient(
+		'lua_analyzer',
+		'Lua Analyzer',
+		serverOptions,
+		clientOptions
+	);
+
+	// Start the client. This will also launch the server
+	client.start();
+	client.onReady().then(() => {
+        client.onNotification("showProgress", showProgress);
+        client.onNotification("setRootFolder", setRootFolder);
+        client.onNotification("setLuaPandaPath", setLuaPandaPath);
+	});
+
 }
 
 export function deactivate() {
-    // nothing to do
+    if (!client) {
+		return undefined;
+	}
+	return client.stop();
 }
 
+// debug启动时的配置项处理
 class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
     private _server?: Net.Server;
     resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration, token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration> {
@@ -64,8 +155,8 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             // 把路径加入package.path
             let path = require("path");
             let pathCMD = "'";
-            let pathArr = path.dirname(__dirname).split( path.sep );
-            let stdPath =  pathArr.join('/');
+            let pathArr = Tools.VSCodeExtensionPath.split( path.sep );
+            let stdPath = pathArr.join('/');
             pathCMD = pathCMD + stdPath + "/Debugger/?.lua;"
             pathCMD = pathCMD + config.packagePath.join(';')
             pathCMD = pathCMD + "'";
@@ -185,4 +276,17 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             this._server.close();
         }
     }
+}
+
+// code server端消息回调函数
+function showProgress(message: string) {
+    StatusBarManager.showSetting(message);
+}
+
+function setRootFolder(message: string) {
+    Tools.VSCodeOpenedFolder = message;
+}
+
+function setLuaPandaPath(message: string) {
+    Tools.luapandaPathInUserProj = message;
 }
