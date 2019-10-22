@@ -33,10 +33,29 @@ export class CppCodeProcessor {
 		this.removeCppInterfaceIntelliSenseRes(this.cppInterfaceIntelliSenseResPath);
 		let cppHeaderFiles = this.getCppHeaderFiles(cppDir);
 		let cppSourceFiles = this.getCppSourceFiles(cppDir);
-		// cppSourceFiles.forEach((filePath: string) => {
-		cppHeaderFiles.forEach((filePath: string) => {
-			this.parseCppFile(filePath);
-		});
+
+		this.parseCppFiles(cppHeaderFiles);
+	}
+
+	private static async parseCppFiles(filePaths: string[]) {
+		for (let i = 0; i < filePaths.length; i++) {
+			let cppText = this.getCppCode(filePaths[i]);
+
+			let astNode: Node;
+			try {
+				astNode = await parseAst({
+					input: cppText,
+					language: Language.cpp,
+					omitPosition: true,
+					text: true,
+					basePath: this.getWasmDir()
+				});
+				this.parseAST2LuaCode(astNode);
+			} catch(e) {
+				Logger.ErrorLog("Parse cpp file failed, filePath: " + filePaths[i] +" error: ");
+				Logger.ErrorLog(e);
+			}
+		}
 	}
 
 	private static parseCppFile(filePath: string) {
@@ -59,7 +78,7 @@ export class CppCodeProcessor {
 		)
 		.catch((e) => {
 			Logger.ErrorLog("Parse cpp file failed, filePath: " + filePath +" error: ");
-			Logger.ErrorLog(e.message);
+			Logger.ErrorLog(e);
 		});
 	}
 
