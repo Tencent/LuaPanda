@@ -77,7 +77,7 @@ export class CppCodeProcessor {
 		let result: RegExpExecArray | null;
 
 		// 将 class XXX ClassName 替换为 class className
-		regex = /\s*(class\s+\w+)\s+\w+.+/;
+		regex = /\s*(class\s+[A-Z0-9_]+)\s+\w+.+/;
 		while ((result = regex.exec(content)) !== null) {
 			content = content.replace(result[1], 'class');
 		}
