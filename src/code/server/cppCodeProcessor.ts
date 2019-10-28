@@ -102,6 +102,12 @@ export class CppCodeProcessor {
 			content = content.replace(result[1], 'class');
 		}
 
+		// 将 struct XXX StructName 替换为 struct StructName
+		regex = /\s*(struct\s+[A-Z0-9_]+)\s+\w+.+/;
+		while ((result = regex.exec(content)) !== null) {
+			content = content.replace(result[1], 'struct');
+		}
+
 		//去除宏 GENERATED_BODY
 		regex = URegex.GENERATED_BODY;
 		while ((result = regex.exec(content)) !== null) {
