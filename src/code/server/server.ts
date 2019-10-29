@@ -128,7 +128,7 @@ connection.onInitialize((initPara: InitializeParams) => {
 			//引用分析
 			referencesProvider: false,
 			//代码格式化
-			documentFormattingProvider: true,
+			documentFormattingProvider: false,
 			documentRangeFormattingProvider: false,
 			//代码选中高亮
 			documentHighlightProvider: false,

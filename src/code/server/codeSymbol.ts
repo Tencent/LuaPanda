@@ -4,7 +4,10 @@
 // https://opensource.org/licenses/BSD-3-Clause
 // Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-//创建并管理文件中的符号
+// CodeSymbol 管理AST中的符号, 对上提供各种接口。
+// 获取/刷新文件符号 
+// 
+
 import * as Tools from './codeTools';
 import { CodeEditor } from './codeEditor';
 import { DocSymbolProcesser } from './docSymbolProcesser';
@@ -34,7 +37,7 @@ export class CodeSymbol {
 		if(luaText == undefined){
 			luaText = CodeEditor.getCode(uri);
 		}
-		this.createDocSymbals(uri, luaText);
+		this.createDocSymbol(uri, luaText);
 	}
 
 	// 获取指定文件的所有符号 ,  并返回Array形式
@@ -69,11 +72,14 @@ export class CodeSymbol {
 
 	// 获取指定文件的返回值，如无返回null
 	public static getCertainDocReturnValue(uri):string{
+		this.createCertainDocSymbols(uri);
 		let docSymbals = this.docSymbolMap.get(uri);
-		if(docSymbals)
+		if(docSymbals){
 			return docSymbals.getFileReturnArray();
-		else
+		}
+		else{
 			return null;
+		}
 	}
 
 	// 指定文件夹中的符号处理
@@ -86,7 +92,7 @@ export class CodeSymbol {
 		filesArray.forEach(pathArray => {
 			let uri  = Tools.pathToUri(pathArray);
 			if(!this.docSymbolMap.has(uri)){
-				this.createDocSymbals( uri , pathArray );
+				this.createDocSymbol( uri , pathArray );
 			}
 		});
 	}
@@ -98,7 +104,7 @@ export class CodeSymbol {
 		}
 		let filesArray = Tools.getDirFiles( path );
 		filesArray.forEach(element => {
-			this.createDocSymbals( element );
+			this.createDocSymbol( element );
 		});
 	}
 
@@ -130,23 +136,23 @@ export class CodeSymbol {
 		return g_symb;
 	}
 
-	// 获取Require文件中的全局符号（本文件引用的其他文件）, 以dictionary的形式返回
-	public static getRequireTreeGlobalSymbols(uri: string){
-		if(uri === undefined || uri === ''){
-			return;
-		}
+	// 获取Require文件中的全局符号（本文件引用的其他文件）, 以dictionary的形式返回 
+	// public static getRequireTreeGlobalSymbols(uri: string){
+	// 	if(uri === undefined || uri === ''){
+	// 		return;
+	// 	}
 
-		let fileList = this.getRequireTreeList(uri);
-		let g_symb = {};
-		for (let index = 0; index < fileList.length; index++) {
-			let g_s = this.getCertainDocSymbolsReturnDic( fileList[index], null, Tools.SearchRange.GlobalSymbols);
-			for (const key in g_s) {
-				const element = g_s[key];
-				g_symb[key] = element;
-			}
-		}
-		return g_symb;
-	}
+	// 	let fileList = this.getRequireTreeList(uri);
+	// 	let g_symb = {};
+	// 	for (let index = 0; index < fileList.length; index++) {
+	// 		let g_s = this.getCertainDocSymbolsReturnDic( fileList[index], null, Tools.SearchRange.GlobalSymbols);
+	// 		for (const key in g_s) {
+	// 			const element = g_s[key];
+	// 			g_symb[key] = element;
+	// 		}
+	// 	}
+	// 	return g_symb;
+	// }
 
 	//reference处理
 	public static searchSymbolReferenceinDoc(searchSymbol) {
@@ -213,10 +219,15 @@ export class CodeSymbol {
 	 * @param searchedFiles 标记已经搜索过的文件，上层调用该方法时可以不传
 	 * @return              搜索结果，SymbolInformation数组
 	 */
-	public static searchGlobalInRequireTree(symbolName: string, uri: string ,  searchMethod: Tools.SearchMode , searchedFiles?: Map<string, boolean>): Tools.SymbolInformation[] {
+	public static searchGlobalInRequireTree(symbolName: string, uri: string ,  searchMethod: Tools.SearchMode , searchedFiles?: Map<string, boolean>, isFirstEntry?: boolean): Tools.SymbolInformation[] {
 		if (searchedFiles == undefined) {
 			searchedFiles = new Map<string, boolean>();
 		}
+
+		if(isFirstEntry == undefined){
+			isFirstEntry = true;
+		}
+
 		let result: Tools.SymbolInformation[] = new Array<Tools.SymbolInformation>();
 
 		// uri为空直接返回
@@ -230,7 +241,12 @@ export class CodeSymbol {
 		}
 		// 在单个文件中搜索全局变量
 		let docSymbol = this.docSymbolMap.get(uri);
-		let searchResult = docSymbol.searchMatchSymbal(symbolName, searchMethod, Tools.SearchRange.GlobalSymbols);
+		let searchResult;
+		if(isFirstEntry){
+			searchResult = docSymbol.searchMatchSymbal(symbolName, searchMethod, Tools.SearchRange.AllSymbols);
+		}else{
+			searchResult = docSymbol.searchMatchSymbal(symbolName, searchMethod, Tools.SearchRange.GlobalSymbols);
+		}
 		result = result.concat(searchResult);
 		searchedFiles.set(uri, true);
 
@@ -240,12 +256,12 @@ export class CodeSymbol {
 		// 搜索的原则为在引用树上优先搜索最近的定义，即先搜本文件，然后逆序搜索require的文件，再逆序搜索reference
 		// 搜索require的文件
 		for (let i = requireFiles.length - 1; i >= 0; i--) {
-			let searchResult = this.searchGlobalInRequireTree(symbolName, Tools.transFileNameToUri(requireFiles[i].reqName), searchMethod, searchedFiles);
+			let searchResult = this.searchGlobalInRequireTree(symbolName, Tools.transFileNameToUri(requireFiles[i].reqName), searchMethod, searchedFiles, false);
 			result = result.concat(searchResult);
 		}
 		// 搜索require本文件的文件(references)
 		for (let i  = references.length - 1; i >= 0; i--) {
-			let searchResult = this.searchGlobalInRequireTree(symbolName, references[i], searchMethod, searchedFiles);
+			let searchResult = this.searchGlobalInRequireTree(symbolName, references[i], searchMethod, searchedFiles, false);
 			result = result.concat(searchResult);
 		}
 
@@ -323,33 +339,35 @@ export class CodeSymbol {
 			}
 		});
 	}
+
 	// 创建某个lua文件的符号
 	// @uri	 文件uri
 	// @text  文件内容
-	private static createDocSymbals(uri: string, luaText?: string): Tools.SymbolInformation[] {
+	private static createDocSymbol(uri: string, luaText?: string): Tools.SymbolInformation[] {
 		if(uri == null) return null;
 		if (luaText == undefined) {
 			luaText = Tools.getFileContent(Tools.uriToPath(uri));
 		}
+
 		let oldDocSymbol = this.docSymbolMap.get(uri);
-		let docSymbol: DocSymbolProcesser = DocSymbolProcesser.create(luaText, uri);
-		if(docSymbol){
-			if( !docSymbol.parseError){
+		let newDocSymbol: DocSymbolProcesser = DocSymbolProcesser.create(luaText, uri);
+		if(newDocSymbol){
+			if( !newDocSymbol.parseError){
 				//解析无误
-				this.docSymbolMap.set(uri, docSymbol);
-				this.updateReference(oldDocSymbol, docSymbol);
+				this.docSymbolMap.set(uri, newDocSymbol);
+				this.updateReference(oldDocSymbol, newDocSymbol);
 			}else{
 				//解析过程有误
 				if ( !this.docSymbolMap.get(uri) ){
 					//map中还未解析过这个table
-					this.docSymbolMap.set(uri, docSymbol);
+					this.docSymbolMap.set(uri, newDocSymbol);
 				}else{
 					//map中已有
 					let oldLen = this.docSymbolMap.get(uri).getAllSymbolsArray().length;
-					let newLen = docSymbol.getAllSymbolsArray().length;
+					let newLen = newDocSymbol.getAllSymbolsArray().length;
 					if (newLen > oldLen){
-						this.docSymbolMap.set(uri, docSymbol);
-						this.updateReference(oldDocSymbol, docSymbol);
+						this.docSymbolMap.set(uri, newDocSymbol);
+						this.updateReference(oldDocSymbol, newDocSymbol);
 					}
 				}
 			}
@@ -371,50 +389,50 @@ export class CodeSymbol {
 	}
 
 	// 获取某个文件的引用树列表
-	private static getRequireTreeList(uri: string){
-		if(uri === undefined || uri === ''){
-			return;
-		}
+	// private static getRequireTreeList(uri: string){
+	// 	if(uri === undefined || uri === ''){
+	// 		return;
+	// 	}
 
-		function recursiveGetRequireTreeList(uri: string, fileList: string[]){
-			if(uri === undefined || uri === ''){
-				return;
-			}
-			// 如果 uri 的符号列表不存在，创建
-			if (!CodeSymbol.docSymbolMap.has(uri)) {
-				Logger.log("createDocSymbals : "+ uri);
-				let luaText = CodeEditor.getCode(uri);
-				CodeSymbol.createDocSymbals(uri, luaText);
-			}
+	// 	function recursiveGetRequireTreeList(uri: string, fileList: string[]){
+	// 		if(uri === undefined || uri === ''){
+	// 			return;
+	// 		}
+	// 		// 如果 uri 的符号列表不存在，创建
+	// 		if (!CodeSymbol.docSymbolMap.has(uri)) {
+	// 			Logger.log("createDocSymbals : "+ uri);
+	// 			let luaText = CodeEditor.getCode(uri);
+	// 			CodeSymbol.createDocSymbol(uri, luaText);
+	// 		}
 
-			//如果uri所在文件存在错误，则无法创建成功。这里docProcesser == null
-			let docProcesser = CodeSymbol.docSymbolMap.get(uri);
-			if(docProcesser == null || docProcesser.getRequiresArray == null){
-				Logger.log("get docProcesser or getRequireFiles error!");
-				return;
-			}
+	// 		//如果uri所在文件存在错误，则无法创建成功。这里docProcesser == null
+	// 		let docProcesser = CodeSymbol.docSymbolMap.get(uri);
+	// 		if(docProcesser == null || docProcesser.getRequiresArray == null){
+	// 			Logger.log("get docProcesser or getRequireFiles error!");
+	// 			return;
+	// 		}
 
-			//当前文件已经在递归处理过了
-			if(alreadyProcessFile[uri] == 1){
-				return;
-			}else{
-				alreadyProcessFile[uri] = 1;
-			}
+	// 		//当前文件已经在递归处理过了
+	// 		if(alreadyProcessFile[uri] == 1){
+	// 			return;
+	// 		}else{
+	// 			alreadyProcessFile[uri] = 1;
+	// 		}
 
-			let reqFiles =  docProcesser.getRequiresArray();
-			for(let idx = 0, len = reqFiles.length ; idx < len ; idx++ ){
-				let newuri =  Tools.transFileNameToUri(reqFiles[idx]['reqName'])
-				recursiveGetRequireTreeList(newuri, fileList);
-			}
-			fileList.push(uri);
-			return fileList;
-		}
+	// 		let reqFiles =  docProcesser.getRequiresArray();
+	// 		for(let idx = 0, len = reqFiles.length ; idx < len ; idx++ ){
+	// 			let newuri =  Tools.transFileNameToUri(reqFiles[idx]['reqName'])
+	// 			recursiveGetRequireTreeList(newuri, fileList);
+	// 		}
+	// 		fileList.push(uri);
+	// 		return fileList;
+	// 	}
 
-		let fileList = new Array<string>();
-		let alreadyProcessFile = new Object(); //防止循环引用
-		recursiveGetRequireTreeList(uri, fileList);
-		return fileList;
-	}
+	// 	let fileList = new Array<string>();
+	// 	let alreadyProcessFile = new Object(); //防止循环引用
+	// 	recursiveGetRequireTreeList(uri, fileList);
+	// 	return fileList;
+	// }
 
 	// 递归搜索 引用树，查找符号
 	// @fileName 文件名
@@ -430,7 +448,7 @@ export class CodeSymbol {
 		if (!this.docSymbolMap.has(uri)) {
 			Logger.log("createDocSymbals : "+ uri);
 			let luaText = CodeEditor.getCode(uri);
-			this.createDocSymbals(uri, luaText);
+			this.createDocSymbol(uri, luaText);
 		}
 		//开始递归
 		//如果uri所在文件存在错误，则无法创建成功。这里docProcesser == null

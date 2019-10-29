@@ -133,7 +133,7 @@ export class CodeCompleting {
 			}
 
 		}else{
-			tagSearchRetSymb = CodeSymbol.searchGlobalInRequireTree(searchName, uri, Tools.SearchMode.FirstLetterContinuousMatching );
+			tagSearchRetSymb = CodeSymbol.searchAllSymbolinRequireTreeforCompleting(uri, searchName, Tools.SearchMode.FirstLetterContinuousMatching);
 		}
 		if( !tagSearchRetSymb || tagSearchRetSymb.length < 1 ){
 			//当直接替换tag查不到的时候，用一次类型推导
@@ -143,7 +143,7 @@ export class CodeCompleting {
 				this.replaceDic[tagSearchRetSymb[0].searchName] = addElement.searchName;
 				searchName = tagSearchRetSymb[0].searchName;
 				//再做一次搜索
-				tagSearchRetSymb = CodeSymbol.searchGlobalInRequireTree(tagSearchRetSymb[0].searchName , uri, Tools.SearchMode.FirstLetterContinuousMatching );
+				tagSearchRetSymb = CodeSymbol.searchAllSymbolinRequireTreeforCompleting(uri, tagSearchRetSymb[0].searchName , Tools.SearchMode.FirstLetterContinuousMatching);
 			}else{
 				// tag 符号没有查到，类型推导也没有找到。
 				return;

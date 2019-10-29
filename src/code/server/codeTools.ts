@@ -268,9 +268,10 @@ export function refresh_FileName_Uri_Cache(){
 // @fileName 文件名
 // @return uri string
 export function transFileNameToUri(requireName : string): string{
+	//从路径中提取文件名
+	let parseName = path.parse(requireName);
 	//从fileMap中查找文件全路径
-	// Logger.InfoLog("transFileNameToUri find--"  + requireName);
-	let cacheUri = fileName_Uri_Cache[requireName];
+	let cacheUri = fileName_Uri_Cache[parseName.name];
 	if(cacheUri){
 		return cacheUri;
 	}
