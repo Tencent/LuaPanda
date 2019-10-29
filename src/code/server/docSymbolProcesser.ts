@@ -709,6 +709,9 @@ export class DocSymbolProcesser {
 		else if (baseNode['type'] == 'Identifier') {
 			return { name: baseNode['name'], isLocal: baseNode['isLocal'] };
 		}
+		else if (baseNode['type'] == 'StringLiteral') {
+			return { name: baseNode['value'], isLocal: false };
+		}
 		else if (baseNode['type'] == 'IndexExpression') {
 			let ret = this.baseProcess(baseNode['base']);
 			let str = ret.name;
@@ -733,6 +736,12 @@ export class DocSymbolProcesser {
 			if(baseNode['index']['type'] == "IndexExpression"){
 				let ret = this.baseProcess(baseNode['index']);
 				let retStr = str + '[' + ret.name + ']';
+				retObj = { name: retStr, isLocal: isLocal, origion: ret.name };
+			}
+
+			if(baseNode['index']['type'] == "StringLiteral"){
+				let ret = this.baseProcess(baseNode['index']);
+				let retStr = str + '["' + ret.name + '"]';
 				retObj = { name: retStr, isLocal: isLocal, origion: ret.name };
 			}
 
