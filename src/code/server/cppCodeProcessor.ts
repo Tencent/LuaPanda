@@ -128,6 +128,11 @@ export class CppCodeProcessor {
 		while ((result = regex.exec(content)) !== null) {
 			content = content.replace(result[1], '//');
 		}
+		// 去除UMETA(xxx）
+		regex = URegex.UMETA;
+		while ((result = regex.exec(content)) !== null) {
+			content = content.replace(result[1], '');
+		}
 
 		return content;
 	}
@@ -135,23 +140,20 @@ export class CppCodeProcessor {
 	private static parseAST2LuaCode(astNode: Node) {
 		let foundUCLASS: boolean = false;
 		let foundUSTRUCT: boolean = false;
+		let foundUENUM: boolean = false;
+
 		astNode.children.forEach((child: Node) => {
 			if (child.type == 'comment') {
 				return;
 			}
 
-			if (child.type == 'namespace_definition') {
-				// 外层有namespace的情况
-				child.children.forEach((child: Node) => {
-					if (child.type == 'declaration_list') {
-						this.parseAST2LuaCode(child);
-					}
-				});
-			} else if (child.type == 'expression_statement' && child.text.match(URegex.UCLASS)) {
+			if (child.type == 'expression_statement' && child.text.match(URegex.UCLASS)) {
 				// 标记找到UCLASS，即下一个Node。
 				foundUCLASS = true;
 			} else if (child.type == 'expression_statement' && child.text.match(URegex.USTRUCT)) {
 				foundUSTRUCT = true;
+			} else if (child.type == 'expression_statement' && child.text.match(URegex.UENUM)) {
+				foundUENUM = true;
 			} else if (foundUCLASS == true) {
 				let result = this.handleUCLASS(child);
 				foundUCLASS = false;
@@ -160,10 +162,23 @@ export class CppCodeProcessor {
 				CodeSymbol.refreshSinglePreLoadFile(filePath);
 			} else if (foundUSTRUCT == true) {
 				let result = this.handleUSTRUCT(child);
-				foundUSTRUCT= false;
+				foundUSTRUCT = false;
 				let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.structName + '.lua');
 				this.appendText2File(result.luaText, filePath);
 				CodeSymbol.refreshSinglePreLoadFile(filePath);
+			} else if (foundUENUM == true) {
+				let result = this.handleUENUM(child);
+				foundUENUM = false;
+				let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.enumType + '.lua');
+				this.appendText2File(result.luaText, filePath);
+				CodeSymbol.refreshSinglePreLoadFile(filePath);
+			} else if (child.type == 'namespace_definition') {
+				// 外层有namespace的情况，要放到UENUM后面，UENUM后面的节点有可能是namespace
+				child.children.forEach((child: Node) => {
+					if (child.type == 'declaration_list') {
+						this.parseAST2LuaCode(child);
+					}
+				});
 			}
 		});
 	}
@@ -223,6 +238,74 @@ export class CppCodeProcessor {
 		let structDeclaration: string;
 		structDeclaration = structName + ' = {}\n';
 		return {luaText: structDeclaration + luaText, structName: structName};
+	}
+
+	private static handleUENUM(astNode: Node): {enumType: string, luaText: string} {
+		let luaText = '';
+		let enumType = '';
+
+		if (astNode.type == 'namespace_definition') {
+			astNode.children.forEach((child: Node) => {
+				switch (child.type) {
+					case 'identifier':
+						enumType = child.text;
+						break;
+
+					case 'declaration_list':
+						child.children.forEach((child: Node) => {
+							if (child.type == 'enum_specifier') {
+								let result = this.handleEnumSpecifier(child);
+								luaText += enumType + ' = {}\n';
+								result.enumeratorList.forEach((enumerator) => {
+									luaText += enumType + '.' + enumerator + ' = nil\n';
+								});
+							}
+						});
+						break;
+				}
+			});
+		} else if (astNode.type == 'enum_specifier') {
+			let result = this.handleEnumSpecifier(astNode);
+			enumType = result.enumType;
+			luaText += enumType + ' = {}\n';
+			result.enumeratorList.forEach((enumerator) => {
+				luaText += enumType + '.' + enumerator + ' = nil\n';
+			});
+		}
+
+		return {enumType: enumType, luaText: luaText};
+	}
+
+	private static handleEnumSpecifier(astNode: Node): {enumType: string, enumeratorList: string[]} {
+		let luaText = '';
+		let enumType = '';
+		let enumeratorList: string[] = [];
+
+		astNode.children.forEach((child: Node) => {
+			switch (child.type) {
+				case 'type_identifier':
+					enumType = child.text;
+					break;
+
+				case 'enumerator_list':
+					enumeratorList = this.handleEnumeratorList(child);
+					break;
+			}
+		});
+
+		return {enumType: enumType, enumeratorList: enumeratorList};
+	}
+
+	private static handleEnumeratorList(astNode: Node): string[] {
+		let enumeratorList: string[] = [];
+
+		astNode.children.forEach((child: Node) => {
+			if (child.type == 'enumerator') {
+				enumeratorList.push(child.text);
+			}
+		});
+
+		return enumeratorList;
 	}
 
 	private static handleBaseClassClause(astNode: Node, className: string): string[] {
@@ -490,6 +573,7 @@ export class CppCodeProcessor {
 class URegex {
 	public static UCLASS    = new RegExp(/\s*(UCLASS\s*\(.*\))/);
 	public static USTRUCT   = new RegExp(/\s*(USTRUCT\s*\(.*\))/);
+	public static UENUM     = new RegExp(/\s*(UENUM\s*\(.*\))/);
 	public static UFUNCTION = new RegExp(/\s*(UFUNCTION\s*\(.*\))/);
 	public static UPROPERTY = new RegExp(/\s*(UPROPERTY\s*\(.*\))/);
 
@@ -497,4 +581,5 @@ class URegex {
 	public static GENERATED_UCLASS_BODY  = new RegExp(/\s*(GENERATED_UCLASS_BODY\s*\(.*\))/);
 	public static GENERATED_USTRUCT_BODY = new RegExp(/\s*(GENERATED_USTRUCT_BODY\s*\(.*\))/);
 	public static DEPRECATED             = new RegExp(/\s*(DEPRECATED\s*\(.*\))/);
+	public static UMETA                  = new RegExp(/\s*(UMETA\s*\(.*\))/);
 }
