@@ -72,11 +72,11 @@ export class VisualSetting {
                 }
             }
 
-            if(valueLaunch["name"] === "LuaPanda-DebugFile"){
-                for (const keyWeb of Object.keys(messageObj["LuaPanda-DebugFile"])) {
-                    valueLaunch[keyWeb] = messageObj["LuaPanda-DebugFile"][keyWeb];
-                }
-            }
+            // if(valueLaunch["name"] === "LuaPanda-DebugFile"){
+            //     for (const keyWeb of Object.keys(messageObj["LuaPanda-DebugFile"])) {
+            //         valueLaunch[keyWeb] = messageObj["LuaPanda-DebugFile"][keyWeb];
+            //     }
+            // }
 
         }
         //序列化并写入

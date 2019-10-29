@@ -33,9 +33,10 @@ export class UpdateManager{
             if (DVerArr.length === AVerArr.length && DVerArr.length === 3 ){
                 if ( parseInt(DVerArr[0]) < parseInt(AVerArr[0]) || parseInt(DVerArr[1]) < parseInt(AVerArr[1]) || parseInt(DVerArr[2]) < parseInt(AVerArr[2])  ){
                     vscode.window.showInformationMessage('当前工程中 LuaPanda 文件版本比较低，是否自动升级为新版本?', 'Yes', 'No').then(value => {
-                        if(value === "Yes"){  
-                            vscode.window.showInformationMessage('已准备好更新 ' + Tools.luapandaPathInUserProj+ '  如用户对此文件有修改, 建议备份后升级。是否现在升级?', '确认升级', '稍后再试').then(value => {
-                                if(value === "确认升级"){
+                        if(value === "Yes"){
+                            let confirmButton = "立刻升级";
+                            vscode.window.showInformationMessage('已准备好更新 ' + Tools.luapandaPathInUserProj+ '。如用户对此文件有修改, 建议备份后再升级, 避免修改内容被覆盖', confirmButton, '稍后再试').then(value => {
+                                if(value === confirmButton){
                                     UpdateManager.updateLuaPandaFile(Tools.luapandaPathInUserProj)
                                 }
                             });
@@ -64,7 +65,7 @@ export class UpdateManager{
             if(err){
                 DebugLogger.showTips("升级失败, " + Tools.luapandaPathInUserProj + "写入失败! 可以手动替换此文件到github最新版", 1);
             }else{
-                DebugLogger.showTips("升级成功, " + Tools.luapandaPathInUserProj + "版本已升级为 " + Tools.adapterVersion , 0);
+                DebugLogger.showTips("升级成功, " + Tools.luapandaPathInUserProj + " 已升级到 " + Tools.adapterVersion , 0);
             }
             UpdateManager.setCheckUpdate(false);
         });

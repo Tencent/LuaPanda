@@ -34,7 +34,7 @@ export function activate(context: ExtensionContext) {
         // 和VSCode的交互
         let panel: vscode.WebviewPanel = vscode.window.createWebviewPanel(
 			'LuaPanda Setting',
-			'LuaPanda 项目配置',
+			'LuaPanda Setting',
 			vscode.ViewColumn.One,
 			{
                 retainContextWhenHidden: true,
