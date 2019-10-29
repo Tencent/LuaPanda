@@ -12,7 +12,7 @@
             "stopOnEntry": true,
             "useCHook": true,
             "autoPathMode": false,
-            "logLevel": 1,
+            "logLevel": 1
         },
         {
             "type": "lua",

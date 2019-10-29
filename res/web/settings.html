@@ -15,31 +15,13 @@
     <!--setting-->
     <form id="CreateProject">
         luaFileExtension <input style = "margin:5px" id="luaFileExtension" type="text" name="fname"/><br />
-        connectionPort: <input style = "margin:5px" id="connectionPort" type="text" name="lname"/><br />
         cwd: <input style = "margin:5px" id="cwd" type="text" name="lname" /><br />
-
-        pathCaseSensitivity:
-        <div class="onoffswitch" style = "margin:20px">
-                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="pathCaseSensitivity">
-                <label class="onoffswitch-label" for="pathCaseSensitivity">
-                <span class="onoffswitch-inner"></span>
-                <span class="onoffswitch-switch"></span>
-            </label>
-        </div>        <br>
+        connectionPort: <input style = "margin:5px" id="connectionPort" type="text" name="lname"/><br />
 
         stopOnEntry:
         <div class="onoffswitch" style = "margin:20px">
                 <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="stopOnEntry" >
                 <label class="onoffswitch-label" for="stopOnEntry">
-                <span class="onoffswitch-inner"></span>
-                <span class="onoffswitch-switch"></span>
-            </label>
-        </div>        <br>
-
-        useCHook:
-        <div class="onoffswitch" style = "margin:20px">
-                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="useCHook">
-                <label class="onoffswitch-label" for="useCHook">
                 <span class="onoffswitch-inner"></span>
                 <span class="onoffswitch-switch"></span>
             </label>
@@ -52,10 +34,27 @@
                 <span class="onoffswitch-inner"></span>
                 <span class="onoffswitch-switch"></span>
             </label>
-        </div>
+        </div> <br>
 
-        <br>
-        <input id="click1" style = "margin:20px" type="button" value="保存配置" onclick="saveConfig();" />
+        useCHook:
+        <div class="onoffswitch" style = "margin:20px">
+                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="useCHook">
+                <label class="onoffswitch-label" for="useCHook">
+                <span class="onoffswitch-inner"></span>
+                <span class="onoffswitch-switch"></span>
+            </label>
+        </div>        <br>
+
+        pathCaseSensitivity:
+        <div class="onoffswitch" style = "margin:20px">
+                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="pathCaseSensitivity">
+                <label class="onoffswitch-label" for="pathCaseSensitivity">
+                <span class="onoffswitch-inner"></span>
+                <span class="onoffswitch-switch"></span>
+            </label>
+        </div>        <br>
+
+        <input id="save" style = "margin:20px" type="button" value="保存配置" onclick="saveConfig();" />
     </form>
 
     <script>
@@ -99,33 +98,19 @@
                 luapanda["autoPathMode"] = false;
             }
 
-            let luapanda_debugfile = new Object();
+            // let luapanda_debugfile = new Object();
             
-
             let saveObj = new Object();
             saveObj["command"] = "save_settings";
             saveObj["LuaPanda"] = luapanda;
-            saveObj["LuaPanda-DebugFile"] = luapanda_debugfile;
+            // saveObj["LuaPanda-DebugFile"] = luapanda_debugfile;
 
             let webInfo = JSON.stringify(saveObj);
             vscode.postMessage({
                 webInfo
             });
         }
-
-        function doFunction() {
-            let name = CreateProject.projectName.value;
-            let path = CreateProject.projectPame.value;
-            console.log(name + " " + path);
-
-            vscode.postMessage({
-                command: 'project_manager',
-                type: 'create_project',
-                projectName: isstopOnEntry,
-                projectPame: useCHook,
-            })
-        }
-
+        
         window.addEventListener('message', event => {
             const message = JSON.parse(event.data); // The JSON data our extension sent
             switch (message.command) {
