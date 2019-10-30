@@ -71,8 +71,8 @@ export class CppCodeProcessor {
 
 		parseProcess.then(
 			(astNode) => {
-				let str = JSON.stringify(astNode, null, 2);
-				Logger.DebugLog(str);
+				// let str = JSON.stringify(astNode, null, 2);
+				// Logger.DebugLog(str);
 				this.parseAST2LuaCode(astNode);
 			}
 		)
@@ -108,22 +108,22 @@ export class CppCodeProcessor {
 			content = content.replace(result[1], 'struct');
 		}
 
-		//去除宏 GENERATED_BODY
+		// 去除宏 GENERATED_BODY
 		regex = URegex.GENERATED_BODY;
 		while ((result = regex.exec(content)) !== null) {
 			content = content.replace(result[1], '//');
 		}
-		//去除宏 GENERATED_UCLASS_BODY
+		// 去除宏 GENERATED_UCLASS_BODY
 		regex = URegex.GENERATED_UCLASS_BODY;
 		while ((result = regex.exec(content)) !== null) {
 			content = content.replace(result[1], '//');
 		}
-		//去除宏 GENERATED_USTRUCT_BODY
+		// 去除宏 GENERATED_USTRUCT_BODY
 		regex = URegex.GENERATED_USTRUCT_BODY;
 		while ((result = regex.exec(content)) !== null) {
 			content = content.replace(result[1], '//');
 		}
-		//去除宏 DEPRECATED
+		// 去除宏 DEPRECATED
 		regex = URegex.DEPRECATED;
 		while ((result = regex.exec(content)) !== null) {
 			content = content.replace(result[1], '//');
