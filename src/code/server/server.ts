@@ -241,7 +241,7 @@ connection.onDocumentSymbol(
 connection.onWorkspaceSymbol(
 	(handler: WorkspaceSymbolParams): SymbolInformation[] => {
 		// try{
-			return CodeSymbol.searchSymbolinWorkSpace(handler.query, Tools.SearchMode.FuzzyMatching, Tools.SearchRange.LocalSymbols);
+			return CodeSymbol.searchSymbolinWorkSpace(handler.query, Tools.SearchMode.FuzzyMatching, Tools.SearchRange.AllSymbols);
 		// } catch (error) {
 			// Logger.InfoLog(error.stack);
 		// }
@@ -257,8 +257,7 @@ documents.onDidOpen(file => {
 		let ext = luaExtname['ext'];
 		let loadedExt =  Tools.getLoadedExt();
 		if (loadedExt && loadedExt[ext] === true) {
-			//把文件名和路径放入cache
-			// Tools.AddTo_FileName_Uri_Cache( luaExtname['name'], uri);
+			// VSCode 会自动调用 onDidChangeContent
 			return;
 		}else{
 			// 处理新的后缀类型

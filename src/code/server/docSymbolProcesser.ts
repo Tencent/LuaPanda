@@ -213,16 +213,17 @@ export class DocSymbolProcesser {
 		searchRange = searchRange || Tools.SearchRange.AllSymbols ;
 		let retSymbols = [];
 		let SymbolArrayForSearch;
-		if( searchRange == Tools.SearchRange.AllSymbols ){
-			SymbolArrayForSearch = this.getAllSymbolsDic();
-		}else if( searchRange == Tools.SearchRange.GlobalSymbols){
-			SymbolArrayForSearch = this.getGlobalSymbolsDic() ;
-		}else if( searchRange == Tools.SearchRange.LocalSymbols){
-			SymbolArrayForSearch = this.getLocalSymbolsDic();
-		}
-		var reg = /[A-Z]/;
+		// let reg = /[A-Z]/;
 		//精确查找。直接使用字典匹配
 		if (matchMode ===  Tools.SearchMode.ExactlyEqual) {
+			if( searchRange == Tools.SearchRange.AllSymbols ){
+				SymbolArrayForSearch = this.getAllSymbolsDic();
+			}else if( searchRange == Tools.SearchRange.GlobalSymbols){
+				SymbolArrayForSearch = this.getGlobalSymbolsDic() ;
+			}else if( searchRange == Tools.SearchRange.LocalSymbols){
+				SymbolArrayForSearch = this.getLocalSymbolsDic();
+			}
+
 			//精确匹配 searchName
 			let tgtSymbol = SymbolArrayForSearch[symbalName];
 			if(tgtSymbol){
@@ -248,45 +249,53 @@ export class DocSymbolProcesser {
 					}
 				}
 			}
-		}
+		}else{
 
-		// let hasUpper = symbalName.match(reg);
-		for (let idx in SymbolArrayForSearch){
-			let sym = SymbolArrayForSearch[idx];
-			if (matchMode === Tools.SearchMode.ContinuousMatching) {
-				//连续查找 name
-				let res = sym.name.match(symbalName);
-				if (res != null) {
-					retSymbols.push(sym);
-				}
-			}  else if (matchMode ===  Tools.SearchMode.FuzzyMatching) {
-				//模糊查找 当前只用于 @ # 的符号查找，所以搜索 name
-				var inputArray = symbalName.split('');
-				var pattStr = inputArray.join('.*?');
-				var pattRegExp = new RegExp(pattStr, "i");
-				let res = sym.name.match(pattRegExp);
-				if (res != null) {
-					retSymbols.push(sym);
-				}
-			}else if (matchMode ===  Tools.SearchMode.FirstLetterContinuousMatching) {
-				//在这种模式中，如果用户输入的字符串中有大写字母，则大小写敏感。否则大小写不敏感
-				let searchName = sym.searchName;
-				if(searchName){
-					let reg1 = new RegExp( /[\.:]/, 'g')
-					let symbalName_dot = symbalName.replace( reg1 , '.' );
-					var reg = new RegExp( '^' + symbalName_dot ,'i');
+			if( searchRange == Tools.SearchRange.AllSymbols ){
+				SymbolArrayForSearch = this.getAllSymbolsArray();
+			}else if( searchRange == Tools.SearchRange.GlobalSymbols){
+				SymbolArrayForSearch = this.getGlobalSymbolsArray();
+			}else if( searchRange == Tools.SearchRange.LocalSymbols){
+				SymbolArrayForSearch = this.getLocalSymbolsArray();
+			}
 
-					let hit = searchName.match(reg);
-					if(hit){
+			// let hasUpper = symbalName.match(reg);
+			for (let idx in SymbolArrayForSearch){
+				let sym = SymbolArrayForSearch[idx];
+				if (matchMode === Tools.SearchMode.ContinuousMatching) {
+					//连续查找 name
+					let res = sym.name.match(symbalName);
+					if (res != null) {
 						retSymbols.push(sym);
 					}
-					//首字母起始连续查找 searchName
-					// searchName = searchName.replace(/:/g,".");
-					// symbalName = symbalName.replace(/:/g,".");
-				}else{
-				}
+				} else if (matchMode ===  Tools.SearchMode.FuzzyMatching) {
+					//模糊查找 当前只用于 @ # 的符号查找，所以搜索 name
+					let inputArray = symbalName.split('');
+					let pattStr = inputArray.join('.*?');
+					let pattRegExp = new RegExp(pattStr, "i");
+					let res = sym.name.match(pattRegExp);
+					if (res != null) {
+						retSymbols.push(sym);
+					}
+				} else if (matchMode ===  Tools.SearchMode.FirstLetterContinuousMatching) {
+					//在这种模式中，如果用户输入的字符串中有大写字母，则大小写敏感。否则大小写不敏感
+					let searchName = sym.searchName;
+					if(searchName){
+						let reg1 = new RegExp( /[\.:]/, 'g')
+						let symbalName_dot = symbalName.replace( reg1 , '.' );
+						let reg = new RegExp( '^' + symbalName_dot ,'i');
 
+						let hit = searchName.match(reg);
+						if(hit){
+							retSymbols.push(sym);
+						}
+						//首字母起始连续查找 searchName
+						// searchName = searchName.replace(/:/g,".");
+						// symbalName = symbalName.replace(/:/g,".");
+					}
+				}
 			}
+
 		}
 		return retSymbols;
 	}

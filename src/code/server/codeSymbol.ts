@@ -173,10 +173,13 @@ export class CodeSymbol {
 			let retSymbols: Tools.SymbolInformation[] = [];
 			for (let [ , value] of this.docSymbolMap) {
 				let docSymbals = value.searchMatchSymbal(symbolStr, searchMethod, searchRange);
-				let preS = this.searchPreLoadSymbols(symbolStr, searchMethod);
 				retSymbols = retSymbols.concat(docSymbals);
-				retSymbols = retSymbols.concat(preS);
 			}
+
+			// 处理预制lua文件
+			// let preS = this.searchPreLoadSymbols(symbolStr, searchMethod);
+			// retSymbols = retSymbols.concat(preS);
+
 			return retSymbols;
 		}
 	}
@@ -386,6 +389,8 @@ export class CodeSymbol {
 		let luaText = Tools.getFileContent(path);
 		let docSymbol: DocSymbolProcesser = DocSymbolProcesser.create(luaText, uri, path);
 		this.preLoadSymbolMap.set(uri, docSymbol);
+
+		this.docSymbolMap.set(uri, docSymbol);
 	}
 
 	// 获取某个文件的引用树列表
