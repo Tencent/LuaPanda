@@ -271,11 +271,41 @@ export class CppCodeProcessor {
 			result.enumeratorList.forEach((enumerator) => {
 				luaText += enumType + '.' + enumerator + ' = nil\n';
 			});
+		} else if (astNode.type == 'declaration') {
+			// enum class
+			astNode.children.forEach((child: Node) => {
+				if (child.type == 'init_declarator') {
+					let result = this.handleInitDeclarator(child);
+					enumType = result.enumType;
+					luaText += enumType + ' = {}\n';
+					result.enumeratorList.forEach((enumerator) => {
+						luaText += enumType + '.' + enumerator + ' = nil\n';
+					});
+				}
+			});
 		}
 
 		return {enumType: enumType, luaText: luaText};
 	}
 
+	private static handleInitDeclarator(astNode: Node): {enumType: string, enumeratorList: string[]} {
+		let luaText = '';
+		let enumType = '';
+		let enumeratorList: string[] = [];
+
+		astNode.children.forEach((child: Node) => {
+			switch (child.type) {
+				case 'identifier':
+					enumType = child.text;
+					break;
+				case 'initializer_list':
+					enumeratorList = this.handleEnumeratorList(child);
+					break;
+			}
+		});
+
+		return {enumType: enumType, enumeratorList: enumeratorList};
+	}
 	private static handleEnumSpecifier(astNode: Node): {enumType: string, enumeratorList: string[]} {
 		let luaText = '';
 		let enumType = '';
@@ -300,7 +330,7 @@ export class CppCodeProcessor {
 		let enumeratorList: string[] = [];
 
 		astNode.children.forEach((child: Node) => {
-			if (child.type == 'enumerator') {
+			if (child.type == 'enumerator' || child.type == 'identifier') {
 				enumeratorList.push(child.text);
 			}
 		});
