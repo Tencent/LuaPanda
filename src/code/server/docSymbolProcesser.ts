@@ -721,6 +721,10 @@ export class DocSymbolProcesser {
 		else if (baseNode['type'] == 'StringLiteral') {
 			return { name: baseNode['value'], isLocal: false };
 		}
+		else if (baseNode['type'] == 'NumericLiteral') {
+			return { name: baseNode['value'], isLocal: false };
+		}
+
 		else if (baseNode['type'] == 'IndexExpression') {
 			let ret = this.baseProcess(baseNode['base']);
 			let str = ret.name;
@@ -751,6 +755,15 @@ export class DocSymbolProcesser {
 			if(baseNode['index']['type'] == "StringLiteral"){
 				let ret = this.baseProcess(baseNode['index']);
 				let retStr = str + '["' + ret.name + '"]';
+				retObj = { name: retStr, isLocal: isLocal, origion: ret.name };
+			}
+
+			//index 中是一个表达式
+			if(baseNode['index']['type'] == "BinaryExpression"){
+				let retL = this.baseProcess(baseNode['index']['left']);
+				let retR = this.baseProcess(baseNode['index']['right']);
+
+				let retStr = str + '[' + retL.name + baseNode['index'].operator + retR.name + ']';
 				retObj = { name: retStr, isLocal: isLocal, origion: ret.name };
 			}
 
