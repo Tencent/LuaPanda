@@ -294,8 +294,12 @@ export function transWinDiskToUpper(uri: string):string{
 }
 
 // path -> uri string
-export function pathToUri(path : string): string{
-	return URI.file(path).toString();
+export function pathToUri(pathStr : string): string{
+	let pathArr = pathStr.split( path.sep );
+	let stdPath = pathArr.join('/');
+	let retUri = 'file:///' + stdPath;
+	return retUri;
+
 }
 
 // uri string -> path
