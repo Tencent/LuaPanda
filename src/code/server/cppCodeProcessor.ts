@@ -222,22 +222,34 @@ export class CppCodeProcessor {
 		let structName = '';
 		let declarationList: {uPropertys: string, uFunctions: string} = {uPropertys: '', uFunctions: ''};
 
-		astNode.children.forEach((child: Node) => {
-			switch (child.type) {
-				case 'type_identifier':
-					structName = child.text;
-					break;
+		if (astNode.type == 'struct_specifier') {
+			astNode.children.forEach((child: Node) => {
+				switch (child.type) {
+					case 'type_identifier':
+						structName = child.text;
+						break;
 
-				case 'field_declaration_list':
-					declarationList = this.handleDeclarationList(child, structName);
-					break;
-			}
-		});
-		luaText = declarationList.uPropertys + declarationList.uFunctions;
+					case 'field_declaration_list':
+						declarationList = this.handleDeclarationList(child, structName);
+						break;
+				}
+			});
+			luaText = declarationList.uPropertys + declarationList.uFunctions;
 
-		let structDeclaration: string;
-		structDeclaration = structName + ' = {}\n';
-		return {luaText: structDeclaration + luaText, structName: structName};
+			let structDeclaration: string;
+			structDeclaration = structName + ' = {}\n';
+			luaText = structDeclaration + luaText;
+		} else if (astNode.type == 'declaration') {
+			astNode.children.forEach((child: Node) => {
+				if (child.type == 'struct_specifier') {
+					let result = this.handleUSTRUCT(child);
+					luaText = result.luaText;
+					structName = result.structName;
+				}
+			});
+		}
+
+		return {luaText: luaText, structName: structName};
 	}
 
 	private static handleUENUM(astNode: Node): {enumType: string, luaText: string} {
