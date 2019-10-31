@@ -830,11 +830,16 @@ export class DocSymbolProcesser {
 			let str = ret.name;
 			let isLocal = ret.isLocal;
 			let retStr;
+
 			if(baseNode['index']['value']){
 				retStr = str + '.' + baseNode['index']['value'];
 			}
-			return { name: retStr, isLocal: isLocal, isInStat: ret.isInStat };
 
+			if(baseNode['index']['name']){
+				retStr = this.MemberExpressionFind(baseNode['index']).name;
+			}
+
+			return { name: retStr, isLocal: isLocal, isInStat: ret.isInStat };
 		}
 		else if (baseNode['type'] == 'CallExpression') {
 			 this.processCallExpression(baseNode, travelMode.GET_DEFINE , null, "call EXp");
@@ -1233,7 +1238,7 @@ export class DocSymbolProcesser {
 		//search
 		if (type === travelMode.GET_DEFINE) {
 			let loc = node['index']['loc'];
-			//search 不仅要search当前元素，还要单独search base. 另外搜多当前元素要把base带上
+			//先判断index是否命中。如果命中，也要search base. 另外搜索当前元素要把base带上
 			let nodeLoc1 = Location.create(this.docInfo["docUri"], loc);
 			let retBool = this.isInLocation(nodeLoc1, this.searchPosition);
 			if (retBool === true) {
@@ -1247,12 +1252,17 @@ export class DocSymbolProcesser {
 					if (this.posSearchRet && this.posSearchRet.isFindout) return;
 					this.processIdentifier(node['index'], type, deepLayer, prefix);
 					if (this.posSearchRet && this.posSearchRet.isFindout == true) return;
+				}else if(node['base'].type == 'IndexExpression'){
+					// c[ a ][ b ] = 9 查找b的定义
+					this.processIdentifier(node['index'], type, deepLayer, prefix);
+					if (this.posSearchRet && this.posSearchRet.isFindout == true) return;
 				}
 			}
 			//递归search base  index 不需要递归
 			let bname = this.MemberExpressionFind(node['base']);
 			if (bname.isInStat && bname.isInStat > 0) {
 				this.posSearchRet = this.createRetSymbol(bname.name, bname.isLocal);
+				return;
 			}
 			//没找到
 			return this.createRetBase(bname.name, bname.isLocal, node['index']['value']);
@@ -1451,6 +1461,10 @@ export class DocSymbolProcesser {
 				}else{
 					this.posSearchRet = this.createRetBase(baseInfo.name, baseInfo.isLocal);
 				}
+			}
+
+			if (node['type'] === 'BinaryExpression') {
+				// c[ a + b ] = 9 , 搜索a或者b的定义
 			}
 		}
 
