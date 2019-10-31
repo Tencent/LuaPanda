@@ -210,7 +210,7 @@ export class CodeSymbol {
 		}else{
 			retS = preS;
 		}
-		Logger.log("ret len = "+ retS.length);
+		// Logger.log("ret len = "+ retS.length);
 		return retS;
 	}
 
@@ -439,16 +439,31 @@ export class CodeSymbol {
 	// 	return fileList;
 	// }
 
+
+	private static deepCounter = 0;
 	// 递归搜索 引用树，查找符号
 	// @fileName 文件名
 	// @symbolStr 符号名
 	// @uri
-	private static recursiveSearchRequireTree(uri: string, symbolStr, searchMethod :Tools.SearchMode){
+	private static recursiveSearchRequireTree(uri: string, symbolStr, searchMethod :Tools.SearchMode, isFirstEntry?:boolean){
 		if(uri === undefined || uri === ''){
 			return;
 		}
 
 		let retSymbArray = new Array<Tools.SymbolInformation>();
+
+		if(isFirstEntry == undefined){
+			// 首次进入
+			isFirstEntry = true;
+			this.deepCounter = 0;
+		}else{
+			//递归中
+			this.deepCounter++;
+			if(this.deepCounter >= 50){
+				return retSymbArray;
+			}
+		}
+
 		//如果 uri 的符号列表不存在，创建
 		if (!this.docSymbolMap.has(uri)) {
 			Logger.log("createDocSymbals : "+ uri);
@@ -470,7 +485,7 @@ export class CodeSymbol {
 			this.alreadyProcessFile[uri] = 1;
 		}
 
-		Logger.log("recursiveSearchRequireTree process :" + uri);
+		// Logger.log("recursiveSearchRequireTree process :" + uri);
 		// 在引用树上搜索符号，搜索的原则为优先搜索最近的定义，即先搜本文件，然后逆序搜索require的文件，再逆序搜索reference
 		// 分析自身文件的符号.  本文件，要查找所有符号，引用文件，仅查找global符号。这里要求符号分析分清楚局部和全局符号
 		let docS = this.docSymbolMap.get(uri);
@@ -483,7 +498,7 @@ export class CodeSymbol {
 		let reqFiles = docProcesser.getRequiresArray();
 		for(let idx = reqFiles.length -1; idx >= 0; idx--){
 			let newuri = Tools.transFileNameToUri(reqFiles[idx]['reqName']);
-			let retSymbols = this.recursiveSearchRequireTree(newuri, symbolStr, searchMethod);
+			let retSymbols = this.recursiveSearchRequireTree(newuri, symbolStr, searchMethod, false);
 			if(retSymbols != null && retSymbols.length > 0){
 				retSymbArray = retSymbArray.concat(retSymbols);
 			}
@@ -492,7 +507,7 @@ export class CodeSymbol {
 		let refFiles = docProcesser.getReferencesArray();
 		for(let idx = refFiles.length -1; idx >= 0; idx--){
 			let newuri = refFiles[idx];
-			let retSymbols = this.recursiveSearchRequireTree(newuri, symbolStr, searchMethod);
+			let retSymbols = this.recursiveSearchRequireTree(newuri, symbolStr, searchMethod, false);
 			if (retSymbols != null && retSymbols.length > 0) {
 				retSymbArray = retSymbArray.concat(retSymbols);
 			}

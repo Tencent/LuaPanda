@@ -706,7 +706,6 @@ export class DocSymbolProcesser {
 		if (baseNode['type'] == 'MemberExpression') {
 			let ret = this.baseProcess(baseNode['base']);
 			if(!ret){
-				// console.log("ssdsd");
 				// let ret = this.baseProcess(baseNode['base']);
 				return;
 			}
@@ -852,6 +851,16 @@ export class DocSymbolProcesser {
 				return { name: '', isLocal: true, isInStat: 0 };
 			}
 		}
+		else if (baseNode['type'] == 'StringCallExpression') {
+			this.processStringCallExpression(baseNode, travelMode.GET_DEFINE , null, "call EXp");
+		   if (this.posSearchRet && this.posSearchRet.isFindout) {
+			   // return retSymbol;
+			   return {name: this.posSearchRet.retSymbol.name, isLocal:this.posSearchRet.retSymbol.isLocal, isInStat:1}
+		   }
+		   else{
+			   return { name: '', isLocal: true, isInStat: 0 };
+		   }
+	   }
 		else if (baseNode['type'] == 'Identifier') {
 			//base的基层级
 			let nodeLoc = Location.create(this.docInfo["docUri"], baseNode['loc']);
@@ -1180,7 +1189,17 @@ export class DocSymbolProcesser {
 
 	//调用表达式
 	private processStringCallExpression(node, type, deepLayer, prefix?: string) {
-		this.processStringCallExpisRequire(node, type, node['argument']);
+		if(type == travelMode.BUILD){
+			this.processStringCallExpisRequire(node, type, node['argument']);
+		}
+
+		if(type == travelMode.GET_DEFINE){
+			let bname = this.MemberExpressionFind(node["base"]);
+			if (bname.isInStat && bname.isInStat > 0) {
+				this.posSearchRet =  this.createRetSymbol(bname.name, bname.isLocal);
+				return;
+			}
+		}
 		//base
 		// if (type === travelMode.FIND_DEFINE) {
 		// 	let bname = this.MemberExpressionFind(node["base"]);
@@ -1214,6 +1233,7 @@ export class DocSymbolProcesser {
 			let bname = this.MemberExpressionFind(node["base"]);
 			if (bname.isInStat && bname.isInStat > 0) {
 				this.posSearchRet =  this.createRetSymbol(bname.name, bname.isLocal);
+				return;
 			}
 		}
 

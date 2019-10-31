@@ -81,7 +81,6 @@ export class VisualSetting {
         }
         //序列化并写入
         let launchJson = JSON.stringify(settings, null,  4);
-        // console.log(launchJson);
         Tools.writeFileContent(Tools.VSCodeOpenedFolder + "/.vscode/launch.json" ,launchJson);
     }   
 }

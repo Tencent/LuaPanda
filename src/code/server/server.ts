@@ -321,7 +321,6 @@ connection.onColorPresentation(
 //代码单击高亮
 connection.onDocumentHighlight (
 	(handler: TextDocumentPositionParams) : DocumentHighlight[] =>{
-		// console.log("onDocumentHighlight");
 		return new Array<DocumentHighlight>();
 	}
 );
