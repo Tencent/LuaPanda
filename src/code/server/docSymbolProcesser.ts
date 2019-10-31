@@ -523,6 +523,7 @@ export class DocSymbolProcesser {
 				case 'UnaryExpression':   this.processUnaryExpression(node, type, deepLayer, prefix); break;
 				// case 'TableConstructorExpression': retsyb = this.processTableConstructorExpression(ASTNode, type, deepLayer, prefix); break;
 				case 'MemberExpression':  this.processMemberExpression(node, type, deepLayer, prefix); break;
+				case 'IndexExpression':  this.processIndexExpression(node, type, deepLayer, prefix); break;
 				// Terminal
 				case 'Identifier':  this.processIdentifier(node, type, deepLayer, prefix); break;
 			}

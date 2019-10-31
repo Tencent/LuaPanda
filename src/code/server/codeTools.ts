@@ -295,11 +295,18 @@ export function transWinDiskToUpper(uri: string):string{
 
 // path -> uri string
 export function pathToUri(pathStr : string): string{
-	let pathArr = pathStr.split( path.sep );
-	let stdPath = pathArr.join('/');
-	let retUri = 'file:///' + stdPath;
-	return retUri;
+	let retUri;
+	if (os.type() == "Windows_NT") {
+		let pathArr = pathStr.split( path.sep );
+		let stdPath = pathArr.join('/');
+		retUri = 'file:///' + stdPath;
+	}
+	else{
+		//Darwin
+		retUri = 'file://' + pathStr;
+	}
 
+	return retUri;
 }
 
 // uri string -> path
