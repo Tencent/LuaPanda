@@ -6,10 +6,10 @@ export class DebugLogger {
 
     public static init() {
         DebugLogger.Ainfo = vscode.window.createOutputChannel("Adapter/log");
-        DebugLogger.Ainfo.show();
+        // DebugLogger.Ainfo.show();
 
         DebugLogger.Dinfo = vscode.window.createOutputChannel("Debugger/log");
-        DebugLogger.Dinfo.show();
+        // DebugLogger.Dinfo.show();
         DebugLogger.Dinfo.appendLine("LuaPanda initializing...");
     }
 
