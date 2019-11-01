@@ -11,7 +11,7 @@ export enum LogLevel{
     RELEASE = 3
 }
 export class Logger {
-    public static currentLevel = LogLevel.DEBUG;
+    public static currentLevel = LogLevel.RELEASE;
     public static connection;
     public static init() {
     }

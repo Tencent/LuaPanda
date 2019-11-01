@@ -57,8 +57,23 @@
         <input id="save" style = "margin:20px" type="button" value="保存配置" onclick="saveConfig();" />
     </form>
 
+    <input id="save" style = "margin:20px" type="button" value="android 反向代理" onclick="startAndroidReverse();" />
+
     <script>
         const vscode = acquireVsCodeApi();
+        function startAndroidReverse(){
+            let luapanda = new Object();
+            let connectionPort = document.getElementById('connectionPort');            
+            luapanda["connectionPort"] = parseInt(connectionPort.value);
+            luapanda["command"] = "adb_reverse";
+
+
+            let webInfo = JSON.stringify(luapanda);
+            vscode.postMessage({
+                webInfo
+            });
+        }
+
         function saveConfig() {
             let luaFileExtension = document.getElementById('luaFileExtension');
             let connectionPort = document.getElementById('connectionPort');

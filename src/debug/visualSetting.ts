@@ -1,6 +1,7 @@
 // 可视化配置部分
 import { Tools } from '../common/tools';
 import * as fs from "fs";
+import * as vscode from 'vscode';
 
 export class VisualSetting {
 
@@ -57,8 +58,22 @@ export class VisualSetting {
         switch (messageObj.command) {
             case 'save_settings':
             	this.processSaveSettings(messageObj);
-            	break;
+                break;
+            case 'adb_reverse':
+                this.processADBReverse(messageObj);
+                break;
         }
+    }
+    private static processADBReverse(messageObj) {
+        let connectionPort = messageObj["connectionPort"];
+        const terminal = vscode.window.createTerminal({
+            name: "ADB Reverse (LuaPanda)",
+            env: {}, 
+        });
+
+        let cmd = "adb reverse -tcp " + connectionPort + " -tcp " + connectionPort;       
+        terminal.sendText(cmd , true);
+        terminal.show(); 
     }
 
     private static processSaveSettings(messageObj) {

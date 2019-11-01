@@ -191,11 +191,11 @@ connection.onCompletion(
 	(_textDocumentPosition: TextDocumentPositionParams): CompletionItem[] => {
 		let uri = Tools.urlDecode(_textDocumentPosition.textDocument.uri);
 		let pos = _textDocumentPosition.position;
-		// try{
+		try{
 			return CodeCompleting.getCompletingArray(uri, pos);
-		// } catch (error) {
-			// Logger.InfoLog(error.stack);
-		// }
+		} catch (error) {
+			Logger.InfoLog(error.stack);
+		}
 	}
 );
 
@@ -210,11 +210,11 @@ connection.onReferences(
 connection.onDefinition(
 	(handler: TextDocumentPositionParams): Definition => {
 		handler.textDocument.uri = Tools.urlDecode(handler.textDocument.uri);
-		// try{
+		try{
 			return CodeDefinition.getSymbalDefine(handler);
-		// } catch (error) {
-		// 	Logger.InfoLog(error.stack);
-		// }
+		} catch (error) {
+			Logger.InfoLog(error.stack);
+		}
 	}
 );
 
@@ -240,11 +240,11 @@ connection.onDocumentSymbol(
 //获取整个工程文件夹的符号
 connection.onWorkspaceSymbol(
 	(handler: WorkspaceSymbolParams): SymbolInformation[] => {
-		// try{
+		try{
 			return CodeSymbol.searchSymbolinWorkSpace(handler.query, Tools.SearchMode.FuzzyMatching, Tools.SearchRange.AllSymbols);
-		// } catch (error) {
-			// Logger.InfoLog(error.stack);
-		// }
+		} catch (error) {
+			Logger.InfoLog(error.stack);
+		}
 	}
 );
 
@@ -288,7 +288,7 @@ documents.onDidChangeContent(change => {
 
 // 保存文件
 documents.onDidSave(change => {
-	// try {
+	try {
 		// 运行语法检查
 		getDocumentSettings(change.document.uri).then(
 			(settings) => {
@@ -297,9 +297,9 @@ documents.onDidSave(change => {
 				}
 			}
 		);
-	// } catch (error) {
-		// Logger.InfoLog(error.stack);
-	// }
+	} catch (error) {
+		Logger.InfoLog(error.stack);
+	}
 });
 
 //-----------------------------------------------------------------------------
