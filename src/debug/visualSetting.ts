@@ -2,6 +2,7 @@
 import { Tools } from '../common/tools';
 import * as fs from "fs";
 import * as vscode from 'vscode';
+import { DebugLogger } from '../common/logManager';
 
 export class VisualSetting {
 
@@ -51,6 +52,7 @@ export class VisualSetting {
         //setting反馈到html中
         let newJson = JSON.stringify(obj);
         webview.postMessage(newJson);
+
     }
 
     public static getWebMessage(message) {
@@ -97,5 +99,6 @@ export class VisualSetting {
         //序列化并写入
         let launchJson = JSON.stringify(settings, null,  4);
         Tools.writeFileContent(Tools.VSCodeOpenedFolder + "/.vscode/launch.json" ,launchJson);
+        DebugLogger.showTips("配置保存成功!");
     }   
 }

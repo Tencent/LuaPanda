@@ -111,13 +111,14 @@ connection.onInitialize((initPara: InitializeParams) => {
 	// 		capabilities.textDocument.publishDiagnostics.relatedInformation);
 
 	// 清空loadedExt, 初始化 name - uri 对应 cache
+	Tools.setVScodeExtensionPath(path.dirname(path.dirname(path.dirname(__dirname))) );
 	Tools.initLoadedExt();
 	createSybwithExt('lua', Tools.getInitPara().rootPath);
 	createSybwithExt('lua.bytes', Tools.getInitPara().rootPath);
 	// 异步执行，建立uri -> 完整路径对应表
 	setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
 	// 分析默认位置(扩展中)的lua文件
-	let resLuaPath = path.dirname(__dirname) + '/../../res/lua';   //安装插件后地址
+	let resLuaPath = Tools.getVScodeExtensionPath + '/res/lua';   //安装插件后地址
 	CodeSymbol.refreshPreLoadSymbals(resLuaPath);
 
 	Logger.DebugLog("init success");

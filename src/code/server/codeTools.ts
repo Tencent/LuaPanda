@@ -24,13 +24,21 @@ import * as fs from "fs";
 //-----------------------------------------------------------------------------
 //-- 暂存的数据
 //-----------------------------------------------------------------------------
-
 let initParameter; //初始化参数
 export function getInitPara(){
 	return initParameter;
 }
 export function setInitPara(para){
 	initParameter = para;
+}
+
+let VScodeExtensionPath;
+export function getVScodeExtensionPath(){
+	return VScodeExtensionPath;
+}
+
+export function setVScodeExtensionPath(_VScodeExtensionPath:string){
+	VScodeExtensionPath = _VScodeExtensionPath;
 }
 
 let loadedExt;	// 已经过处理的文件后缀
