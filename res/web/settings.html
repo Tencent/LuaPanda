@@ -9,61 +9,67 @@
 
 <body>
     <!--title-->
-    <h1>LuaPanda Settings</h1>
-    <a href="https://github.com/Tencent/LuaPanda/">LuaPanda on github</a><br>
+    <h1 style="margin:50px 0px 10px 30px">LuaPanda Settings</h1>
+    <label style="margin:20px 0px 50px 30px">&nbsp;&nbsp;*本配置项读取的是 launch.json 文件中的数据, 并在配置结束后把结果保存回此文件。在本页面修改配置和直接修改 launch.json 效果是一致的</label>
+
     <br> <br>
     <!--setting-->
     <form id="CreateProject">
-        luaFileExtension <input style = "margin:5px" id="luaFileExtension" type="text" name="fname"/><br />
-        cwd: <input style = "margin:5px" id="cwd" type="text" name="lname" /><br />
-        connectionPort: <input style = "margin:5px" id="connectionPort" type="text" name="lname"/><br />
+        <label class="lab" style="margin:30px 0px 10px 0px" title="lua文件后缀(必须填写), 如lua, txt, lua.bytes"><font size="3" face="Arial">luaFileExtension: </font></label>&nbsp;&nbsp;&nbsp;<input style="margin:5px"
+            id="luaFileExtension" type="text" name="fname" /><br />
+        <label class="lab" style="margin:10px 0px" title="工作路径, 一般默认${workspaceFolder}即可"><font size="3" face="Arial">cwd: </font></label>&nbsp;&nbsp;&nbsp;<input style="margin:5px" id="cwd" type="text"
+            name="lname" /><br />
+        <label class="lab" style="margin:10px 0px" title="连接端口号, 需要和require('LuaPanda').start(ip,port) 中的端口号保持一致。默认8818"><font size="3" face="Arial">connectionPort: </font></label>&nbsp;&nbsp;&nbsp;<input style="margin:5px" id="connectionPort"
+            type="text" name="lname" /><br />
 
-        stopOnEntry:
-        <div class="onoffswitch" style = "margin:20px">
-                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="stopOnEntry" >
-                <label class="onoffswitch-label" for="stopOnEntry">
-                <span class="onoffswitch-inner"></span>
-                <span class="onoffswitch-switch"></span>
-            </label>
-        </div>        <br>
-
-        autoPathMode:
-        <div class="onoffswitch" style = "margin:20px">
-                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="autoPathMode">
-                <label class="onoffswitch-label" for="autoPathMode">
+        <label class="lab" title="当调试器建立连接后，自动停止在当前运行位置"><font size="3" face="Arial">stopOnEntry: </font></label>
+        <div class="onoffswitch" style="margin:20px">
+            <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="stopOnEntry">
+            <label class="onoffswitch-label" for="stopOnEntry">
                 <span class="onoffswitch-inner"></span>
                 <span class="onoffswitch-switch"></span>
             </label>
         </div> <br>
 
-        useCHook:
-        <div class="onoffswitch" style = "margin:20px">
-                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="useCHook">
-                <label class="onoffswitch-label" for="useCHook">
+        <label class="lab" title="自动路径模式,帮助用户减少因路径不一致造成的问题,默认开启"><font size="3" face="Arial">autoPathMode: </font></label>
+        <div class="onoffswitch" style="margin:20px">
+            <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="autoPathMode">
+            <label class="onoffswitch-label" for="autoPathMode">
                 <span class="onoffswitch-inner"></span>
                 <span class="onoffswitch-switch"></span>
             </label>
-        </div>        <br>
+        </div> <br>
 
-        pathCaseSensitivity:
-        <div class="onoffswitch" style = "margin:20px">
-                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="pathCaseSensitivity">
-                <label class="onoffswitch-label" for="pathCaseSensitivity">
+        <label class="lab" title="使用C调试库, 加快调试效率, 默认开启"><font size="3" face="Arial">useCHook: </font></label>
+        <div class="onoffswitch" style="margin:20px">
+            <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="useCHook">
+            <label class="onoffswitch-label" for="useCHook">
                 <span class="onoffswitch-inner"></span>
                 <span class="onoffswitch-switch"></span>
             </label>
-        </div>        <br>
+        </div> <br>
 
-        <input id="save" style = "margin:20px" type="button" value="保存配置" onclick="saveConfig();" />
+        <label class="lab" title="路径大小写敏感, 默认开启"><font size="3" face="Arial">pathCaseSensitivity: </font></label>
+        <div class="onoffswitch" style="margin:20px">
+            <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="pathCaseSensitivity">
+            <label class="onoffswitch-label" for="pathCaseSensitivity">
+                <span class="onoffswitch-inner"></span>
+                <span class="onoffswitch-switch"></span>
+            </label>
+        </div> <br>
+        <label class="lab"></label>
+        <input id="save" class="btn_st" style="margin:20px" type="button" value="保存配置" onclick="saveConfig();" />
     </form>
 
-    <input id="save" style = "margin:20px" type="button" value="android 反向代理" onclick="startAndroidReverse();" />
-
+    <div class="divider" style="border-top: thin solid #cccccc;width: 40%;display: block;margin: 0 auto;margin:20px 0px 20px 15%"></div>
+    <label class="lab"><font size="3" face="Arial">真机调试工具: </font></label>
+    <input id="save" class="btn_st" style="margin:20px" type="button" value="启动 Android 反向代理"
+        onclick="startAndroidReverse();" />
     <script>
         const vscode = acquireVsCodeApi();
-        function startAndroidReverse(){
+        function startAndroidReverse() {
             let luapanda = new Object();
-            let connectionPort = document.getElementById('connectionPort');            
+            let connectionPort = document.getElementById('connectionPort');
             luapanda["connectionPort"] = parseInt(connectionPort.value);
             luapanda["command"] = "adb_reverse";
 
@@ -89,32 +95,32 @@
             luapanda["connectionPort"] = parseInt(connectionPort.value);
             luapanda["cwd"] = cwd.value;
 
-            if(pathCaseSensitivity.checked){
+            if (pathCaseSensitivity.checked) {
                 luapanda["pathCaseSensitivity"] = true;
-            } else{
+            } else {
                 luapanda["pathCaseSensitivity"] = false;
             }
 
-            if(stopOnEntry.checked){
+            if (stopOnEntry.checked) {
                 luapanda["stopOnEntry"] = true;
-            } else{
+            } else {
                 luapanda["stopOnEntry"] = false;
             }
-            
-            if(useCHook.checked){
+
+            if (useCHook.checked) {
                 luapanda["useCHook"] = true;
-            } else{
+            } else {
                 luapanda["useCHook"] = false;
             }
 
-            if(autoPathMode.checked){
+            if (autoPathMode.checked) {
                 luapanda["autoPathMode"] = true;
-            } else{
+            } else {
                 luapanda["autoPathMode"] = false;
             }
 
             // let luapanda_debugfile = new Object();
-            
+
             let saveObj = new Object();
             saveObj["command"] = "save_settings";
             saveObj["LuaPanda"] = luapanda;
@@ -125,54 +131,54 @@
                 webInfo
             });
         }
-        
+
         window.addEventListener('message', event => {
             const message = JSON.parse(event.data); // The JSON data our extension sent
             switch (message.command) {
                 case 'init_setting':
-                    if(message["LuaPanda"] && message["LuaPanda-DebugFile"]){
+                    if (message["LuaPanda"] && message["LuaPanda-DebugFile"]) {
                         //初始化luapanda
-                        
+
                         //初始化单文件调试
-                        if(message["LuaPanda"]["luaFileExtension"]){
+                        if (message["LuaPanda"]["luaFileExtension"]) {
                             setInputContent("luaFileExtension", message["LuaPanda"]["luaFileExtension"]);
-                        }else{
+                        } else {
                             setInputContent("luaFileExtension", "lua");
                         }
 
-                        if(message["LuaPanda"]["connectionPort"]){
+                        if (message["LuaPanda"]["connectionPort"]) {
                             setInputContent("connectionPort", message["LuaPanda"]["connectionPort"]);
-                        }else{
+                        } else {
                             setInputContent("connectionPort", "8818");
                         }
-                        
-                        if(message["LuaPanda"]["cwd"]){
+
+                        if (message["LuaPanda"]["cwd"]) {
                             setInputContent("cwd", message["LuaPanda"]["cwd"]);
-                        }else{
+                        } else {
                             setInputContent("cwd", "${workspaceFolder}");
                         }
-                        
-                        if(message["LuaPanda"]["pathCaseSensitivity"]){
+
+                        if (message["LuaPanda"]["pathCaseSensitivity"]) {
                             setCheckboxStatue("pathCaseSensitivity", message["LuaPanda"]["pathCaseSensitivity"]);
-                        }else{
+                        } else {
                             setInputContent("pathCaseSensitivity", true);
                         }
 
-                        if(message["LuaPanda"]["stopOnEntry"]){
+                        if (message["LuaPanda"]["stopOnEntry"]) {
                             setCheckboxStatue("stopOnEntry", message["LuaPanda"]["stopOnEntry"]);
-                        }else{
+                        } else {
                             setInputContent("stopOnEntry", true);
                         }
-                        
-                        if(message["LuaPanda"]["useCHook"]){
+
+                        if (message["LuaPanda"]["useCHook"]) {
                             setCheckboxStatue("useCHook", message["LuaPanda"]["useCHook"]);
-                        }else{
+                        } else {
                             setInputContent("useCHook", true);
                         }
 
-                        if(message["LuaPanda"]["autoPathMode"]){
+                        if (message["LuaPanda"]["autoPathMode"]) {
                             setCheckboxStatue("autoPathMode", message["LuaPanda"]["autoPathMode"]);
-                        }else{
+                        } else {
                             setInputContent("autoPathMode", true);
                         }
 
@@ -181,69 +187,129 @@
             }
         });
 
-        function setCheckboxStatue(checkboxName, isOn)
-        {
+        function setCheckboxStatue(checkboxName, isOn) {
             document.getElementById(checkboxName).checked = isOn;
         }
 
-        function setInputContent(inputName, text){
+        function setInputContent(inputName, text) {
             document.getElementById(inputName).value = text;
         }
-
     </script>
 </body>
 
 
 <style>
-        .onoffswitch {
-            position: relative; width: 40px;
-            -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
-        }
-        .onoffswitch-checkbox {
-            display: none;
-        }
-        .onoffswitch-label {
-            display: block; overflow: hidden; cursor: pointer;
-            border: 2px solid #999999; border-radius: 20px;
-        }
-        .onoffswitch-inner {
-            display: block; width: 200%; margin-left: -100%;
-            transition: margin 0.3s ease-in 0s;
-        }
-        .onoffswitch-inner:before, .onoffswitch-inner:after {
-            display: block; float: left; width: 50%; height: 5px; padding: 0; line-height: 5px;
-            font-size: 14px; color: white; font-family: Trebuchet, Arial, sans-serif; font-weight: bold;
-            box-sizing: border-box;
-        }
-        .onoffswitch-inner:before {
-            content: "";
-            padding-left: 10px;
-            background-color: #34A7C1; color: #FFFFFF;
-        }
-        .onoffswitch-inner:after {
-            content: "";
-            padding-right: 10px;
-            background-color: #EEEEEE; color: #999999;
-            text-align: right;
-        }
-        .onoffswitch-switch {
-            display: block; width: 15px; margin: -5px;
-            background: #FFFFFF;
-            position: absolute; top: 0; bottom: 0;
-            right: 31px;
-            border: 2px solid #999999; border-radius: 20px;
-            transition: all 0.3s ease-in 0s; 
-        }
-        .onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-inner {
-            margin-left: 0;
-        }
-        .onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-switch {
-            right: 0px; 
-        }
-        
-        div{  
-            display: inline-block;  
-        }  
-        </style>
+    .onoffswitch {
+        position: relative;
+        width: 40px;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+    }
+
+    .onoffswitch-checkbox {
+        display: none;
+    }
+
+    .onoffswitch-label {
+        display: block;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid #999999;
+        border-radius: 20px;
+    }
+
+    .onoffswitch-inner {
+        display: block;
+        width: 200%;
+        margin-left: -100%;
+        transition: margin 0.3s ease-in 0s;
+    }
+
+    .onoffswitch-inner:before,
+    .onoffswitch-inner:after {
+        display: block;
+        float: left;
+        width: 50%;
+        height: 5px;
+        padding: 0;
+        line-height: 5px;
+        font-size: 14px;
+        color: white;
+        font-family: Trebuchet, Arial, sans-serif;
+        font-weight: bold;
+        box-sizing: border-box;
+    }
+
+    .onoffswitch-inner:before {
+        content: "";
+        padding-left: 10px;
+        background-color: rgb(73, 128, 247);
+        color: #FFFFFF;
+    }
+
+    .onoffswitch-inner:after {
+        content: "";
+        padding-right: 10px;
+        background-color: #EEEEEE;
+        color: #999999;
+        text-align: right;
+    }
+
+    .onoffswitch-switch {
+        display: block;
+        width: 15px;
+        margin: -5px;
+        background: rgb(73, 128, 247);
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 31px;
+        border: 2px solid #999999;
+        border-radius: 20px;
+        transition: all 0.3s ease-in 0s;
+    }
+
+    .onoffswitch-checkbox:checked+.onoffswitch-label .onoffswitch-inner {
+        margin-left: 0;
+    }
+
+    .onoffswitch-checkbox:checked+.onoffswitch-label .onoffswitch-switch {
+        right: 0px;
+    }
+
+    div {
+        display: inline-block;
+    }
+
+    .lab {
+        display: inline-block;
+        width: 30%;
+        text-align: right;
+    }
+
+    .btn_st {
+        border: none;
+        background: rgb(52, 93, 206);
+        color: #ffffff !important;
+        font-weight: 100;
+        padding: 10px;
+        text-transform: uppercase;
+        border-radius: 6px;
+        display: inline-block;
+        transition: all 0.1s ease 0s;
+    }
+
+    .btn_st:hover {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        cursor: pointer;
+        letter-spacing: 1px;
+        background: rgb(74, 118, 240);
+        -webkit-box-shadow: 0px 5px 40px -10px rgba(255, 255, 255, 0.57);
+        -moz-box-shadow: 0px 5px 40px -10px rgba(255, 255, 255, 0.57);
+        transition: all 0.0s ease 0s;
+    }
+</style>
 
 </html>
