@@ -271,6 +271,7 @@
 				"initialConfigurations": [
 					{
 						"type": "lua",
+						"request": "launch",
 						"name": "LuaPanda",
 						"program": "",
 						"cwd": "${workspaceFolder}",
@@ -284,6 +285,7 @@
 					},
 					{
 						"type": "lua",
+						"request": "launch",
 						"name": "LuaPanda-DebugFile",
 						"luaPath": "",
 						"packagePath": [],
