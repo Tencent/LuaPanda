@@ -2,9 +2,40 @@
 
 [TOC]
 
-LuaPanda 是一个基于VSCode扩展的lua调试器，设计目标是简单易用，支持多种开发框架。因当前项目大量使用lua进行开发，为了能够提升定位修复lua问题的效率，我们自己动手开发了这个工具。
+### lua代码辅助
 
-LuaPanda 使用了lua + C 双架构。调试器主体使用lua开发（可独立运行），另外有一个高性能的C扩展库，兼顾了C的高效以及lua的灵活性。
+经常使用VSCode做lua开发，所以花时间开发了lua代码辅助功能。
+
+目前实现的主要功能：
+
+- 自动补全（auto completion）
+- 代码片段（snippet completion）
+- 定义跳转（definition）
+- 引用分析  (find reference)
+- 类型推断  (type inference)
+- 生成注释  (comment generation)
+- 代码诊断（linting）：依赖 [luacheck](https://github.com/mpeterv/luacheck)
+- 代码格式化  (formatting)  :  依赖 [lua-fmt](https://github.com/trixnz/lua-fmt)
+
+
+
+​    功能展示: 代码提示和定义跳转
+
+![](../static/feature-introduction/codeDefAndCompleting.gif)
+
+
+
+​    功能展示: 生成注释	
+
+​    ![](../static/feature-introduction/generateComments.gif)	
+
+**以上功能只要用 VSCode 打开含有lua的文件夹即可使用，无需配置。**
+
+
+
+### lua代码调试
+
+LuaPanda 调试使用了lua + C 双架构。调试器主体使用lua开发（可独立运行），另外有一个高性能的C扩展库，兼顾了C的高效以及lua的灵活性。
 
 lua适合的场景
 

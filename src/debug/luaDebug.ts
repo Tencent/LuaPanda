@@ -195,7 +195,8 @@ export class LuaDebugSession extends LoggingDebugSession {
                     let AVerArr = String(Tools.adapterVersion).split(".");
                     if (DVerArr.length === AVerArr.length && DVerArr.length === 3 ){
                         //在adapter和debugger版本号长度相等的前提下，比较大版本，大版本 <2 或者 小版本 < 1 就提示. 2.1.0以下会提示
-                        if ( parseInt(DVerArr[0]) < 2 || parseInt(DVerArr[1]) < 1 ){
+                        let intDVer = parseInt(DVerArr[0]) * 10000  + parseInt(DVerArr[1]) * 100 + parseInt(DVerArr[2]);
+                        if ( intDVer < 20100 ){
                             DebugLogger.showTips("当前调试器的lua文件版本过低，可能无法正常使用，请升级到最新版本。帮助文档 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md ", 2);
                         }
                     }else{
