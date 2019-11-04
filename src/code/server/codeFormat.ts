@@ -37,7 +37,7 @@ export class CodeFormat {
 			formattedText = formattedText.split('\r\n').join('\n');
 		}
 
-		return formattedText;
+		return this.getEditsFromFormattedText(uri, text, formattedText);
 	}
 
 	public static getEditsFromFormattedText(documentUri: string, originalText: string, formattedText: string,
