@@ -14,6 +14,18 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 
 
+# 接入和开发指引
+
+接入和使用文档
+
+[项目介绍](./Docs/Manual/feature-introduction.md)	| [快速试用指引](./Docs/Manual/quick-use.md) | [调试器接入指引](./Docs/Manual/access-guidelines.md) |  [真机调试](./Docs/Manual/debug-on-phone.md)  | [单文件调试和运行](./Docs/Manual/debug-file.md) | [升级说明](./Docs/Manual/update.md) | [FAQ](./Docs/Manual/FAQ.md)
+
+调试器开发文档
+
+[工程说明](./Docs/Development-instructions/project-description.md) 	|  [调试器开发指引](./Docs/Development-instructions/how_to_join.md) |  [特性简述](./Docs/Development-instructions/debugger-principle.md) 
+
+
+
 # Tips
 
 + 版本说明和升级建议
@@ -24,8 +36,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
   
 
-  另外加入了配置页面，点击状态栏的LuaPanda图标即可打开。其中提供了一些常用配置方便用户修改。
-配置页面打开时读取launch.json中的对应数据，并在配置完成后把数据写回launch.json, 如果不想使用配置页面，直接修改launch.json中的项目可以达到同样的效果。
+  另外加入了配置页面，点击状态栏的LuaPanda图标即可打开。其中提供了一些常用配置方便用户修改。配置页面打开时读取launch.json中的对应数据，并在配置完成后把数据写回launch.json, 如果不想使用配置页面，直接修改launch.json中的项目可以达到同样的效果。
 
   
 
@@ -72,19 +83,8 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
     之前的版本在cocos2dx中运行时会报查找 c 库错误。2.3.0 修复了此问题，测试 cocos2dx 在 win/mac 下都可以使用c库。
 
     另外调试器目前支持标准lua虚拟机，cocos2dx集成的是luajit，可能会在单步时出现跳步的情况，后续完整支持luajit会解决此问题。
-
-  如希望体验新功能，请按照 [升级说明](./Docs/Manual/update.md) 手动替换工程中的 `LuaPanda.lua` 文件。
-
-
-
-+ v2.2.1
-
-     小幅更新，优化了单文件调试和调试控制台的使用。
-
-  - 修复单文件调试 文件路径中的 \ 被当做转义符的问题。
-  - 修复单文件调试 首次运行窗口报错的问题。
-  - 优化调试控制台的使用，动态执行表达式不必再加p 。
-
+  
+    
   
 
 
@@ -99,18 +99,6 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 + 使用 lua / C 双调试引擎。lua 部分可动态下发，避免打包后无法调试。C 部分效率高，适合开发期调试
 
 + 可以提供代码补全，代码片段，定义跳转，生成注释，符号列表等功能
-
-
-
-# 接入和开发指引
-
-接入和使用文档
-
-[项目介绍](./Docs/Manual/feature-introduction.md)	| [快速试用指引](./Docs/Manual/quick-use.md) | [接入指引](./Docs/Manual/access-guidelines.md) |  [真机调试](./Docs/Manual/debug-on-phone.md)  | [单文件调试和运行](./Docs/Manual/debug-file.md) | [升级说明](./Docs/Manual/update.md) | [FAQ](./Docs/Manual/FAQ.md)
-
-调试器开发文档
-
-[工程说明](./Docs/Development-instructions/project-description.md) 	|  [调试器开发指引](./Docs/Development-instructions/how_to_join.md) |  [特性简述](./Docs/Development-instructions/debugger-principle.md) 
 
 
 
