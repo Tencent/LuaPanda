@@ -68,7 +68,10 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
   
     采用了配置界面，方便用户可视化配置常用选项。原理是把用户的配置结果写回到 launch.json，和直接修改 launch.json 中的配置效果一致。
   
-    
+  + 合并了 `LuaPanda.lua` 和 `DebugTools.lua`  。 为了方便文件拷贝和升级，合并了这两个文件，内容全部放入 `LuaPanda.lua`，DebugTools.lua 不再使用。
+
+
+
 
 + v2.3.0
 
