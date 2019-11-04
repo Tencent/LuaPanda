@@ -31,27 +31,34 @@ export function activate(context: ExtensionContext) {
     context.subscriptions.push(LuaGarbageCollect);
 
     let openSettingsPage = vscode.commands.registerCommand('luapanda.openSettingsPage', function () {
-        // 和VSCode的交互
-        let panel: vscode.WebviewPanel = vscode.window.createWebviewPanel(
-			'LuaPanda Setting',
-			'LuaPanda Setting',
-			vscode.ViewColumn.One,
-			{
-                retainContextWhenHidden: true,
-				enableScripts: true
-			}
-        );
-        
-		panel.webview.html = Tools.readFileContent(Tools.VSCodeExtensionPath + '/res/web/settings.html');
-		// Handle messages from the webview
-		panel.webview.onDidReceiveMessage(message => {
-			VisualSetting.getWebMessage(message)
-		},
-			undefined,
-			context.subscriptions
-        );
-        // 读入配置
-        VisualSetting.setLaunchToWeb(panel.webview);
+        //先尝试获取数据，如果数据获取失败，给错误提示。
+        try{
+            let launchData = VisualSetting.getLaunchData();
+            // 和VSCode的交互
+            let panel: vscode.WebviewPanel = vscode.window.createWebviewPanel(
+                'LuaPanda Setting',
+                'LuaPanda Setting',
+                vscode.ViewColumn.One,
+                {
+                    retainContextWhenHidden: true,
+                    enableScripts: true
+                }
+            );
+            
+            panel.webview.html = Tools.readFileContent(Tools.VSCodeExtensionPath + '/res/web/settings.html');
+            // Handle messages from the webview
+            panel.webview.onDidReceiveMessage(message => {
+                VisualSetting.getWebMessage(message)
+            },
+                undefined,
+                context.subscriptions
+            );
+
+            panel.webview.postMessage(launchData);
+        }catch (error) {
+            DebugLogger.showTips("解析 launch.json 文件失败, 请检查此文件配置项是否异常, 或手动修改 launch.json 中的项目来完成配置!", 2);   
+        }
+    
     });
     context.subscriptions.push(openSettingsPage);
 

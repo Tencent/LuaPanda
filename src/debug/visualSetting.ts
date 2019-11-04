@@ -33,8 +33,8 @@ export class VisualSetting {
         return launchSettings;
     }
 
-    // 处理配置文件launch.json
-    public static setLaunchToWeb(webview){
+    // 读取launch.json中的信息，并序列化
+    public static getLaunchData(){
         let settings = this.readLaunchjson();
 
         let obj = new Object();
@@ -50,9 +50,7 @@ export class VisualSetting {
             }
         }
         //setting反馈到html中
-        let newJson = JSON.stringify(obj);
-        webview.postMessage(newJson);
-
+        return JSON.stringify(obj);
     }
 
     public static getWebMessage(message) {
@@ -73,32 +71,36 @@ export class VisualSetting {
             env: {}, 
         });
 
-        let cmd = "adb reverse -tcp " + connectionPort + " -tcp " + connectionPort;       
+        let cmd = "adb reverse tcp:" + connectionPort + " tcp:" + connectionPort;       
         terminal.sendText(cmd , true);
         terminal.show(); 
     }
 
     private static processSaveSettings(messageObj) {
-        // 再读取一次launch.json , 序列化，用传来的obj替换之前的
-        let settings = this.readLaunchjson();
-        for (const keyLaunch in settings.configurations) {
-            let valueLaunch = settings.configurations[keyLaunch]
-            if(valueLaunch["name"] === "LuaPanda"){
-                for (const keyWeb of Object.keys(messageObj["LuaPanda"])) {
-                    valueLaunch[keyWeb] = messageObj["LuaPanda"][keyWeb];
+        try {        
+            // 再读取一次launch.json , 序列化，用传来的obj替换之前的
+            let settings = this.readLaunchjson();
+            for (const keyLaunch in settings.configurations) {
+                let valueLaunch = settings.configurations[keyLaunch]
+                if(valueLaunch["name"] === "LuaPanda"){
+                    for (const keyWeb of Object.keys(messageObj["LuaPanda"])) {
+                        valueLaunch[keyWeb] = messageObj["LuaPanda"][keyWeb];
+                    }
                 }
+    
+                // if(valueLaunch["name"] === "LuaPanda-DebugFile"){
+                //     for (const keyWeb of Object.keys(messageObj["LuaPanda-DebugFile"])) {
+                //         valueLaunch[keyWeb] = messageObj["LuaPanda-DebugFile"][keyWeb];
+                //     }
+                // }
+    
             }
-
-            // if(valueLaunch["name"] === "LuaPanda-DebugFile"){
-            //     for (const keyWeb of Object.keys(messageObj["LuaPanda-DebugFile"])) {
-            //         valueLaunch[keyWeb] = messageObj["LuaPanda-DebugFile"][keyWeb];
-            //     }
-            // }
-
+            //序列化并写入
+            let launchJson = JSON.stringify(settings, null,  4);
+            Tools.writeFileContent(Tools.VSCodeOpenedFolder + "/.vscode/launch.json" ,launchJson);
+            DebugLogger.showTips("配置保存成功!");
+        } catch (error) {
+            DebugLogger.showTips("配置保存失败, 可能是由于 launch.json 文件无法写入. 请手动修改 launch.json 中的配置项来完成配置!", 2);
         }
-        //序列化并写入
-        let launchJson = JSON.stringify(settings, null,  4);
-        Tools.writeFileContent(Tools.VSCodeOpenedFolder + "/.vscode/launch.json" ,launchJson);
-        DebugLogger.showTips("配置保存成功!");
     }   
 }
