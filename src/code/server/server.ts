@@ -118,7 +118,7 @@ connection.onInitialize((initPara: InitializeParams) => {
 	// 异步执行，建立uri -> 完整路径对应表
 	setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
 	// 分析默认位置(扩展中)的lua文件
-	let resLuaPath = Tools.getVScodeExtensionPath + '/res/lua';   //安装插件后地址
+	let resLuaPath = Tools.getVScodeExtensionPath() + '/res/lua';   //安装插件后地址
 	CodeSymbol.refreshPreLoadSymbals(resLuaPath);
 
 	Logger.DebugLog("init success");

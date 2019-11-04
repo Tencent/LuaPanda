@@ -50,7 +50,7 @@ export class CodeLinting {
 
 		// 如果用户未配置则使用默认配置
 		if (os.type() == "Windows_NT") {
-			luacheck = Tools.getVScodeExtensionPath +  "/res/luacheck/luacheck.exe";
+			luacheck = Tools.getVScodeExtensionPath() +  "/res/luacheck/luacheck.exe";
 		}
 		else {
 			luacheck = '/usr/local/bin/luacheck';
