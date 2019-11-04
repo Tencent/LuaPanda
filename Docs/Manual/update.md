@@ -8,7 +8,7 @@
 
 + lua文件。 下载地址：https://github.com/Tencent/LuaPanda/releases 
 
-  LuaPanda.lua，DebugTools.lua
+  LuaPanda.lua
 
   需要用户手动下载最新的文件，替换工程中原有文件。
 

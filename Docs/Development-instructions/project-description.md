@@ -35,8 +35,7 @@
 │   ├── debugger_lib         	
 │   │	├── libpdebug.h/cpp     C调试库源码
 │   │	└── plugins				打包好的调试库文件
-│   ├── LuaPanda.lua         	Debugger源码
-│   └── DebugTools.lua          Debugger工具文件
+│   └── LuaPanda.lua         	Debugger源码
 ├── Docs						项目文档
 ├── LICENSE.txt					证书
 ├── package.json				工程配置文件

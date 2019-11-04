@@ -73,7 +73,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
     另外调试器目前支持标准lua虚拟机，cocos2dx集成的是luajit，可能会在单步时出现跳步的情况，后续完整支持luajit会解决此问题。
 
-  如希望体验新功能，请按照 [升级说明](./Docs/Manual/update.md) 手动替换工程中的 `LuaPanda.lua，DebugTools.lua` 文件。
+  如希望体验新功能，请按照 [升级说明](./Docs/Manual/update.md) 手动替换工程中的 `LuaPanda.lua` 文件。
 
 
 
