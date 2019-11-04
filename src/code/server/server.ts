@@ -20,6 +20,8 @@ import {
 	DocumentSymbolParams,
 	Definition, //定义跳转
 	WorkspaceSymbolParams,//folder 符号
+	DocumentFormattingParams,
+	TextEdit,
 	DocumentHighlight,
 	ColorInformation,
 	DocumentColorParams,
@@ -37,6 +39,7 @@ import { CodeSymbol } from './codeSymbol';
 import { CodeDefinition } from './codeDefinition';
 import { CodeCompleting } from './codeCompleting';
 import { CodeEditor } from './codeEditor';
+import { CodeFormat } from './codeFormat';
 import { CodeLinting } from './codeLinting';
 import { CodeReference } from './codeReference';
 
@@ -128,7 +131,7 @@ connection.onInitialize((initPara: InitializeParams) => {
 			//引用分析
 			referencesProvider: false,
 			//代码格式化
-			documentFormattingProvider: false,
+			documentFormattingProvider: true,
 			documentRangeFormattingProvider: false,
 			//代码选中高亮
 			documentHighlightProvider: false,
@@ -167,7 +170,15 @@ connection.onInitialized(() => {
 
 });
 
-//这是个干嘛的？
+
+// 代码格式化
+connection.onDocumentFormatting( (handler: DocumentFormattingParams) :  TextEdit[] =>{
+	let uri = Tools.urlDecode(handler.textDocument.uri);
+	let retCode = CodeFormat.format(uri);
+	return retCode;
+});
+
+
 connection.onDidChangeConfiguration(change => {
 	if (hasConfigurationCapability) {
 		// Reset all cached document settings

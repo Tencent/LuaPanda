@@ -40,7 +40,7 @@ export class CodeDefinition {
 				symbInstance = this.judgeLocalDefinition(symbInstance, containerList, info);
 			}else{
 				// 最远原则
-				symbInstance = symbInstance[symbInstance.length - 1];
+				symbInstance = symbInstance[0];
 			}
 			
 			// 此处应该保证 symbInstance是一个实例（不是数组）
