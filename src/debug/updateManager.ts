@@ -31,8 +31,11 @@ export class UpdateManager{
             let DVerArr  = dver[2].split('.');
             let AVerArr = String(Tools.adapterVersion).split(".");
             if (DVerArr.length === AVerArr.length && DVerArr.length === 3 ){
-                if ( parseInt(DVerArr[0]) < parseInt(AVerArr[0]) || parseInt(DVerArr[1]) < parseInt(AVerArr[1]) || parseInt(DVerArr[2]) < parseInt(AVerArr[2])  ){
-                    vscode.window.showInformationMessage('当前工程中 LuaPanda 文件版本比较低，是否自动升级为新版本?', 'Yes', 'No').then(value => {
+                let intDVer = parseInt(DVerArr[0]) * 10000  + parseInt(DVerArr[1]) * 100 + parseInt(DVerArr[2]);
+                let intAVer = parseInt(AVerArr[0]) * 10000  + parseInt(AVerArr[1]) * 100 + parseInt(AVerArr[2]);
+
+                if ( intDVer < intAVer ){
+                    vscode.window.showInformationMessage('当前工程中 LuaPanda 文件版本较低，是否自动升级为新版本?', 'Yes', 'No').then(value => {
                         if(value === "Yes"){
                             let confirmButton = "立刻升级";
                             vscode.window.showInformationMessage('已准备好更新 ' + Tools.luapandaPathInUserProj+ '。如用户对此文件有修改, 建议备份后再升级, 避免修改内容被覆盖', confirmButton, '稍后再试').then(value => {
