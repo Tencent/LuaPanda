@@ -111,6 +111,7 @@ export class Tools {
         this.extMap = new Object();
         this.extMap['lua'] = true;
         this.extMap['lua.txt'] = true;
+        this.extMap['lua.bytes'] = true;
         if(typeof userSetExt == 'string' && userSetExt != ''){
             this.extMap[userSetExt] = true;
         }
