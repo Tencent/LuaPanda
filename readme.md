@@ -1,13 +1,17 @@
 # LuaPanda
 
-LuaPanda 是一个基于 VS Code 的 lua 代码工具，设计目标是简单易用。它支持多种开发框架。能够提供多种代码辅助功能，主要包括代码补全，代码片段，定义跳转，生成注释，符号列表，以及调试器功能。具体功能请参考 [项目介绍](./Docs/Manual/feature-introduction.md)。
+LuaPanda 是一个基于 VS Code 的 lua 代码工具，设计目标是简单易用。它支持多种开发框架，主要提供以下功能：
 
-其中调试器模块由两部分组成:
+- 自动补全（auto completion）
+- 代码片段（snippet completion）
+- 定义跳转（definition）
+- 生成注释（comment generation）
+- 类型推断（limited type inference）
+- 代码格式化（formatting）: 依赖 [lua-fmt](https://github.com/trixnz/lua-fmt)
+- 代码诊断（linting）：依赖 [luacheck](https://github.com/mpeterv/luacheck)
+- 调试器（debugger）
 
-- VS Code Extension  调试器 VSCode 插件
-- Lua Debugger  调试器的 debugger 部分
-
-Debugger 主体使用 lua 实现，另含一个 C 扩展模块，以保证高速运行。支持 lua5.1- 5.3，调试器运行环境要包含 LuaSocket。
+功能详情可以参考[项目介绍](./Docs/Manual/feature-introduction.md)。LuaPanda 支持 lua5.1- 5.3，调试器运行环境需要包含 LuaSocket。
 
 LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`为游戏提供嵌入式跨引擎的运营开发能力，使游戏研发及运营各自独立闭环，在游戏内实现各种营销活动和周边系统，让游戏分工更加专业，团队更加专注，高效产出价值。
 潘多拉为游戏提供的服务包括用户生命周期的精细化运营方案、游戏内直播解决方案、游戏内内容社区解决方案、游戏内商城商业化解决方案等，已经在大量腾讯精品游戏中上线、稳定运营。
@@ -33,8 +37,6 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
   3.0.0 版本中加入了 LuaPanda.lua 文件的自动更新提示，帮助把版本保持到最新。升级原理是检测VScode打开工程中是否包含 LuaPanda 文件，并匹配文件中的版本号，如果落后于当前插件版本，则用插件中附带的最新版覆盖。升级过程无需网络，也不会对外发送和接收数据。
 
   ![updateTips](https://github.com/Tencent/LuaPanda/blob/dev/Docs/static/updateTips.png?raw=true)
-
-  
 
   另外加入了配置页面，点击状态栏的LuaPanda图标即可打开。其中提供了一些常用配置方便用户修改。配置页面打开时读取launch.json中的对应数据，并在配置完成后把数据写回launch.json, 如果不想使用配置页面，直接修改launch.json中的项目可以达到同样的效果。
 

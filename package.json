@@ -61,7 +61,8 @@
 	},
 	"main": "./out/extension",
 	"activationEvents": [
-		"onLanguage:lua", "onDebug"
+		"onLanguage:lua",
+		"onDebug"
 	],
 	"contributes": {
 		"breakpoints": [
