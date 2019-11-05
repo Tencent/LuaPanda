@@ -54,6 +54,22 @@ export class VisualSetting {
                 obj["LuaPanda-DebugFile"] = v;
             }
         }
+
+        if(obj["LuaPanda"] == undefined){
+            //读取预制内容，传给页面
+            let launchTemplate = Tools.readFileContent(Tools.VSCodeExtensionPath + "/res/others/launch.json");
+            let settings = JSON.parse(launchTemplate);
+            for (const key in settings.configurations) {
+                const v = settings.configurations[key];
+                if(v["name"] === "LuaPanda"){
+                    obj["LuaPanda"] = v;
+                }
+                if(v["name"] === "LuaPanda-DebugFile"){
+                    obj["LuaPanda-DebugFile"] = v;
+                }
+            }
+        }
+
         //setting反馈到html中
         return JSON.stringify(obj);
     }
@@ -85,10 +101,12 @@ export class VisualSetting {
         try {        
             // 再读取一次launch.json , 序列化，用传来的obj替换之前的
             let settings = this.readLaunchjson();
+            let alreadyWriteIn = false;
             for (const keyLaunch in settings.configurations) {
                 let valueLaunch = settings.configurations[keyLaunch]
                 if(valueLaunch["name"] === "LuaPanda"){
                     for (const keyWeb of Object.keys(messageObj["LuaPanda"])) {
+                        alreadyWriteIn = true;
                         valueLaunch[keyWeb] = messageObj["LuaPanda"][keyWeb];
                     }
                 }
@@ -98,8 +116,13 @@ export class VisualSetting {
                 //         valueLaunch[keyWeb] = messageObj["LuaPanda-DebugFile"][keyWeb];
                 //     }
                 // }
-    
             }
+
+            if(!alreadyWriteIn){
+                //launch.json中不存在luapanda项目
+                settings.configurations.push(messageObj["LuaPanda"]);
+            }
+
             //序列化并写入
             let launchJson = JSON.stringify(settings, null,  4);
             Tools.writeFileContent(Tools.VSCodeOpenedFolder + "/.vscode/launch.json" ,launchJson);

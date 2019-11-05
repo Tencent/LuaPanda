@@ -91,6 +91,9 @@
             let autoPathMode = document.getElementById('autoPathMode');
 
             let luapanda = new Object();
+            luapanda["type"] = "lua";
+            luapanda["request"] = "launch";
+            luapanda["name"] = "LuaPanda";
             luapanda["luaFileExtension"] = luaFileExtension.value;
             luapanda["connectionPort"] = parseInt(connectionPort.value);
             luapanda["cwd"] = cwd.value;
@@ -118,6 +121,7 @@
             } else {
                 luapanda["autoPathMode"] = false;
             }
+            luapanda["logLevel"] = 1;
 
             // let luapanda_debugfile = new Object();
 
@@ -136,7 +140,7 @@
             const message = JSON.parse(event.data); // The JSON data our extension sent
             switch (message.command) {
                 case 'init_setting':
-                    if (message["LuaPanda"] && message["LuaPanda-DebugFile"]) {
+                    if (message["LuaPanda"]) {
                         //初始化luapanda
 
                         //初始化单文件调试
