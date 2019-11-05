@@ -12,6 +12,11 @@ export class VisualSetting {
         let launchExist = fs.existsSync(launchPath);
         let jsonStr;
         if(!launchExist){
+            let dotVScodeDirExist = fs.existsSync(Tools.VSCodeOpenedFolder + "/.vscode");
+            if(!dotVScodeDirExist){
+                //创建.vscode目录
+                fs.mkdirSync(Tools.VSCodeOpenedFolder + "/.vscode");
+            }
             // 文件不存在，读取预制文件，创建launch
             let launchTemplate = Tools.readFileContent(Tools.VSCodeExtensionPath + "/res/others/launch.json");
             Tools.writeFileContent(Tools.VSCodeOpenedFolder + "/.vscode/launch.json" ,launchTemplate);

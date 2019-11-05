@@ -11,7 +11,7 @@
             "pathCaseSensitivity": true,
             "stopOnEntry": true,
             "useCHook": true,
-            "autoPathMode": false,
+            "autoPathMode": true,
             "logLevel": 1
         },
         {
