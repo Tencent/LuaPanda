@@ -73,7 +73,7 @@
 		"commands": [
 			{
 				"command": "luapanda.reloadLuaDebug",
-				"title": "reloadLuaDebug"
+				"title": "Reload LuaPanda"
 			},
 			{
 				"command": "luapanda.LuaGarbageCollect",
@@ -86,7 +86,7 @@
 		],
 		"configuration": {
 			"type": "object",
-			"title": "lua-analyzer configuration",
+			"title": "lua-panda configuration",
 			"properties": {
 				"lua_analyzer.codeLinting.enable": {
 					"scope": "resource",

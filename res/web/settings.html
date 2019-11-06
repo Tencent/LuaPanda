@@ -65,8 +65,39 @@
     <label class="lab"><font size="3" face="Arial">真机调试工具: </font></label>
     <input id="save" class="btn_st" style="margin:20px" type="button" value="启动 Android 反向代理"
         onclick="startAndroidReverse();" />
+    <br>
+
+    <label class="lab"><font size="3" face="Arial">lua代码辅助功能: </font></label>
+    <div class="onoffswitch" style="margin:20px">
+        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="luaAnalyzerSwitch"" onclick="changeLuaAnalyzerSwitch();">
+        <label class="onoffswitch-label" for="luaAnalyzerSwitch">
+            <span class="onoffswitch-inner"></span>
+            <span class="onoffswitch-switch"></span>
+        </label>
+    </div> 
+    <br>
+
     <script>
         const vscode = acquireVsCodeApi();
+
+        function changeLuaAnalyzerSwitch()
+        {
+            let switchStatus;
+            if (document.getElementById('luaAnalyzerSwitch').checked) 
+            {
+                switchStatus = true;
+            } else {
+                switchStatus = false;
+            }
+            let saveObj = new Object();
+            saveObj["command"] = "on_off_analyzer";
+            saveObj["switch"] = switchStatus;
+            let webInfo = JSON.stringify(saveObj);
+            vscode.postMessage({
+                webInfo
+            });
+        }
+
         function startAndroidReverse() {
             let luapanda = new Object();
             let connectionPort = document.getElementById('connectionPort');
@@ -142,7 +173,6 @@
                 case 'init_setting':
                     if (message["LuaPanda"]) {
                         //初始化luapanda
-
                         //初始化单文件调试
                         if (message["LuaPanda"]["luaFileExtension"] != undefined) {
                             setInputContent("luaFileExtension", message["LuaPanda"]["luaFileExtension"]);
@@ -186,6 +216,11 @@
                             setInputContent("autoPathMode", true);
                         }
 
+                        if (message["isOpenAnalyzer"]) {
+                            setCheckboxStatue("luaAnalyzerSwitch", message["isOpenAnalyzer"]);
+                        } else {
+                            setInputContent("luaAnalyzerSwitch", true);
+                        }
                     }
                     break;
             }

@@ -33,6 +33,7 @@ import {
 } from 'vscode-languageserver';
 let dir = require('path-reader');
 let path = require('path');  /*nodejs自带的模块*/
+import * as fs from "fs";
 import  * as Tools  from "./codeTools";
 import { Logger } from './codeLogManager';
 import { CodeSymbol } from './codeSymbol';
@@ -122,37 +123,47 @@ connection.onInitialize((initPara: InitializeParams) => {
 	CodeSymbol.refreshPreLoadSymbals(resLuaPath);
 
 	Logger.DebugLog("init success");
-	return {
-		capabilities: {
-			//符号分析
-			documentSymbolProvider: true,
-			workspaceSymbolProvider: true,
-			//定义分析
-			definitionProvider: true,
-			//引用分析
-			referencesProvider: false,
-			//代码格式化
-			documentFormattingProvider: true,
-			documentRangeFormattingProvider: false,
-			//代码选中高亮
-			documentHighlightProvider: false,
-			//文档同步
-			textDocumentSync: documents.syncKind,
-			//自动补全
-			completionProvider: {
-				triggerCharacters:['.', '-', ':'],
-				resolveProvider: false
-			},
-			//重命名
-			renameProvider : false,
-			//函数签名提示
-			// signatureHelpProvider:{
-			// 	triggerCharacters: [ '(' ],
-			// },
-			//代码上色
-			colorProvider : false,
+
+	//读取标记文件，如果关闭了标记，那么
+	let snippetsPath = Tools.getVScodeExtensionPath() + "/res/snippets";
+
+	if(!fs.existsSync(snippetsPath)){
+		return {
+			capabilities: {}
 		}
-	};
+	}else{
+		return {
+			capabilities: {
+				//符号分析
+				documentSymbolProvider: true,
+				workspaceSymbolProvider: true,
+				//定义分析
+				definitionProvider: true,
+				//引用分析
+				referencesProvider: false,
+				//代码格式化
+				documentFormattingProvider: true,
+				documentRangeFormattingProvider: false,
+				//代码选中高亮
+				documentHighlightProvider: false,
+				//文档同步
+				textDocumentSync: documents.syncKind,
+				//自动补全
+				completionProvider: {
+					triggerCharacters:['.', '-', ':'],
+					resolveProvider: false
+				},
+				//重命名
+				renameProvider : false,
+				//函数签名提示
+				// signatureHelpProvider:{
+				// 	triggerCharacters: [ '(' ],
+				// },
+				//代码上色
+				colorProvider : false,
+			}
+		};
+	}
 });
 
 connection.onInitialized(() => {
