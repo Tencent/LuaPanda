@@ -32,12 +32,13 @@ export class CppCodeProcessor {
 	public static processCppDir(cppDir: string) {
 		this.removeCppInterfaceIntelliSenseRes(this.cppInterfaceIntelliSenseResPath);
 		let cppHeaderFiles = this.getCppHeaderFiles(cppDir);
-		// let cppSourceFiles = this.getCppSourceFiles(cppDir);
+		let cppSourceFiles = this.getCppSourceFiles(cppDir);
 
-		this.parseCppFiles(cppHeaderFiles);
+		this.parseCppFiles(cppHeaderFiles, CppFileType.CppHeaderFile);
+		this.parseCppFiles(cppSourceFiles, CppFileType.CppSourceFile);
 	}
 
-	private static async parseCppFiles(filePaths: string[]) {
+	private static async parseCppFiles(filePaths: string[], cppFileType: CppFileType) {
 		for (let i = 0; i < filePaths.length; i++) {
 			let cppText = this.getCppCode(filePaths[i]);
 
@@ -50,7 +51,11 @@ export class CppCodeProcessor {
 					text: true,
 					basePath: this.getWasmDir()
 				});
-				this.parseAST2LuaCode(astNode);
+				if (cppFileType === CppFileType.CppHeaderFile) {
+					this.parseCppHeaderAST2LuaCode(astNode);
+				} else if (cppFileType === CppFileType.CppSourceFile) {
+					this.parseCppSourceAST2LuaCode(astNode);
+				}
 			} catch(e) {
 				Logger.ErrorLog("Parse cpp file failed, filePath: " + filePaths[i] +" error: ");
 				Logger.ErrorLog(e);
@@ -139,7 +144,7 @@ export class CppCodeProcessor {
 		return content;
 	}
 
-	private static parseAST2LuaCode(astNode: Node) {
+	private static parseCppHeaderAST2LuaCode(astNode: Node) {
 		let foundUCLASS: boolean = false;
 		let foundUSTRUCT: boolean = false;
 		let foundUENUM: boolean = false;
@@ -183,7 +188,7 @@ export class CppCodeProcessor {
 				// 外层有namespace的情况，要放到UENUM后面，UENUM后面的节点有可能是namespace
 				child.children.forEach((child: Node) => {
 					if (child.type === 'declaration_list') {
-						this.parseAST2LuaCode(child);
+						this.parseCppHeaderAST2LuaCode(child);
 					}
 				});
 			}
@@ -534,6 +539,105 @@ export class CppCodeProcessor {
 		return luaText;
 	}
 
+	private static parseCppSourceAST2LuaCode(astNode: Node) {
+		let className: string = "";
+		let baseClass: string[] = [];
+		let methodList: string[] = [];
+
+		astNode.children.forEach((child: Node) => {
+			if (child.type === 'comment') {
+				return;
+			}
+
+			if (child.type === 'expression_statement' && child.text.match(URegex.DefLuaClass)) {
+				let result = this.handleDefLuaClass(child);
+				className = result.className;
+				baseClass = result.baseClass;
+			} else if (child.type === 'expression_statement' && child.text.match(URegex.DefLuaMethod)) {
+				methodList.push(this.handleDefLuaMethod(child, className));
+			} else if (child.type === 'expression_statement' && child.text.match(URegex.EndDef)) {
+				if (className !== '') {
+					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, className + '.lua');
+					let luaText = this.assembleLuaClassText(className, baseClass, methodList);
+					this.appendText2File(luaText, filePath);
+					CodeSymbol.refreshSinglePreLoadFile(filePath);
+					className = '';
+					baseClass.length = 0;
+					methodList.length = 0;
+				}
+			}
+
+			else if (child.type === 'namespace_definition') {
+				child.children.forEach((child: Node) => {
+					if (child.type === 'declaration_list') {
+						this.parseCppSourceAST2LuaCode(child);
+					}
+				});
+			}
+		});
+	}
+
+	private static handleDefLuaClass(astNode: Node): {className: string, baseClass: string[]} {
+		let argumentList: string[] = [];
+
+		let argumentListNode: Node;
+		astNode.children.forEach((child: Node) => {
+			if (child.type === 'call_expression') {
+				child.children.forEach((child: Node) => {
+					if (child.type === 'argument_list') {
+						argumentListNode = child;
+					}
+				});
+			}
+		});
+
+		argumentListNode.children.forEach((child: Node) => {
+			if (child.type === 'identifier') {
+				argumentList.push(child.text);
+			}
+		});
+
+		return {className: argumentList[0], baseClass: argumentList.slice(1)};
+	}
+
+	private static handleDefLuaMethod(astNode: Node, className: string): string {
+		let luaText: string = 'function ';
+
+		astNode.children.forEach((child: Node) => {
+			if (child.type === 'call_expression') {
+				child.children.forEach((child: Node) => {
+					if (child.type === 'argument_list') {
+						child.children.forEach((child: Node) => {
+							if (child.type === 'identifier') {
+								luaText += className + '.' + child.text + '()';
+							}
+						});
+					}
+				});
+			}
+
+		});
+		luaText += ' end\n'
+
+		return luaText;
+	}
+
+	private static assembleLuaClassText(className: string, baseClass: string[], methodList: string[]): string {
+		let luaText: string = className + ' = {}'
+
+		if (baseClass.length > 0) {
+			luaText += ' ---@type ' + baseClass[0] + '\n';
+		} else {
+			luaText += '\n';
+		}
+		methodList.forEach((method: string) => {
+			luaText += method;
+		});
+
+		return luaText;
+	}
+
+
 	/**
 	 * 获取tree-sitter wasm文件目录
 	 */
@@ -556,7 +660,6 @@ export class CppCodeProcessor {
 		return dir.files(dirPath, 'file', null, options);
 	}
 
-	/*
 	private static getCppSourceFiles(dirPath: string): string[] {
 		let options = {
 			sync: true,
@@ -571,7 +674,6 @@ export class CppCodeProcessor {
 
 		return dir.files(dirPath, 'file', null, options);
 	}
-	*/
 
 	/**
 	 * 将文本写入指定文件。
@@ -637,4 +739,13 @@ class URegex {
 	public static GENERATED_USTRUCT_BODY = new RegExp(/\s*(GENERATED_USTRUCT_BODY\s*\(.*\))/);
 	public static DEPRECATED             = new RegExp(/\s*(DEPRECATED\s*\(.*\))/);
 	public static UMETA                  = new RegExp(/\s*(UMETA\s*\(.*\))/);
+
+	public static DefLuaClass  = new RegExp(/\s*(DefLuaClass\s*\(.*\))/);
+	public static DefLuaMethod = new RegExp(/\s*(DefLuaMethod\s*\(.*\))/);
+	public static EndDef       = new RegExp(/\s*(EndDef\s*\(.*\))/);
+}
+
+enum CppFileType {
+	CppHeaderFile = 0,
+	CppSourceFile = 1,
 }
