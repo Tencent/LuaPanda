@@ -159,22 +159,27 @@ export class CppCodeProcessor {
 			} else if (foundUCLASS == true) {
 				let result = this.handleUCLASS(child);
 				foundUCLASS = false;
-				let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.className + '.lua');
-				this.appendText2File(result.luaText, filePath);
-				CodeSymbol.refreshSinglePreLoadFile(filePath);
+				if (result.className != '') {
+					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.className + '.lua');
+					this.appendText2File(result.luaText, filePath);
+					CodeSymbol.refreshSinglePreLoadFile(filePath);
+				}
 			} else if (foundUSTRUCT == true) {
 				let result = this.handleUSTRUCT(child);
 				foundUSTRUCT = false;
-				let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.structName + '.lua');
-				this.appendText2File(result.luaText, filePath);
-				CodeSymbol.refreshSinglePreLoadFile(filePath);
+				if (result.structName != '') {
+					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.structName + '.lua');
+					this.appendText2File(result.luaText, filePath);
+					CodeSymbol.refreshSinglePreLoadFile(filePath);
+				}
 			} else if (foundUENUM == true) {
 				let result = this.handleUENUM(child);
 				foundUENUM = false;
-				let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.enumType + '.lua');
-				this.appendText2File(result.luaText, filePath);
-				CodeSymbol.refreshSinglePreLoadFile(filePath);
-			} else if (child.type == 'namespace_definition') {
+				if (result.enumType != '') {
+					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.enumType + '.lua');
+					this.appendText2File(result.luaText, filePath);
+					CodeSymbol.refreshSinglePreLoadFile(filePath);
+				}
 				// 外层有namespace的情况，要放到UENUM后面，UENUM后面的节点有可能是namespace
 				child.children.forEach((child: Node) => {
 					if (child.type == 'declaration_list') {
