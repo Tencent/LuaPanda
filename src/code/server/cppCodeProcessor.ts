@@ -533,7 +533,7 @@ export class CppCodeProcessor {
 	 * 获取tree-sitter wasm文件目录
 	 */
 	private static getWasmDir(): string {
-		return path.join(__dirname, "/../node_modules/univac/dist/static/");
+		return path.join(Tools.getVScodeExtensionPath(), "node_modules/univac/dist/static/");
 	}
 
 	private static getCppHeaderFiles(dirPath: string) {
