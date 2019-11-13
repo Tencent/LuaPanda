@@ -32,7 +32,7 @@ export class CppCodeProcessor {
 	public static processCppDir(cppDir: string) {
 		this.removeCppInterfaceIntelliSenseRes(this.cppInterfaceIntelliSenseResPath);
 		let cppHeaderFiles = this.getCppHeaderFiles(cppDir);
-		let cppSourceFiles = this.getCppSourceFiles(cppDir);
+		// let cppSourceFiles = this.getCppSourceFiles(cppDir);
 
 		this.parseCppFiles(cppHeaderFiles);
 	}
@@ -556,6 +556,7 @@ export class CppCodeProcessor {
 		return dir.files(dirPath, 'file', null, options);
 	}
 
+	/*
 	private static getCppSourceFiles(dirPath: string): string[] {
 		let options = {
 			sync: true,
@@ -570,6 +571,7 @@ export class CppCodeProcessor {
 
 		return dir.files(dirPath, 'file', null, options);
 	}
+	*/
 
 	/**
 	 * 将文本写入指定文件。
