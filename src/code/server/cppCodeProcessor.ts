@@ -342,8 +342,14 @@ export class CppCodeProcessor {
 		let enumeratorList: string[] = [];
 
 		astNode.children.forEach((child: Node) => {
-			if (child.type == 'enumerator' || child.type == 'identifier') {
+			if (child.type == 'identifier') {
 				enumeratorList.push(child.text);
+			} else if (child.type == 'enumerator') {
+				child.children.forEach((child: Node) => {
+					if (child.type == 'identifier') {
+						enumeratorList.push(child.text);
+					}
+				});
 			}
 		});
 
