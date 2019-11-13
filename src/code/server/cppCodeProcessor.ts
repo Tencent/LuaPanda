@@ -58,6 +58,7 @@ export class CppCodeProcessor {
 		}
 	}
 
+	/*
 	private static parseCppFile(filePath: string) {
 		let cppText = this.getCppCode(filePath);
 
@@ -81,6 +82,7 @@ export class CppCodeProcessor {
 			Logger.ErrorLog(e);
 		});
 	}
+	*/
 
 	/**
 	 * 获取文件内容，并对内容进行预处理。
@@ -301,7 +303,6 @@ export class CppCodeProcessor {
 	}
 
 	private static handleInitDeclarator(astNode: Node): {enumType: string, enumeratorList: string[]} {
-		let luaText = '';
 		let enumType = '';
 		let enumeratorList: string[] = [];
 
@@ -319,7 +320,6 @@ export class CppCodeProcessor {
 		return {enumType: enumType, enumeratorList: enumeratorList};
 	}
 	private static handleEnumSpecifier(astNode: Node): {enumType: string, enumeratorList: string[]} {
-		let luaText = '';
 		let enumType = '';
 		let enumeratorList: string[] = [];
 
