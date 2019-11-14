@@ -366,7 +366,7 @@ export function getTextByPosition(luaText : string, pos : Position): string{
 	let startStr = stringArr[pos.line].substring(0, pos.character);
 	//使用正则搜索最后一个出现的 符号或者空格 TODO 待完善
 	// let reg= /[~!#%&\*\(\)\|,<>\?"';\+\-\=\[\]\{\}]/g;
-	let reg= /[~!#%&\*\(\)\|,<>\?"';\+\=\[\]\{\}]/g; // 保留"-"，用于触发文档注释
+	let reg= /[~!#%&\t\*\(\)\|,<>\?"';\+\=\[\]\{\}]/g; // 保留"-"，用于触发文档注释
 	let blankStr = startStr.replace(reg, ' ');
 	let finalArr = blankStr.split(' ');
 	let retStr = finalArr.pop();
