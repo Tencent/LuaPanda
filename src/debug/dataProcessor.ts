@@ -4,7 +4,7 @@ import { DebugLogger } from '../common/logManager';
 import { LuaDebugSession } from './luaDebug';
 
 //网络收发消息，记录回调
-export class DataProcesser {
+export class DataProcessor {
 
     public static _runtime: LuaDebugRuntime;							//RunTime句柄
     public static _socket: Socket;
@@ -23,36 +23,36 @@ export class DataProcesser {
             this.cutoffString = "";
         }
 
-        let pos = data.indexOf(DataProcesser._runtime.TCPSplitChar);
+        let pos = data.indexOf(DataProcessor._runtime.TCPSplitChar);
         if (pos < 0) {
             //没有分隔符，做截断判断
-            DataProcesser.processCutoffMsg(data);
+            DataProcessor.processCutoffMsg(data);
         } else {
             do {
                 let data_save = data.substring(0, pos); //保存的命令
-                data = data.substring(pos + DataProcesser._runtime.TCPSplitChar.length, data.length);
-                DataProcesser.recvMsgQueue.push(data_save);
-                pos = data.indexOf(DataProcesser._runtime.TCPSplitChar);
+                data = data.substring(pos + DataProcessor._runtime.TCPSplitChar.length, data.length);
+                DataProcessor.recvMsgQueue.push(data_save);
+                pos = data.indexOf(DataProcessor._runtime.TCPSplitChar);
                 if (pos < 0) {
                     //没有分隔符时，剩下的字符串不为空
-                    DataProcesser.processCutoffMsg(data);
+                    DataProcessor.processCutoffMsg(data);
                 }
             } while (pos > 0);
 
-            while (DataProcesser.recvMsgQueue.length > 0) {
-                let dt1 = DataProcesser.recvMsgQueue.shift();   //从头部取元素，保证是一个队列形式
-                DataProcesser.getData(String(dt1));
+            while (DataProcessor.recvMsgQueue.length > 0) {
+                let dt1 = DataProcessor.recvMsgQueue.shift();   //从头部取元素，保证是一个队列形式
+                DataProcessor.getData(String(dt1));
             }
         }
 
         //最后处理一下超时回调
-        for (let index = 0; index < DataProcesser.orderList.length; index++) {
-            const element = DataProcesser.orderList[index];
+        for (let index = 0; index < DataProcessor.orderList.length; index++) {
+            const element = DataProcessor.orderList[index];
             if ( element["timeOut"] && Date.now() > element["timeOut"] ){
-                // dataProcesser._runtime.showError(element["callbackId"] + " 请求超时! 详细请求信息可在 Adapter/log 中搜索此id查看");
+                // dataProcessor._runtime.showError(element["callbackId"] + " 请求超时! 详细请求信息可在 Adapter/log 中搜索此id查看");
                 let cb = element["callback"];
                 cb(element["callbackArgs"]);
-                DataProcesser.orderList.splice(index, 1);
+                DataProcessor.orderList.splice(index, 1);
             }
         }
     }
@@ -64,7 +64,7 @@ export class DataProcesser {
     private static processCutoffMsg(orgData: string) {
         let data = orgData.trim();
         if (data.length > 0) {
-            DataProcesser.cutoffString = DataProcesser.cutoffString + data; //被截断的部分
+            DataProcessor.cutoffString = DataProcessor.cutoffString + data; //被截断的部分
         }
     }
 
@@ -90,7 +90,7 @@ export class DataProcesser {
         }
         catch(e){
             if(LuaDebugSession.isNeedB64EncodeStr){
-                DataProcesser._runtime.showError(" JSON  解析失败! " + data);
+                DataProcessor._runtime.showError(" JSON  解析失败! " + data);
                 DebugLogger.AdapterInfo("[Adapter Error]: JSON  解析失败! " + data);
             }else{
                 this.getDataJsonCatch = data + "|*|";
@@ -98,21 +98,21 @@ export class DataProcesser {
             return;
         }
 
-        if (DataProcesser._runtime != null) {
+        if (DataProcessor._runtime != null) {
             if (cmdInfo == null) {
-                DataProcesser._runtime.showError("JSON 解析失败! no cmdInfo:" + data);
+                DataProcessor._runtime.showError("JSON 解析失败! no cmdInfo:" + data);
                 DebugLogger.AdapterInfo("[Adapter Error]:JSON解析失败  no cmdInfo:"+ data);
                 return;
             }
             if (cmdInfo["cmd"] == undefined) {
-                DataProcesser._runtime.showError("JSON 解析失败! no cmd:" + data);
+                DataProcessor._runtime.showError("JSON 解析失败! no cmd:" + data);
                 DebugLogger.AdapterInfo("[Adapter Warning]:JSON 解析失败 no cmd:"+ data);
             }
 
             if (cmdInfo["callbackId"] != undefined && cmdInfo["callbackId"] != "0") {
                 //进入回调（如增加断点）
-                for (let index = 0; index < DataProcesser.orderList.length; index++) {
-                    const element = DataProcesser.orderList[index];
+                for (let index = 0; index < DataProcessor.orderList.length; index++) {
+                    const element = DataProcessor.orderList[index];
                     if (element["callbackId"] == cmdInfo["callbackId"]) {
                         let cb = element["callback"];
                         if (cmdInfo["info"] != null) {
@@ -120,35 +120,35 @@ export class DataProcesser {
                         } else {
                             cb(element["callbackArgs"]);
                         }
-                        DataProcesser.orderList.splice(index, 1);
+                        DataProcessor.orderList.splice(index, 1);
                         return;
                     }
                 }
                 DebugLogger.AdapterInfo("[Adapter Error]: 没有在列表中找到回调");
             } else {
                 if (cmdInfo["cmd"] == "refreshLuaMemory") {
-                    DataProcesser._runtime.refreshLuaMemoty(cmdInfo["info"]["memInfo"]);
+                    DataProcessor._runtime.refreshLuaMemoty(cmdInfo["info"]["memInfo"]);
                     return;
                 }
 
                 if (cmdInfo["cmd"] == "tip") {
-                    DataProcesser._runtime.showTip(cmdInfo["info"]["logInfo"]);
+                    DataProcessor._runtime.showTip(cmdInfo["info"]["logInfo"]);
                     return;
                 }
 
                 if (cmdInfo["cmd"] == "tipError") {
-                    DataProcesser._runtime.showError(cmdInfo["info"]["logInfo"]);
+                    DataProcessor._runtime.showError(cmdInfo["info"]["logInfo"]);
                     return;
                 }
 
                 if (cmdInfo["cmd"] == "stopOnBreakpoint" || cmdInfo["cmd"] == "stopOnEntry" || cmdInfo["cmd"] == "stopOnStep" || cmdInfo["cmd"] == "stopOnStepIn" || cmdInfo["cmd"] == "stopOnStepOut") {
                     // 进入断点/step停止
                     let stackInfo = cmdInfo["stack"];
-                    DataProcesser._runtime.stop(stackInfo, cmdInfo["cmd"]);
+                    DataProcessor._runtime.stop(stackInfo, cmdInfo["cmd"]);
                 } else if (cmdInfo["cmd"] == "log") {
                     let logStr = cmdInfo["info"]["logInfo"];
                     if (logStr != null) {
-                        DataProcesser._runtime.printLog(logStr);
+                        DataProcessor._runtime.printLog(logStr);
                     }
                 }
             }
@@ -176,7 +176,7 @@ export class DataProcesser {
                 isSame = false;
                 ranNum = Math.floor(Math.random() * (max - min + 1) + min);
                 //检查随机数唯一性
-                DataProcesser.orderList.forEach(element => {
+                DataProcessor.orderList.forEach(element => {
                     if (element["callbackId"] == ranNum) {
                         //若遍历后isSame依然是false，说明没有重合
                         isSame = true;
@@ -194,17 +194,17 @@ export class DataProcesser {
             if (callbackArgs != null) {
                 dic["callbackArgs"] = callbackArgs;
             }
-            DataProcesser.orderList.push(dic);
+            DataProcessor.orderList.push(dic);
             sendObj["callbackId"] = ranNum.toString();
         }
 
         sendObj["cmd"] = cmd;
         sendObj["info"] = sendObject;
-        const str = JSON.stringify(sendObj) + " " + DataProcesser._runtime.TCPSplitChar + "\n";
+        const str = JSON.stringify(sendObj) + " " + DataProcessor._runtime.TCPSplitChar + "\n";
         //记录随机数和回调的对应关系
-        if (DataProcesser._socket != undefined) {
+        if (DataProcessor._socket != undefined) {
             DebugLogger.AdapterInfo("[Send Msg]:" + str);
-            DataProcesser._socket.write(str);
+            DataProcessor._socket.write(str);
         } else {
             DebugLogger.AdapterInfo("[Send Msg but socket deleted]:" + str);
         }

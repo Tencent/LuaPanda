@@ -10,14 +10,14 @@
 
 import * as Tools from './codeTools';
 import { CodeEditor } from './codeEditor';
-import { DocSymbolProcesser } from './docSymbolProcesser';
+import { DocSymbolProcessor } from './docSymbolProcessor';
 import { Logger } from './codeLogManager';
 
 export class CodeSymbol {
 	// 用 kv 结构保存所有用户文件以及对应符号结构（包含定义符号和AST，以及方法）
-	public static docSymbolMap = new Map<string, DocSymbolProcesser>();
+	public static docSymbolMap = new Map<string, DocSymbolProcessor>();
 	// 用 kv 结构保存所有预置文件以及对应符号结构（包含定义符号和AST，以及方法）
-	public static preLoadSymbolMap = new Map<string, DocSymbolProcesser>();
+	public static preLoadSymbolMap = new Map<string, DocSymbolProcessor>();
 	// 已处理文件列表，这里是防止循环引用
 	private static alreadyProcessFile;
 
@@ -311,7 +311,7 @@ export class CodeSymbol {
 	 * @param oldDocSymbol 上一次的docSymbol
 	 * @param newDocSymbol 本次更新之后的docSymbol
 	 */
-	private static updateReference(oldDocSymbol: DocSymbolProcesser, newDocSymbol: DocSymbolProcesser) {
+	private static updateReference(oldDocSymbol: DocSymbolProcessor, newDocSymbol: DocSymbolProcessor) {
 		if (!oldDocSymbol) {
 			// 初次处理无需更新
 			return;
@@ -353,7 +353,7 @@ export class CodeSymbol {
 		}
 
 		let oldDocSymbol = this.docSymbolMap.get(uri);
-		let newDocSymbol: DocSymbolProcesser = DocSymbolProcesser.create(luaText, uri);
+		let newDocSymbol: DocSymbolProcessor = DocSymbolProcessor.create(luaText, uri);
 		if(newDocSymbol){
 			if( !newDocSymbol.parseError){
 				//解析无误
@@ -387,7 +387,7 @@ export class CodeSymbol {
 			path = Tools.uriToPath(uri);
 		}
 		let luaText = Tools.getFileContent(path);
-		let docSymbol: DocSymbolProcesser = DocSymbolProcesser.create(luaText, uri, path);
+		let docSymbol: DocSymbolProcessor = DocSymbolProcessor.create(luaText, uri, path);
 		this.preLoadSymbolMap.set(uri, docSymbol);
 
 		this.docSymbolMap.set(uri, docSymbol);
@@ -472,9 +472,9 @@ export class CodeSymbol {
 		}
 		//开始递归
 		//如果uri所在文件存在错误，则无法创建成功。这里docProcesser == null
-		let docProcesser = this.docSymbolMap.get(uri);
-		if(docProcesser == null || docProcesser.getRequiresArray == null){
-			Logger.log("get docProcesser or getRequireFiles error!");
+		let docProcessor = this.docSymbolMap.get(uri);
+		if(docProcessor == null || docProcessor.getRequiresArray == null){
+			Logger.log("get docProcessor or getRequireFiles error!");
 			return;
 		}
 
@@ -495,7 +495,7 @@ export class CodeSymbol {
 			retSymbArray = retSymbArray.concat(retSymbols);
 		}
 		// 逆序搜索require
-		let reqFiles = docProcesser.getRequiresArray();
+		let reqFiles = docProcessor.getRequiresArray();
 		for(let idx = reqFiles.length -1; idx >= 0; idx--){
 			let newuri = Tools.transFileNameToUri(reqFiles[idx]['reqName']);
 			let retSymbols = this.recursiveSearchRequireTree(newuri, symbolStr, searchMethod, false);
@@ -504,7 +504,7 @@ export class CodeSymbol {
 			}
 		}
 		// 逆序搜索reference
-		let refFiles = docProcesser.getReferencesArray();
+		let refFiles = docProcessor.getReferencesArray();
 		for(let idx = refFiles.length -1; idx >= 0; idx--){
 			let newuri = refFiles[idx];
 			let retSymbols = this.recursiveSearchRequireTree(newuri, symbolStr, searchMethod, false);

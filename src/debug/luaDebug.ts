@@ -16,7 +16,7 @@ import { basename } from 'path';
 import { LuaDebugRuntime, LuaBreakpoint } from './luaDebugRuntime';
 const { Subject } = require('await-notify');
 import * as Net from 'net';
-import { DataProcesser } from './dataProcesser';
+import { DataProcessor } from './dataProcessor';
 import { DebugLogger } from '../common/logManager';
 import { StatusBarManager } from '../common/statusBarManager';
 import { LineBreakpoint, ConditionBreakpoint, LogPoint } from './breakpoint';
@@ -58,7 +58,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         this.setDebuggerColumnsStartAt1(true);
         //设置runtime实例
         this._runtime = new LuaDebugRuntime();
-        DataProcesser._runtime = this._runtime;
+        DataProcessor._runtime = this._runtime;
         this._runtime.TCPSplitChar = "|*|";
         //给状态绑定监听方法
         this._runtime.on('stopOnEntry', () => {
@@ -184,7 +184,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         LuaDebugSession._server = Net.createServer(socket => {
             //--connect--
             DebugLogger.AdapterInfo("Debugger  " + socket.remoteAddress + ":" + socket.remotePort + "  connect!");
-            DataProcesser._socket = socket;
+            DataProcessor._socket = socket;
             //向debugger发送含配置项的初始化协议
             this._runtime.start((arr, info) => {
                 DebugLogger.AdapterInfo("已建立连接，发送初始化协议和断点信息!");
@@ -239,14 +239,14 @@ export class LuaDebugSession extends LoggingDebugSession {
                 //停止连接
                 LuaDebugSession._server.close();
                 LuaDebugSession.userConnectionFlag = false;
-                delete DataProcesser._socket;
+                delete DataProcessor._socket;
                 //停止VSCode的调试模式
                 this.sendEvent(new TerminatedEvent(LuaDebugSession.autoReconnect));
             });
 
             socket.on('data', (data) => {
                 DebugLogger.AdapterInfo('[Get Msg]:' + data);
-                DataProcesser.processMsg(data.toString());
+                DataProcessor.processMsg(data.toString());
             });
         }).listen(LuaDebugSession.TCPPort, function () {
             DebugLogger.AdapterInfo("listening...");
@@ -370,7 +370,7 @@ export class LuaDebugSession extends LoggingDebugSession {
             LuaDebugSession.breakpointsArray.push(bk);
         }
 
-        if (DataProcesser._socket && LuaDebugSession.userConnectionFlag) {
+        if (DataProcessor._socket && LuaDebugSession.userConnectionFlag) {
             //已建立连接
             let callbackArgs = new Array();
             callbackArgs.push(this);

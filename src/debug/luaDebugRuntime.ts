@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { EventEmitter } from 'events';
-import { DataProcesser } from './dataProcesser';
+import { DataProcessor } from './dataProcessor';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugLogger } from '../common/logManager';
 import { StatusBarManager } from '../common/statusBarManager';
@@ -52,7 +52,7 @@ export class LuaDebugRuntime extends EventEmitter {
         for (let key in sendArgs) {
             arrSend[key] = String(sendArgs[key]);
         }
-        DataProcesser.commandToDebugger('initSuccess', arrSend, callback, callbackArgs);
+        DataProcessor.commandToDebugger('initSuccess', arrSend, callback, callbackArgs);
     }
 
     /**
@@ -64,7 +64,7 @@ export class LuaDebugRuntime extends EventEmitter {
     public continue(callback, callbackArgs, event = 'continue') {
         DebugLogger.AdapterInfo("continue");
         let arrSend = new Object();
-        DataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
+        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -80,7 +80,7 @@ export class LuaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["varName"] = String(varName);
         arrSend["stackId"] = String(frameId);
-        DataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
+        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -96,7 +96,7 @@ export class LuaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["Expression"] = String(expression);
         arrSend["stackId"] = String(frameId);
-        DataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
+        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -116,7 +116,7 @@ export class LuaDebugRuntime extends EventEmitter {
         arrSend["stackId"] = String(frameId);
         arrSend["newValue"] = String(newValue);
         arrSend["varName"] = String(name);
-        DataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
+        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -133,7 +133,7 @@ export class LuaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["varRef"] = String(variableRef);
         arrSend["stackId"] = String(frameId);
-        DataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs, 3);
+        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs, 3);
     }
 
     /**
@@ -141,7 +141,7 @@ export class LuaDebugRuntime extends EventEmitter {
      */
     public stopRun(callback, callbackArgs, event = 'stopRun') {
         let arrSend = new Object();
-        DataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
+        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -150,7 +150,7 @@ export class LuaDebugRuntime extends EventEmitter {
     public step(callback, callbackArgs, event = 'stopOnStep') {
         DebugLogger.AdapterInfo("step:" + event);
         let arrSend = new Object();
-        DataProcesser.commandToDebugger(event, arrSend, callback, callbackArgs);
+        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -158,7 +158,7 @@ export class LuaDebugRuntime extends EventEmitter {
      */
     public luaGarbageCollect(event = "LuaGarbageCollect") {
         let arrSend = new Object();
-        DataProcesser.commandToDebugger(event, arrSend);
+        DataProcessor.commandToDebugger(event, arrSend);
     }
 
     /**
@@ -173,7 +173,7 @@ export class LuaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["path"] = path;
         arrSend["bks"] = bks;
-        DataProcesser.commandToDebugger("setBreakPoint", arrSend, callback, callbackArgs);
+        DataProcessor.commandToDebugger("setBreakPoint", arrSend, callback, callbackArgs);
     }
 
     /**

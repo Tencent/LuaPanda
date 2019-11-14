@@ -39,7 +39,7 @@ enum travelMode {
 	FIND_REFS = 2 //查找引用符号
 }
 
-export class DocSymbolProcesser {
+export class DocSymbolProcessor {
 	private docInfo: Tools.docInformation; // 记录.lua文本中的所有信息
 	// 下面是临时记录信息的变量
 	// refs 引用相关
@@ -58,7 +58,7 @@ export class DocSymbolProcesser {
 
 	// 静态创建方法，创建文件的 定义符号列表（定义符号tools.docInformation 数组）
 	public static create(luaText: string, uri: string, path?: string) {
-		let instance: DocSymbolProcesser = new DocSymbolProcesser();
+		let instance: DocSymbolProcessor = new DocSymbolProcessor();
 		if(!path){
 			path = Tools.uriToPath(uri);
 		}
@@ -74,7 +74,7 @@ export class DocSymbolProcesser {
 
 			//建立空文件（没有AST）
 			instance.docInfo = new  Tools.docInformation(new Object, uri, path);
-			DocSymbolProcesser.tempSaveInstance = instance;
+			DocSymbolProcessor.tempSaveInstance = instance;
 			//解析
 			try {
 				luaparse.parse(luaText, { locations: true, scope: true, onCreateNode: instance.onCreateNode});
@@ -539,15 +539,15 @@ export class DocSymbolProcesser {
 		//require
 		let deepLayer: Array<Tools.chunkClass> = new Array<Tools.chunkClass>();
 		if(node['type'] == 'CallExpression' || node['type'] == 'StringCallExpression'){
-			DocSymbolProcesser.tempSaveInstance.traversalAST(node, travelMode.BUILD, deepLayer);
+			DocSymbolProcessor.tempSaveInstance.traversalAST(node, travelMode.BUILD, deepLayer);
 		}
 		//定义 |  可以处理，但是失去了深度信息
 		if(node['type'] == "LocalStatement"){
-			DocSymbolProcesser.tempSaveInstance.traversalAST(node, travelMode.BUILD, deepLayer);
+			DocSymbolProcessor.tempSaveInstance.traversalAST(node, travelMode.BUILD, deepLayer);
 		}
 			//function 定义
 		if(node['type'] == "FunctionDeclaration"){
-			DocSymbolProcesser.tempSaveInstance.traversalAST(node, travelMode.BUILD, deepLayer);
+			DocSymbolProcessor.tempSaveInstance.traversalAST(node, travelMode.BUILD, deepLayer);
 		}
 	}
 
