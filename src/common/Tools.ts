@@ -14,7 +14,8 @@ export class Tools {
     public static VSCodeOpenedFolder;   // VSCode当前打开的用户工程路径。打开文件夹后，由languageServer赋值
     public static luapandaPathInUserProj;   // 用户工程中luapanda文件所在的路径，它在调试器启动时赋值。但也可能工程中不存在luapanda文件导致路径为空
     public static VSCodeExtensionPath;  // VSCode插件所在路径，插件初始化时就会被赋值
-    
+    public static client;
+
     // 路径相关函数
     // 获取扩展中预置的lua文件位置
     public static getLuaPathInExtension() : string{

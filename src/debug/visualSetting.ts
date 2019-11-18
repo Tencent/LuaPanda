@@ -90,6 +90,13 @@ export class VisualSetting {
             case 'on_off_analyzer':
                 this.on_off_analyzer(messageObj);
                 break;
+            case 'preAnalysisCpp':
+                if(!messageObj.path || messageObj.path.trim() == ''){
+                    DebugLogger.showTips("C++ 文件分析失败，传入路径为空!",2);
+                }else{
+                    Tools.client.sendNotification('preAnalysisCpp', message.webInfo);
+                }
+            break;
         }
     }
 

@@ -168,6 +168,13 @@ connection.onInitialize((initPara: InitializeParams) => {
 	}
 });
 
+
+connection.onNotification("preAnalysisCpp", (message) =>{
+	let msgObj = JSON.parse(message);
+	let anaPath = msgObj['path'];
+	CppCodeProcessor.processCppDir(anaPath);
+});
+
 connection.onInitialized(() => {
 	if (hasConfigurationCapability) {
 		connection.client.register(

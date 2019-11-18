@@ -75,10 +75,26 @@
             <span class="onoffswitch-switch"></span>
         </label>
     </div> 
+
+    <br>
+    <label class="lab" style="margin:10px 0px" title="分析CPP文件，生成对应的lua文件用于代码补全"><font size="3" face="Arial">预先分析的文件路径:  </font></label>&nbsp;&nbsp;&nbsp;<input style="margin:5px" id="preAnalysisPath"
+    type="text" name="lname" /> <input class="btn_st" style="margin:20px" type="button" value="生成文件" onclick="preProcess();" />
+    <br />
     <br>
 
     <script>
         const vscode = acquireVsCodeApi();
+
+        function preProcess(){
+            let preAnalysisPath = document.getElementById('preAnalysisPath');
+            let saveObj = new Object();
+            saveObj["command"] = "preAnalysisCpp";
+            saveObj["path"] = preAnalysisPath.value;
+            let webInfo = JSON.stringify(saveObj);
+            vscode.postMessage({
+                webInfo
+            });
+        }
 
         function changeLuaAnalyzerSwitch()
         {

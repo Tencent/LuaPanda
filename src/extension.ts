@@ -115,6 +115,7 @@ export function activate(context: ExtensionContext) {
 	// Start the client. This will also launch the server
 	client.start();
 	client.onReady().then(() => {
+        Tools.client = client;
         client.onNotification("showProgress", showProgress);
         client.onNotification("setRootFolder", setRootFolder);
         client.onNotification("setLuaPandaPath", setLuaPandaPath);
@@ -125,7 +126,8 @@ export function activate(context: ExtensionContext) {
 export function deactivate() {
     if (!client) {
 		return undefined;
-	}
+    }
+    Tools.client = undefined;
 	return client.stop();
 }
 
