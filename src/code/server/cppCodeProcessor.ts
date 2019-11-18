@@ -32,12 +32,13 @@ export class CppCodeProcessor {
 	public static processCppDir(cppDir: string) {
 		this.removeCppInterfaceIntelliSenseRes(this.cppInterfaceIntelliSenseResPath);
 		let cppHeaderFiles = this.getCppHeaderFiles(cppDir);
-		// let cppSourceFiles = this.getCppSourceFiles(cppDir);
+		let cppSourceFiles = this.getCppSourceFiles(cppDir);
 
-		this.parseCppFiles(cppHeaderFiles);
+		this.parseCppFiles(cppHeaderFiles, CppFileType.CppHeaderFile);
+		this.parseCppFiles(cppSourceFiles, CppFileType.CppSourceFile);
 	}
 
-	private static async parseCppFiles(filePaths: string[]) {
+	private static async parseCppFiles(filePaths: string[], cppFileType: CppFileType) {
 		for (let i = 0; i < filePaths.length; i++) {
 			let cppText = this.getCppCode(filePaths[i]);
 
@@ -50,7 +51,11 @@ export class CppCodeProcessor {
 					text: true,
 					basePath: this.getWasmDir()
 				});
-				this.parseAST2LuaCode(astNode);
+				if (cppFileType === CppFileType.CppHeaderFile) {
+					this.parseCppHeaderAST2LuaCode(astNode);
+				} else if (cppFileType === CppFileType.CppSourceFile) {
+					this.parseCppSourceAST2LuaCode(astNode);
+				}
 			} catch(e) {
 				Logger.ErrorLog("Parse cpp file failed, filePath: " + filePaths[i] +" error: ");
 				Logger.ErrorLog(e);
@@ -139,51 +144,51 @@ export class CppCodeProcessor {
 		return content;
 	}
 
-	private static parseAST2LuaCode(astNode: Node) {
+	private static parseCppHeaderAST2LuaCode(astNode: Node) {
 		let foundUCLASS: boolean = false;
 		let foundUSTRUCT: boolean = false;
 		let foundUENUM: boolean = false;
 
 		astNode.children.forEach((child: Node) => {
-			if (child.type == 'comment') {
+			if (child.type === 'comment') {
 				return;
 			}
 
-			if (child.type == 'expression_statement' && child.text.match(URegex.UCLASS)) {
+			if (child.type === 'expression_statement' && child.text.match(URegex.UCLASS)) {
 				// 标记找到UCLASS，即下一个Node。
 				foundUCLASS = true;
-			} else if (child.type == 'expression_statement' && child.text.match(URegex.USTRUCT)) {
+			} else if (child.type === 'expression_statement' && child.text.match(URegex.USTRUCT)) {
 				foundUSTRUCT = true;
-			} else if (child.type == 'expression_statement' && child.text.match(URegex.UENUM)) {
+			} else if (child.type === 'expression_statement' && child.text.match(URegex.UENUM)) {
 				foundUENUM = true;
-			} else if (foundUCLASS == true) {
+			} else if (foundUCLASS === true) {
 				let result = this.handleUCLASS(child);
 				foundUCLASS = false;
-				if (result.className != '') {
+				if (result.className !== '') {
 					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.className + '.lua');
 					this.appendText2File(result.luaText, filePath);
 					CodeSymbol.refreshSinglePreLoadFile(filePath);
 				}
-			} else if (foundUSTRUCT == true) {
+			} else if (foundUSTRUCT === true) {
 				let result = this.handleUSTRUCT(child);
 				foundUSTRUCT = false;
-				if (result.structName != '') {
+				if (result.structName !== '') {
 					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.structName + '.lua');
 					this.appendText2File(result.luaText, filePath);
 					CodeSymbol.refreshSinglePreLoadFile(filePath);
 				}
-			} else if (foundUENUM == true) {
+			} else if (foundUENUM === true) {
 				let result = this.handleUENUM(child);
 				foundUENUM = false;
-				if (result.enumType != '') {
+				if (result.enumType !== '') {
 					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.enumType + '.lua');
 					this.appendText2File(result.luaText, filePath);
 					CodeSymbol.refreshSinglePreLoadFile(filePath);
 				}
 				// 外层有namespace的情况，要放到UENUM后面，UENUM后面的节点有可能是namespace
 				child.children.forEach((child: Node) => {
-					if (child.type == 'declaration_list') {
-						this.parseAST2LuaCode(child);
+					if (child.type === 'declaration_list') {
+						this.parseCppHeaderAST2LuaCode(child);
 					}
 				});
 			}
@@ -229,7 +234,7 @@ export class CppCodeProcessor {
 		let structName = '';
 		let declarationList: {uPropertys: string, uFunctions: string} = {uPropertys: '', uFunctions: ''};
 
-		if (astNode.type == 'struct_specifier') {
+		if (astNode.type === 'struct_specifier') {
 			astNode.children.forEach((child: Node) => {
 				switch (child.type) {
 					case 'type_identifier':
@@ -246,9 +251,9 @@ export class CppCodeProcessor {
 			let structDeclaration: string;
 			structDeclaration = structName + ' = {}\n';
 			luaText = structDeclaration + luaText;
-		} else if (astNode.type == 'declaration') {
+		} else if (astNode.type === 'declaration') {
 			astNode.children.forEach((child: Node) => {
-				if (child.type == 'struct_specifier') {
+				if (child.type === 'struct_specifier') {
 					let result = this.handleUSTRUCT(child);
 					luaText = result.luaText;
 					structName = result.structName;
@@ -263,7 +268,7 @@ export class CppCodeProcessor {
 		let luaText = '';
 		let enumType = '';
 
-		if (astNode.type == 'namespace_definition') {
+		if (astNode.type === 'namespace_definition') {
 			astNode.children.forEach((child: Node) => {
 				switch (child.type) {
 					case 'identifier':
@@ -272,7 +277,7 @@ export class CppCodeProcessor {
 
 					case 'declaration_list':
 						child.children.forEach((child: Node) => {
-							if (child.type == 'enum_specifier') {
+							if (child.type === 'enum_specifier') {
 								let result = this.handleEnumSpecifier(child);
 								luaText += enumType + ' = {}\n';
 								result.enumeratorList.forEach((enumerator) => {
@@ -283,17 +288,17 @@ export class CppCodeProcessor {
 						break;
 				}
 			});
-		} else if (astNode.type == 'enum_specifier') {
+		} else if (astNode.type === 'enum_specifier') {
 			let result = this.handleEnumSpecifier(astNode);
 			enumType = result.enumType;
 			luaText += enumType + ' = {}\n';
 			result.enumeratorList.forEach((enumerator) => {
 				luaText += enumType + '.' + enumerator + ' = nil\n';
 			});
-		} else if (astNode.type == 'declaration') {
+		} else if (astNode.type === 'declaration') {
 			// enum class
 			astNode.children.forEach((child: Node) => {
-				if (child.type == 'init_declarator') {
+				if (child.type === 'init_declarator') {
 					let result = this.handleInitDeclarator(child);
 					enumType = result.enumType;
 					luaText += enumType + ' = {}\n';
@@ -347,11 +352,11 @@ export class CppCodeProcessor {
 		let enumeratorList: string[] = [];
 
 		astNode.children.forEach((child: Node) => {
-			if (child.type == 'identifier') {
+			if (child.type === 'identifier') {
 				enumeratorList.push(child.text);
-			} else if (child.type == 'enumerator') {
+			} else if (child.type === 'enumerator') {
 				child.children.forEach((child: Node) => {
-					if (child.type == 'identifier') {
+					if (child.type === 'identifier') {
 						enumeratorList.push(child.text);
 					}
 				});
@@ -364,7 +369,7 @@ export class CppCodeProcessor {
 	private static handleBaseClassClause(astNode: Node, className: string): string[] {
 		let baseClass: string[] = [];
 		astNode.children.forEach((child: Node) => {
-			if (child.type == 'type_identifier') {
+			if (child.type === 'type_identifier') {
 				baseClass.push(child.text);
 			}
 		});
@@ -377,21 +382,21 @@ export class CppCodeProcessor {
 		let foundUFUNCTION = false;
 		let foundUPROPERTY = false;
 		astNode.children.forEach((child: Node) => {
-			if (child.type == 'comment') {
+			if (child.type === 'comment') {
 				return;
 			}
 
-			if (foundUFUNCTION == true) {
+			if (foundUFUNCTION === true) {
 				uFunctions += this.handleUFUNCTION(child, className);
 				foundUFUNCTION = false;
-			} else if (foundUPROPERTY == true) {
+			} else if (foundUPROPERTY === true) {
 				uPropertys += this.handleUPROPERTY(child, className);
 				foundUPROPERTY = false;
-			} else if ((child.type == 'field_declaration' || child.type == 'declaration') && child.text.match(URegex.UFUNCTION)) {
+			} else if ((child.type === 'field_declaration' || child.type === 'declaration') && child.text.match(URegex.UFUNCTION)) {
 				foundUFUNCTION = true;
-			} else if ((child.type == 'field_declaration' || child.type == 'declaration') && child.text.match(URegex.UPROPERTY)) {
+			} else if ((child.type === 'field_declaration' || child.type === 'declaration') && child.text.match(URegex.UPROPERTY)) {
 				foundUPROPERTY = true;
-			} else if (child.type == 'preproc_if' || child.type == 'preproc_ifdef') {
+			} else if (child.type === 'preproc_if' || child.type === 'preproc_ifdef') {
 				let declarationList = this.handleDeclarationList(child, className);
 				uPropertys += declarationList.uPropertys;
 				uFunctions += declarationList.uFunctions;
@@ -413,7 +418,7 @@ export class CppCodeProcessor {
 				case 'pointer_declarator':
 				case 'reference_declarator':
 					child.children.forEach((child: Node) => {
-						if (child.type == 'function_declarator') {
+						if (child.type === 'function_declarator') {
 							luaText += this.handleFunctionDeclarator(child, className);
 						}
 					});
@@ -448,12 +453,12 @@ export class CppCodeProcessor {
 		let params: string[] = [];
 
 		astNode.children.forEach((child: Node) => {
-			if (child.type == 'parameter_declaration') {
+			if (child.type === 'parameter_declaration') {
 				params = params.concat(this.handleParameterDeclaration(child));
 			}
 		});
 		for (let i = 0; i < params.length; i++) {
-			if (i == 0) {
+			if (i === 0) {
 				luaText += params[i];
 			} else {
 				luaText += ", " + params[i];
@@ -486,7 +491,7 @@ export class CppCodeProcessor {
 	private static handleReferenceDeclarator(astNode: Node): string {
 		let param = '';
 		astNode.children.forEach((child: Node) => {
-			if (child.type == 'identifier') {
+			if (child.type === 'identifier') {
 				param = child.text;
 			}
 		});
@@ -496,7 +501,7 @@ export class CppCodeProcessor {
 	private static handlePointerDeclarator(astNode: Node): string {
 		let param = '';
 		astNode.children.forEach((child: Node) => {
-			if (child.type == 'identifier') {
+			if (child.type === 'identifier') {
 				param = child.text;
 			}
 		});
@@ -515,7 +520,7 @@ export class CppCodeProcessor {
 
 				case 'init_declarator':
 					child.children.forEach((child: Node) => {
-						if (child.type == 'identifier') {
+						if (child.type === 'identifier') {
 							luaText += className + '.' + child.text + " = nil\n";
 						}
 					});
@@ -524,7 +529,7 @@ export class CppCodeProcessor {
 				case 'pointer_declarator':
 				case 'reference_declarator':
 					child.children.forEach((child: Node) => {
-						if (child.type == 'field_identifier') {
+						if (child.type === 'field_identifier') {
 							luaText += className + '.' + child.text + " = nil\n";
 						}
 					});
@@ -533,6 +538,105 @@ export class CppCodeProcessor {
 		});
 		return luaText;
 	}
+
+	private static parseCppSourceAST2LuaCode(astNode: Node) {
+		let className: string = "";
+		let baseClass: string[] = [];
+		let methodList: string[] = [];
+
+		astNode.children.forEach((child: Node) => {
+			if (child.type === 'comment') {
+				return;
+			}
+
+			if (child.type === 'expression_statement' && child.text.match(URegex.DefLuaClass)) {
+				let result = this.handleDefLuaClass(child);
+				className = result.className;
+				baseClass = result.baseClass;
+			} else if (child.type === 'expression_statement' && child.text.match(URegex.DefLuaMethod)) {
+				methodList.push(this.handleDefLuaMethod(child, className));
+			} else if (child.type === 'expression_statement' && child.text.match(URegex.EndDef)) {
+				if (className !== '') {
+					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, className + '.lua');
+					let luaText = this.assembleLuaClassText(className, baseClass, methodList);
+					this.appendText2File(luaText, filePath);
+					CodeSymbol.refreshSinglePreLoadFile(filePath);
+					className = '';
+					baseClass.length = 0;
+					methodList.length = 0;
+				}
+			}
+
+			else if (child.type === 'namespace_definition') {
+				child.children.forEach((child: Node) => {
+					if (child.type === 'declaration_list') {
+						this.parseCppSourceAST2LuaCode(child);
+					}
+				});
+			}
+		});
+	}
+
+	private static handleDefLuaClass(astNode: Node): {className: string, baseClass: string[]} {
+		let argumentList: string[] = [];
+
+		let argumentListNode: Node;
+		astNode.children.forEach((child: Node) => {
+			if (child.type === 'call_expression') {
+				child.children.forEach((child: Node) => {
+					if (child.type === 'argument_list') {
+						argumentListNode = child;
+					}
+				});
+			}
+		});
+
+		argumentListNode.children.forEach((child: Node) => {
+			if (child.type === 'identifier') {
+				argumentList.push(child.text);
+			}
+		});
+
+		return {className: argumentList[0], baseClass: argumentList.slice(1)};
+	}
+
+	private static handleDefLuaMethod(astNode: Node, className: string): string {
+		let luaText: string = 'function ';
+
+		astNode.children.forEach((child: Node) => {
+			if (child.type === 'call_expression') {
+				child.children.forEach((child: Node) => {
+					if (child.type === 'argument_list') {
+						child.children.forEach((child: Node) => {
+							if (child.type === 'identifier') {
+								luaText += className + '.' + child.text + '()';
+							}
+						});
+					}
+				});
+			}
+
+		});
+		luaText += ' end\n'
+
+		return luaText;
+	}
+
+	private static assembleLuaClassText(className: string, baseClass: string[], methodList: string[]): string {
+		let luaText: string = className + ' = {}'
+
+		if (baseClass.length > 0) {
+			luaText += ' ---@type ' + baseClass[0] + '\n';
+		} else {
+			luaText += '\n';
+		}
+		methodList.forEach((method: string) => {
+			luaText += method;
+		});
+
+		return luaText;
+	}
+
 
 	/**
 	 * 获取tree-sitter wasm文件目录
@@ -556,7 +660,6 @@ export class CppCodeProcessor {
 		return dir.files(dirPath, 'file', null, options);
 	}
 
-	/*
 	private static getCppSourceFiles(dirPath: string): string[] {
 		let options = {
 			sync: true,
@@ -571,7 +674,6 @@ export class CppCodeProcessor {
 
 		return dir.files(dirPath, 'file', null, options);
 	}
-	*/
 
 	/**
 	 * 将文本写入指定文件。
@@ -637,4 +739,13 @@ class URegex {
 	public static GENERATED_USTRUCT_BODY = new RegExp(/\s*(GENERATED_USTRUCT_BODY\s*\(.*\))/);
 	public static DEPRECATED             = new RegExp(/\s*(DEPRECATED\s*\(.*\))/);
 	public static UMETA                  = new RegExp(/\s*(UMETA\s*\(.*\))/);
+
+	public static DefLuaClass  = new RegExp(/\s*(DefLuaClass\s*\(.*\))/);
+	public static DefLuaMethod = new RegExp(/\s*(DefLuaMethod\s*\(.*\))/);
+	public static EndDef       = new RegExp(/\s*(EndDef\s*\(.*\))/);
+}
+
+enum CppFileType {
+	CppHeaderFile = 0,
+	CppSourceFile = 1,
 }
