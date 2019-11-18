@@ -363,6 +363,7 @@ export class CodeSymbol {
 		let oldDocSymbol = this.docSymbolMap.get(uri);
 		let newDocSymbol: DocSymbolProcesser = DocSymbolProcesser.create(luaText, uri);
 		if(newDocSymbol){
+			Tools.AddTo_FileName_Uri_Cache(Tools.getPathNameAndExt(uri)['name'] , uri)
 			if( !newDocSymbol.parseError){
 				//解析无误
 				this.docSymbolMap.set(uri, newDocSymbol);
