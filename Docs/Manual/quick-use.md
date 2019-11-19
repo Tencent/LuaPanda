@@ -56,7 +56,21 @@
 
 
 
-#### cocos2dx
+### unlua
+
+目前unlua默认不集成luasocket，需要安装调试依赖的luasocket库，之后再进行调试接入。
+
+1. **安装luasocket** 
+   + mac下可以使用 **源码编译/插件管理工具安装/拷贝库文件** 的方式，把`socket和mime文件夹`部署到/usr/local/lib/lua/5.3/ 目录下，这个目录下的库当ue运行时可以被引用到。
+   + win下可以用 **源码编译/拷贝库文件** 的方式，把luascoket拷贝到自定义位置，并在lua代码中修改package.cpath，使库文件可以被引用到。比如部署在c:/luasocket下，cpath要修改为`package.cpath = package.cpath .. ";c:/luasocket/?.dll";`, 并用 `require("socket.core");` 验证是否有报错。
+   + luasocket源码推荐使用 https://github.com/diegonehab/luasocket 。使用此源码编译出的库放在本工程的/luasocketBin/下。
+2. **放入调试器文件** 把github中 /Debugger 下的 `LuaPanda.lua` 文件拷贝到unlua工程 `unlua/Content/Script/`下，和UnLua.lua 文件同级
+3. **配置工程** 把`Script`文件夹放入 VSCode , 点击 VSCode 调试选项卡下的齿轮图标，选择 LuaPanda。打开生成的 `.vscode/launch.json` 文件,  **调整其中的stopOnEntry为 false。**
+4. **开始调试** 在执行的lua代码中加入`require("LuaPanda").start("127.0.0.1",8818)` 。VSCode切换到调试选项卡，配置项选择`LuaPanda`， 点击 VSCode 的开始调试箭头，再运行ue4，在加入 require 的位置后会自动停止。之后可以打断点调试。
+
+
+
+### cocos2dx
 
 可能存在的问题：LuaPanda目前支持标准lua虚拟机，cocos2dx集成的是luajit，可能会在调试函数尾调用时出现跳步的情况，后续完整支持luajit后会解决此问题。
 
@@ -66,3 +80,4 @@
 3. **配置工程** 把`src`文件夹拖入 VSCode , 点击 VSCode 调试选项卡下的齿轮图标，选择 LuaPanda。
 
 4. **开始调试** 在main.lua文件 `require "cocos.init"` 行之前加入代码    `require("LuaPanda").start("127.0.0.1",8818)` 。VSCode切换到调试选项卡，配置项选择`LuaPanda`， 点击 VSCode 的开始调试箭头，再运行cocos2dx工程，在加入 require 的位置后会自动停止。之后可以打断点调试。
+
