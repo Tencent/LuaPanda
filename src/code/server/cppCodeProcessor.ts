@@ -637,7 +637,8 @@ export class CppCodeProcessor {
 				className = result.className;
 				baseClass = result.baseClass;
 			} else if (child.type === 'expression_statement' && child.text.match(URegex.DefLuaMethod)) {
-				methodList.push(this.handleDefLuaMethod(child, className));
+				let functionInfo = classFunctionInfo.get(className);
+				methodList.push(this.handleDefLuaMethod(child, className, functionInfo));
 			} else if (child.type === 'expression_statement' && child.text.match(URegex.EndDef)) {
 				if (className !== '') {
 					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, className + '.lua');
@@ -683,7 +684,7 @@ export class CppCodeProcessor {
 		return {className: argumentList[0], baseClass: argumentList.slice(1)};
 	}
 
-	private static handleDefLuaMethod(astNode: Node, className: string): string {
+	private static handleDefLuaMethod(astNode: Node, className: string, functionInfo: Map<string, string[]>): string {
 		let luaText: string = 'function ';
 
 		astNode.children.forEach((child: Node) => {
@@ -692,7 +693,19 @@ export class CppCodeProcessor {
 					if (child.type === 'argument_list') {
 						child.children.forEach((child: Node) => {
 							if (child.type === 'identifier') {
-								luaText += className + '.' + child.text + '()';
+								luaText += className + '.' + child.text + '(';
+								// 处理函数参数列表
+								if (functionInfo.has(child.text)) {
+									let paramList = functionInfo.get(child.text);
+									for (let i = 0; i < paramList.length; i++) {
+										if (i === 0) {
+											luaText += paramList[i];
+										} else {
+											luaText += ", " + paramList[i];
+										}
+									}
+								}
+								luaText += ')';
 							}
 						});
 					}
