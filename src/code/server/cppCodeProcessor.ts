@@ -23,22 +23,35 @@ export class CppCodeProcessor {
 	 */
 	public static setWorkspaceRootPath(workspaceRootPath: string | null) {
 		this.workspaceRootPath = workspaceRootPath;
-		this.cppInterfaceIntelliSenseResPath = path.join(this.workspaceRootPath, '.vscode/LuaAnalyzer/IntelliSenseRes/UECppInterface');
+		this.cppInterfaceIntelliSenseResPath = path.join(this.workspaceRootPath, '.vscode/LuaPanda/IntelliSenseRes/UECppInterface');
 	}
 	/**
 	 * 将静态导出的C++代码处理成Lua table用于代码提示。
 	 * @param cppDir C++代码根目录。
 	 */
 	public static processCppDir(cppDir: string) {
-		this.removeCppInterfaceIntelliSenseRes(this.cppInterfaceIntelliSenseResPath);
+		if (this.cppInterfaceIntelliSenseResPath === null) {
+			Logger.ErrorLog('未打开文件夹，无法使用此功能！');
+			// TODO 弹窗提示
+			return;
+		}
+
+		// 生成一个子目录对应用户代码路径
+		let subDir = cppDir;
+		subDir = subDir.replace(/\//g, ' ');
+		subDir = subDir.replace(/\\/g, ' ');
+		subDir = subDir.trim();
+		subDir = subDir.replace(/ /g, '-');
+
+		this.removeCppInterfaceIntelliSenseRes(path.join(this.cppInterfaceIntelliSenseResPath, subDir));
 		let cppHeaderFiles = this.getCppHeaderFiles(cppDir);
 		let cppSourceFiles = this.getCppSourceFiles(cppDir);
 
-		this.parseCppFiles(cppHeaderFiles, CppFileType.CppHeaderFile);
-		this.parseCppFiles(cppSourceFiles, CppFileType.CppSourceFile);
+		this.parseCppFiles(cppHeaderFiles, CppFileType.CppHeaderFile, subDir);
+		this.parseCppFiles(cppSourceFiles, CppFileType.CppSourceFile, subDir);
 	}
 
-	private static async parseCppFiles(filePaths: string[], cppFileType: CppFileType) {
+	private static async parseCppFiles(filePaths: string[], cppFileType: CppFileType, subDir: string) {
 		for (let i = 0; i < filePaths.length; i++) {
 			let cppText = this.getCppCode(filePaths[i]);
 
@@ -52,10 +65,10 @@ export class CppCodeProcessor {
 					basePath: this.getWasmDir()
 				});
 				if (cppFileType === CppFileType.CppHeaderFile) {
-					this.parseCppHeaderAST2LuaCode(astNode);
+					this.parseCppHeaderAST2LuaCode(astNode, subDir);
 				} else if (cppFileType === CppFileType.CppSourceFile) {
 					let classFunctionInfo = this.getClassFunctionInfo(astNode);
-					this.parseCppSourceAST2LuaCode(astNode, classFunctionInfo);
+					this.parseCppSourceAST2LuaCode(astNode, classFunctionInfo, subDir);
 				}
 			} catch(e) {
 				Logger.ErrorLog("Parse cpp file failed, filePath: " + filePaths[i] +" error: ");
@@ -145,7 +158,7 @@ export class CppCodeProcessor {
 		return content;
 	}
 
-	private static parseCppHeaderAST2LuaCode(astNode: Node) {
+	private static parseCppHeaderAST2LuaCode(astNode: Node, subDir: string) {
 		let foundUCLASS: boolean = false;
 		let foundUSTRUCT: boolean = false;
 		let foundUENUM: boolean = false;
@@ -166,7 +179,7 @@ export class CppCodeProcessor {
 				let result = this.handleUCLASS(child);
 				foundUCLASS = false;
 				if (result.className !== '') {
-					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.className + '.lua');
+					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, subDir, result.className + '.lua');
 					this.appendText2File(result.luaText, filePath);
 					CodeSymbol.refreshSinglePreLoadFile(filePath);
 				}
@@ -174,7 +187,7 @@ export class CppCodeProcessor {
 				let result = this.handleUSTRUCT(child);
 				foundUSTRUCT = false;
 				if (result.structName !== '') {
-					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.structName + '.lua');
+					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, subDir, result.structName + '.lua');
 					this.appendText2File(result.luaText, filePath);
 					CodeSymbol.refreshSinglePreLoadFile(filePath);
 				}
@@ -182,14 +195,14 @@ export class CppCodeProcessor {
 				let result = this.handleUENUM(child);
 				foundUENUM = false;
 				if (result.enumType !== '') {
-					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, result.enumType + '.lua');
+					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, subDir, result.enumType + '.lua');
 					this.appendText2File(result.luaText, filePath);
 					CodeSymbol.refreshSinglePreLoadFile(filePath);
 				}
 				// 外层有namespace的情况，要放到UENUM后面，UENUM后面的节点有可能是namespace
 				child.children.forEach((child: Node) => {
 					if (child.type === 'declaration_list') {
-						this.parseCppHeaderAST2LuaCode(child);
+						this.parseCppHeaderAST2LuaCode(child, subDir);
 					}
 				});
 			}
@@ -622,7 +635,7 @@ export class CppCodeProcessor {
 		return paramList;
 	}
 
-	private static parseCppSourceAST2LuaCode(astNode: Node, classFunctionInfo: Map<string, Map<string, string[]>>) {
+	private static parseCppSourceAST2LuaCode(astNode: Node, classFunctionInfo: Map<string, Map<string, string[]>>, subDir: string) {
 		let className: string = "";
 		let baseClass: string[] = [];
 		let methodList: string[] = [];
@@ -641,7 +654,7 @@ export class CppCodeProcessor {
 				methodList.push(this.handleDefLuaMethod(child, className, functionInfo));
 			} else if (child.type === 'expression_statement' && child.text.match(URegex.EndDef)) {
 				if (className !== '') {
-					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, className + '.lua');
+					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, subDir, className + '.lua');
 					let luaText = this.assembleLuaClassText(className, baseClass, methodList);
 					this.appendText2File(luaText, filePath);
 					CodeSymbol.refreshSinglePreLoadFile(filePath);
@@ -654,7 +667,7 @@ export class CppCodeProcessor {
 			else if (child.type === 'namespace_definition') {
 				child.children.forEach((child: Node) => {
 					if (child.type === 'declaration_list') {
-						this.parseCppSourceAST2LuaCode(child, classFunctionInfo);
+						this.parseCppSourceAST2LuaCode(child, classFunctionInfo, subDir);
 					}
 				});
 			}
