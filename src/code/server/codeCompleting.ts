@@ -68,7 +68,17 @@ export class CodeCompleting {
 	}
 
 	// 根据tag类型修改查找值
-	private static searchTag( addElement, prefix, completingArray, uri) {
+	private static searchTag( addElement, prefix, completingArray, uri, searchDeep?) {
+		if(!searchDeep){
+			searchDeep = 3;
+		}else{
+			if(searchDeep <= 0){
+				return;
+			}else{
+				searchDeep--;
+			}
+		}
+
 		// 防止循环搜索
 		if(this.alreadychkSymbol[addElement.searchName]){
 			return;
@@ -80,13 +90,13 @@ export class CodeCompleting {
 		if(addElement.tagReason == Tools.TagReason.UserTag || addElement.tagReason == Tools.TagReason.Equal){
 			// 用户标记 / 等号标记
 			searchName = addElement.tagType;
-			this.realSearchTag(addElement, prefix, completingArray, uri, searchName)
+			this.realSearchTag(addElement, prefix, completingArray, uri, searchName, searchDeep)
 		}
 		
 		if(addElement.tagReason == Tools.TagReason.MetaTable){
 			//元表标记
 			searchName = addElement.tagType + ".__index";
-			this.realSearchTag(addElement, prefix, completingArray, uri, searchName);
+			this.realSearchTag(addElement, prefix, completingArray, uri, searchName, searchDeep);
 		}
 
 		// 符号 = 文件返回值
@@ -96,18 +106,18 @@ export class CodeCompleting {
 			if(retTag && retTag.length > 0){
 				searchName = retTag;
 			}
-			this.realSearchTag(addElement, prefix, completingArray, uri, searchName);
+			this.realSearchTag(addElement, prefix, completingArray, uri, searchName, searchDeep);
 		}
 
 		//函数返回值
 		if(addElement.funcRets){
 			searchName = addElement.funcRets.name;
-			this.realSearchTag(addElement, prefix, completingArray, uri, searchName, true);
+			this.realSearchTag(addElement, prefix, completingArray, uri, searchName, searchDeep, true);
 		}
 	}
 
 	// 真正做tag查找的位置
-	private static realSearchTag(addElement, prefix, completingArray, uri, searchName, isAllowNoPrefixEQ?) {
+	private static realSearchTag(addElement, prefix, completingArray, uri, searchName, searchDeep, isAllowNoPrefixEQ?) {
 		let finalInsertText;
 		//如果有tagtype, 再去符号表中查找tagtype
 		let tagSearchRetSymb;
@@ -151,9 +161,9 @@ export class CodeCompleting {
 		}
 
 		let srarchLen = tagSearchRetSymb.length;
-		if(tagSearchRetSymb.length > this.maxSearchLen){
-			srarchLen = this.maxSearchLen;
-		}
+		// if(tagSearchRetSymb.length > this.maxSearchLen){
+		// 	srarchLen = this.maxSearchLen;
+		// }
 
 		//遍历tag的搜索结果。这里的结果通过FirstLetterContinuousMatching搜索出来的。
 		//这里要做的工作就是。替换tag，替换用户prefix,  删除searchprefab
@@ -186,7 +196,7 @@ export class CodeCompleting {
 				// 未能匹配到用户输入. 性能消耗大，暂时去掉
 
 				//此时不代表有错误，比如函数的返回值一类
-				this.searchTag(element, prefix, completingArray, uri)
+				this.searchTag(element, prefix, completingArray, uri, searchDeep)
 
 				if(isAllowNoPrefixEQ){
 					finalInsertText = SCHName;
@@ -299,11 +309,15 @@ export class CodeCompleting {
 				finalInsertText = retSymb[idx].searchName;	
 			}
 			//搜索结果10以内才使用 类型推导，否则会卡顿
-			if( srarchLen < this.maxSearchLen && (retSymb[idx].tagType ||  retSymb[idx].requireFile || retSymb[idx].funcRets) ){
+			if( (retSymb[idx].tagType ||  retSymb[idx].requireFile || retSymb[idx].funcRets) ){
+				let deep = 2;
+				if( srarchLen > this.maxSearchLen){
+					deep = 1;
+				}
 				//如果当前搜索结果有tag，搜索一次tag
 				this.alreadychkSymbol = new Object();
 				this.replaceDic = new Object();
-				this.searchTag(retSymb[idx], prefix, completingArray, uri)
+				this.searchTag(retSymb[idx], prefix, completingArray, uri, deep)
 			}else{
 				// retSymb[idx] 当前项目没有tag。
 				// 判断用户输入的前缀有没有. 如果没有不需要做[前缀替换] 和 [tag替换]
