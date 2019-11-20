@@ -54,7 +54,8 @@ export class CppCodeProcessor {
 				if (cppFileType === CppFileType.CppHeaderFile) {
 					this.parseCppHeaderAST2LuaCode(astNode);
 				} else if (cppFileType === CppFileType.CppSourceFile) {
-					this.parseCppSourceAST2LuaCode(astNode);
+					let classFunctionInfo = this.getClassFunctionInfo(astNode);
+					this.parseCppSourceAST2LuaCode(astNode, classFunctionInfo);
 				}
 			} catch(e) {
 				Logger.ErrorLog("Parse cpp file failed, filePath: " + filePaths[i] +" error: ");
@@ -539,7 +540,89 @@ export class CppCodeProcessor {
 		return luaText;
 	}
 
-	private static parseCppSourceAST2LuaCode(astNode: Node) {
+	/**
+	 * 获取当前文件中定义的函数列表，用于填充LuaMethod的参数。
+	 * @param astNode cpp源码解析后的语法树根节点。
+	 * @return 存储函数列表信息的map，结构：<class, <function, paramList>>，暂时忽略namespace。
+	 */
+	private static getClassFunctionInfo(astNode: Node): Map<string, Map<string, string[]>> {
+		let classFunctionInfo = new Map<string, Map<string, string[]>>();
+
+		astNode.children.forEach((child: Node) => {
+			if (child.type === 'namespace_definition') {
+				child.children.forEach((child: Node) => {
+					if (child.type === 'declaration_list') {
+						child.children.forEach((child: Node) => {
+							if (child.type === 'class_specifier') {
+								let classInfo = this.getClassInfo(child);
+								if (classInfo.className !== '' && classInfo.functionListMap !== undefined) {
+									// functionMap[classInfo.className] = classInfo.functionListMap;
+									classFunctionInfo.set(classInfo.className, classInfo.functionListMap);
+								}
+							}
+						});
+					}
+				});
+			} else if (child.type === 'class_specifier') {
+				let classInfo = this.getClassInfo(child);
+				classFunctionInfo.set(classInfo.className, classInfo.functionListMap);
+			}
+		});
+
+		return classFunctionInfo;
+	}
+
+	private static getClassInfo(astNode: Node): {className: string, functionListMap: Map<string, string[]>} {
+		let className = '';
+		let functionListMap = new Map<string, string[]>();
+
+		astNode.children.forEach((child: Node) => {
+			if (child.type === 'type_identifier') {
+				className = child.text;
+			} else if (child.type === 'field_declaration_list') {
+				child.children.forEach((child: Node) => {
+					if (child.type === 'function_definition') {
+						let functionInfo = this.getFunctionInfo(child);
+						if (functionInfo.functionName !== '') {
+							functionListMap.set(functionInfo.functionName, functionInfo.paramList);
+						}
+					}
+				});
+			}
+		});
+		return {className: className, functionListMap: functionListMap}
+	}
+
+	private static getFunctionInfo(astNode: Node): {functionName: string, paramList: string[]} {
+		let functionName = '';
+		let paramList = [];
+		astNode.children.forEach((child: Node) => {
+			if (child.type === 'function_declarator') {
+				child.children.forEach((child: Node) => {
+					if (child.type === 'identifier' || child.type === 'field_identifier') {
+						functionName = child.text;
+					} else if (child.type === 'parameter_list') {
+						paramList = this.getParamList(child);
+					}
+				});
+			}
+		});
+
+		return {functionName: functionName, paramList: paramList};
+	}
+
+	private static getParamList(astNode: Node): string[] {
+		let paramList = [];
+		astNode.children.forEach((child: Node) => {
+			if (child.type === 'parameter_declaration') {
+				paramList = paramList.concat(this.handleParameterDeclaration(child));
+			}
+		});
+
+		return paramList;
+	}
+
+	private static parseCppSourceAST2LuaCode(astNode: Node, classFunctionInfo: Map<string, Map<string, string[]>>) {
 		let className: string = "";
 		let baseClass: string[] = [];
 		let methodList: string[] = [];
@@ -570,7 +653,7 @@ export class CppCodeProcessor {
 			else if (child.type === 'namespace_definition') {
 				child.children.forEach((child: Node) => {
 					if (child.type === 'declaration_list') {
-						this.parseCppSourceAST2LuaCode(child);
+						this.parseCppSourceAST2LuaCode(child, classFunctionInfo);
 					}
 				});
 			}
