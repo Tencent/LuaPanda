@@ -32,9 +32,10 @@ export class CppCodeProcessor {
 	public static processCppDir(cppDir: string) {
 		if (this.cppInterfaceIntelliSenseResPath === null) {
 			Logger.ErrorLog('未打开文件夹，无法使用此功能！');
-			// TODO 弹窗提示
+			Tools.showTips('未打开文件夹，无法使用此功能！');
 			return;
 		}
+		Tools.showTips('正在分析处理中，请稍后！');
 
 		// 生成一个子目录对应用户代码路径
 		let subDir = cppDir;
@@ -49,6 +50,8 @@ export class CppCodeProcessor {
 
 		this.parseCppFiles(cppHeaderFiles, CppFileType.CppHeaderFile, subDir);
 		this.parseCppFiles(cppSourceFiles, CppFileType.CppSourceFile, subDir);
+
+		Tools.showTips('处理完成！');
 	}
 
 	private static async parseCppFiles(filePaths: string[], cppFileType: CppFileType, subDir: string) {
