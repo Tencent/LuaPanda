@@ -119,6 +119,9 @@ export function activate(context: ExtensionContext) {
         client.onNotification("showProgress", showProgress);
         client.onNotification("setRootFolder", setRootFolder);
         client.onNotification("setLuaPandaPath", setLuaPandaPath);
+        client.onNotification("showErrorMessage", showErrorMessage);
+        client.onNotification("showWarningMessage", showWarningMessage);
+        client.onNotification("showInformationMessage", showInformationMessage);
 	});
 
 }
@@ -298,4 +301,16 @@ function setRootFolder(message: string) {
 
 function setLuaPandaPath(message: string) {
     Tools.luapandaPathInUserProj = message;
+}
+
+function showErrorMessage(str: string) {
+    vscode.window.showErrorMessage(str);
+}
+
+function showWarningMessage(str: string) {
+    vscode.window.showWarningMessage(str);
+}
+
+function showInformationMessage(str: string) {
+    vscode.window.showInformationMessage(str);
 }
