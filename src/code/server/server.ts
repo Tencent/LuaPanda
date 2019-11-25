@@ -123,6 +123,7 @@ connection.onInitialize((initPara: InitializeParams) => {
 	// 分析默认位置(扩展中)的lua文件
 	let resLuaPath = Tools.getVScodeExtensionPath() + '/res/lua';   //安装插件后地址
 	CodeSymbol.refreshPreLoadSymbals(resLuaPath);
+	CppCodeProcessor.loadIntelliSenseRes();
 
 	Logger.DebugLog("init success");
 

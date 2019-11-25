@@ -25,6 +25,11 @@ export class CppCodeProcessor {
 		this.workspaceRootPath = workspaceRootPath;
 		this.cppInterfaceIntelliSenseResPath = path.join(this.workspaceRootPath, '.vscode/LuaPanda/IntelliSenseRes/UECppInterface');
 	}
+
+	public static loadIntelliSenseRes() {
+		CodeSymbol.refreshPreLoadSymbals(this.cppInterfaceIntelliSenseResPath);
+	}
+
 	/**
 	 * 将静态导出的C++代码处理成Lua table用于代码提示。
 	 * @param cppDir C++代码根目录。
