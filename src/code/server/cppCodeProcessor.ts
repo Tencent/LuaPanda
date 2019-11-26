@@ -27,7 +27,9 @@ export class CppCodeProcessor {
 	}
 
 	public static loadIntelliSenseRes() {
-		CodeSymbol.refreshPreLoadSymbals(this.cppInterfaceIntelliSenseResPath);
+		if (fs.existsSync(this.cppInterfaceIntelliSenseResPath)) {
+			CodeSymbol.refreshPreLoadSymbals(this.cppInterfaceIntelliSenseResPath);
+		}
 	}
 
 	/**
