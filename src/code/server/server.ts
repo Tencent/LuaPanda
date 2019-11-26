@@ -82,7 +82,7 @@ const defaultSettings: LuaAnalyzerSettings = {
 		checkAfterSave               : true,
 		maxNumberOfProblems          : 100,
 		maxLineLength                : 120,
-		ignoreFolderRegularExpression: ".*/res/lua/\\w+\\.lua;.*/LuaAnalyzer/IntelliSenseRes/;",
+		ignoreFolderRegularExpression: ".*/res/lua/\\w+\\.lua;.*vscode/LuaPanda/IntelliSenseRes/;",
 		ignoreErrorCode              : "",
 		ignoreGlobal                 : "",
 	}
