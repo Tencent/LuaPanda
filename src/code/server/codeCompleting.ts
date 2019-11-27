@@ -18,7 +18,9 @@ import { CodeDefinition } from './codeDefinition';
 import { TypeInfer } from './typeInfer';
 
 export class CodeCompleting {
-	private static maxSearchLen = 100;	//类型搜索时处理的最大数量
+	private static maxSearchLen = 99;	//类型搜索时处理的最大数量
+	private static completeSearchLen = 30;	//结果数量小于completeSearchLen时使用完整搜索
+
 	private static replaceDic;	//记录用作替换的searchName ,保证搜索的tag最后能转回用户输入
 	private static alreadychkSymbol;	//记录搜索过的关键字，防止循环搜索
 
@@ -300,6 +302,9 @@ export class CodeCompleting {
 		let retSymb = CodeSymbol.searchAllSymbolinRequireTreeforCompleting(uri, searchPrefix, Tools.SearchMode.FirstLetterContinuousMatching);
 		if(!retSymb)  return;
 		let srarchLen = retSymb.length;
+		if(srarchLen > this.maxSearchLen){
+			srarchLen = this.maxSearchLen;
+		}
 
 		for(let idx = 0 ; idx < srarchLen; idx ++){
 			if( !retSymb[idx] )	continue; //有错误
@@ -310,15 +315,16 @@ export class CodeCompleting {
 			}
 			//搜索结果10以内才使用 类型推导，否则会卡顿
 			if( (retSymb[idx].tagType ||  retSymb[idx].requireFile || retSymb[idx].funcRets) ){
-				let deep = 2;
-				if( srarchLen > this.maxSearchLen){
+				let deep = 3;
+				if( srarchLen > this.completeSearchLen){
 					deep = 1;
 				}
 				//如果当前搜索结果有tag，搜索一次tag
 				this.alreadychkSymbol = new Object();
 				this.replaceDic = new Object();
 				this.searchTag(retSymb[idx], prefix, completingArray, uri, deep)
-			}else{
+			}else
+			{
 				// retSymb[idx] 当前项目没有tag。
 				// 判断用户输入的前缀有没有. 如果没有不需要做[前缀替换] 和 [tag替换]
 				if(prefix.match(/[\.:]/)){
@@ -335,7 +341,7 @@ export class CodeCompleting {
 						prefix_dot_list.pop(); //把最后一位去掉
 						prefix_dot_list.push('');
 						prefix_dot = prefix_dot_list.join('[\.:]');
-						// 用户已输入的前缀剔除
+						//用户已输入的前缀剔除
 						let matRes = beReplaceStr.match(RegExp( prefix_dot,  'i'));
 						if(matRes){
 							finalInsertText = beReplaceStr.replace(RegExp( prefix_dot,  'i'), '');
