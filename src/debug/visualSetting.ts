@@ -96,7 +96,17 @@ export class VisualSetting {
                 }else{
                     Tools.client.sendNotification('preAnalysisCpp', message.webInfo);
                 }
-            break;
+                break;
+            case 'clearPreProcessFile':
+                //清除文件夹
+                let removePath = Tools.VSCodeOpenedFolder + "/.vscode/LuaPanda/";
+                let res =Tools.removeDir(removePath);
+                if(res){
+                    DebugLogger.showTips("文件夹已经清除");
+                }else{
+                    DebugLogger.showTips("文件不存在", 2);
+                }
+                break;
         }
     }
 

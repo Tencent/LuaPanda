@@ -251,4 +251,32 @@ export class Tools {
         DebugLogger.showTips("调试器没有找到文件 " + shortPath + " 。 请检查launch.json文件中lua后缀是否配置正确, 以及VSCode打开的工程是否正确", 2);
         return shortPath;
     }
+
+    public static removeDir(dir): boolean {
+        let files;
+        try{
+            files = fs.readdirSync(dir)
+        }catch(err){
+            if (err.code === 'ENOENT') {
+                return false;
+              } else {
+                throw err;
+              }
+        }
+
+        for(var i=0;i< files.length;i++){
+            let newPath = path.join(dir,files[i]);
+            let stat = fs.statSync(newPath)
+            if(stat.isDirectory()){
+                //如果是文件夹就递归下去
+                this.removeDir(newPath);
+            }
+            else{
+                //删除文件
+                fs.unlinkSync(newPath);
+            }
+        }
+        fs.rmdirSync(dir); //如果文件夹是空的，就将自己删除掉
+        return true;
+    }
 }

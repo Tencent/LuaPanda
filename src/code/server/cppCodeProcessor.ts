@@ -42,7 +42,7 @@ export class CppCodeProcessor {
 			Tools.showTips('未打开文件夹，无法使用此功能！');
 			return;
 		}
-		Tools.showTips('正在分析处理中，请稍后！');
+		Tools.showTips('正在分析处理中，请稍后。分析完成后会有提示，请不要重复点击。');
 
 		// 生成一个子目录对应用户代码路径
 		let subDir = cppDir;
