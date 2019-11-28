@@ -268,7 +268,7 @@ export class Tools {
             let newPath = path.join(dir,files[i]);
             let stat = fs.statSync(newPath)
             if(stat.isDirectory()){
-                //如果是文件夹就递归下去
+                //如果是文件夹就递归
                 this.removeDir(newPath);
             }
             else{
@@ -276,7 +276,7 @@ export class Tools {
                 fs.unlinkSync(newPath);
             }
         }
-        fs.rmdirSync(dir); //如果文件夹是空的，就将自己删除掉
+        fs.rmdirSync(dir);
         return true;
     }
 }
