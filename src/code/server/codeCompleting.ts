@@ -104,6 +104,7 @@ export class CodeCompleting {
 		// 符号 = 文件返回值
 		if(addElement.requireFile && addElement.requireFile.length > 0){
 			let uri = Tools.transFileNameToUri(addElement.requireFile);
+			if(uri == "") return;
 			let retTag = CodeSymbol.getCertainDocReturnValue(uri);//类似于使用@type得到的类型
 			if(retTag && retTag.length > 0){
 				searchName = retTag;
@@ -126,6 +127,7 @@ export class CodeCompleting {
 		if(  addElement.requireFile ){
 			//含有引用 tag，只搜索引用文件的符号
 			let uri = Tools.transFileNameToUri( addElement.requireFile );
+			if(uri == "") return;
 			tagSearchRetSymb = CodeSymbol.searchSymbolinDoc(uri, searchName, Tools.SearchMode.FirstLetterContinuousMatching);
 		}else if(addElement.funcRets){
 			//含有func 返回，搜索对应函数
@@ -317,7 +319,7 @@ export class CodeCompleting {
 			if( (retSymb[idx].tagType ||  retSymb[idx].requireFile || retSymb[idx].funcRets) ){
 				let deep = 3;
 				if( srarchLen > this.completeSearchLen){
-					deep = 1;
+					deep = 2;
 				}
 				//如果当前搜索结果有tag，搜索一次tag
 				this.alreadychkSymbol = new Object();
