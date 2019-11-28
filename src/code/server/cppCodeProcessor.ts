@@ -48,6 +48,7 @@ export class CppCodeProcessor {
 		let subDir = cppDir;
 		subDir = subDir.replace(/\//g, ' ');
 		subDir = subDir.replace(/\\/g, ' ');
+		subDir = subDir.replace(/:/g, '');
 		subDir = subDir.trim();
 		subDir = subDir.replace(/ /g, '-');
 
