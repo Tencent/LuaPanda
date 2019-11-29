@@ -58,7 +58,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 + V3.0.2
   
-  + 新增了导出c++符号给 lua 做代码提示，目前支持slua-unreal。 说明
+  + 新增了导出c++符号给 lua 做代码提示，目前支持slua-unreal。 [说明](https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/lua-intellisense.md)
   
   
   
