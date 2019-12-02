@@ -75,10 +75,36 @@
             <span class="onoffswitch-switch"></span>
         </label>
     </div> 
+
+    <br>
+    <label class="lab" style="margin:10px 0px" title="分析CPP文件，生成对应的lua文件用于代码补全"><font size="3" face="Arial">用于IntelliSense的cpp文件夹路径:  </font></label>&nbsp;&nbsp;&nbsp;<input style="margin:5px" id="preAnalysisPath"
+    type="text" name="lname" /> <input class="btn_st" style="margin:20px" type="button" value="生成文件" onclick="preProcess();" />
+    <!-- <input class="btn_st2" style="margin:10px" type="button" value="清除生成文件" onclick="clearPreProcessFile();" /> -->
+    目前仅用于生成slua-unreal的导出符号，后续会支持更多框架
+    <br />
     <br>
 
     <script>
         const vscode = acquireVsCodeApi();
+        function preProcess(){
+            let preAnalysisPath = document.getElementById('preAnalysisPath');
+            let saveObj = new Object();
+            saveObj["command"] = "preAnalysisCpp";
+            saveObj["path"] = preAnalysisPath.value;
+            let webInfo = JSON.stringify(saveObj);
+            vscode.postMessage({
+                webInfo
+            });
+        }
+
+        function clearPreProcessFile(){
+            let saveObj = new Object();
+            saveObj["command"] = "clearPreProcessFile";
+            let webInfo = JSON.stringify(saveObj);
+            vscode.postMessage({
+                webInfo
+            });
+        } 
 
         function changeLuaAnalyzerSwitch()
         {
@@ -337,6 +363,28 @@
         border-radius: 6px;
         display: inline-block;
         transition: all 0.1s ease 0s;
+    }
+
+    .btn_st2 {
+        border: none;
+        background: rgb(184, 55, 55);
+        color: #ffffff !important;
+        font-weight: 100;
+        padding: 10px;
+        text-transform: uppercase;
+        border-radius: 6px;
+        display: inline-block;
+        transition: all 0.1s ease 0s;
+    }
+    .btn_st2:hover {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        cursor: pointer;
+        letter-spacing: 1px;
+        background: rgb(240, 74, 74);
+        -webkit-box-shadow: 0px 5px 40px -10px rgba(255, 255, 255, 0.57);
+        -moz-box-shadow: 0px 5px 40px -10px rgba(255, 255, 255, 0.57);
+        transition: all 0.0s ease 0s;
     }
 
     .btn_st:hover {

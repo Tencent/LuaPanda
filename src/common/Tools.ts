@@ -14,7 +14,8 @@ export class Tools {
     public static VSCodeOpenedFolder;   // VSCode当前打开的用户工程路径。打开文件夹后，由languageServer赋值
     public static luapandaPathInUserProj;   // 用户工程中luapanda文件所在的路径，它在调试器启动时赋值。但也可能工程中不存在luapanda文件导致路径为空
     public static VSCodeExtensionPath;  // VSCode插件所在路径，插件初始化时就会被赋值
-    
+    public static client;
+
     // 路径相关函数
     // 获取扩展中预置的lua文件位置
     public static getLuaPathInExtension() : string{
@@ -249,5 +250,33 @@ export class Tools {
         //最终没有找到，返回输入的地址
         DebugLogger.showTips("调试器没有找到文件 " + shortPath + " 。 请检查launch.json文件中lua后缀是否配置正确, 以及VSCode打开的工程是否正确", 2);
         return shortPath;
+    }
+
+    public static removeDir(dir): boolean {
+        let files;
+        try{
+            files = fs.readdirSync(dir)
+        }catch(err){
+            if (err.code === 'ENOENT') {
+                return false;
+              } else {
+                throw err;
+              }
+        }
+
+        for(var i=0;i< files.length;i++){
+            let newPath = path.join(dir,files[i]);
+            let stat = fs.statSync(newPath)
+            if(stat.isDirectory()){
+                //如果是文件夹就递归
+                this.removeDir(newPath);
+            }
+            else{
+                //删除文件
+                fs.unlinkSync(newPath);
+            }
+        }
+        fs.rmdirSync(dir);
+        return true;
     }
 }

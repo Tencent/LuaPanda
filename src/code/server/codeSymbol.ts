@@ -119,6 +119,14 @@ export class CodeSymbol {
 		});
 	}
 
+	// 刷新 PreLoad 单个文件的符号 [PreLoad刷新]
+	public static refreshSinglePreLoadFile(filePath: string){
+		if(filePath === undefined || filePath === ''){
+			return;
+		}
+		this.createPreLoadSymbals(Tools.pathToUri(filePath), filePath);
+	}
+
 	// 获取 workspace 中的全局符号, 以dictionary的形式返回
 	public static getWorkspaceSymbols(range? : Tools.SearchRange){
 		range = range || Tools.SearchRange.AllSymbols;
@@ -355,6 +363,7 @@ export class CodeSymbol {
 		let oldDocSymbol = this.docSymbolMap.get(uri);
 		let newDocSymbol: DocSymbolProcessor = DocSymbolProcessor.create(luaText, uri);
 		if(newDocSymbol){
+			Tools.AddTo_FileName_Uri_Cache(Tools.getPathNameAndExt(uri)['name'] , uri)
 			if( !newDocSymbol.parseError){
 				//解析无误
 				this.docSymbolMap.set(uri, newDocSymbol);

@@ -43,6 +43,7 @@ import { CodeEditor } from './codeEditor';
 import { CodeFormat } from './codeFormat';
 import { CodeLinting } from './codeLinting';
 import { CodeReference } from './codeReference';
+import { CppCodeProcessor } from './cppCodeProcessor';
 
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -81,7 +82,7 @@ const defaultSettings: LuaAnalyzerSettings = {
 		checkAfterSave               : true,
 		maxNumberOfProblems          : 100,
 		maxLineLength                : 120,
-		ignoreFolderRegularExpression: ".*/res/lua/\w+\.lua;",
+		ignoreFolderRegularExpression: ".*/res/lua/\\w+\\.lua;.*vscode/LuaPanda/IntelliSenseRes/;",
 		ignoreErrorCode              : "",
 		ignoreGlobal                 : "",
 	}
@@ -99,6 +100,7 @@ connection.onInitialize((initPara: InitializeParams) => {
 	Tools.setInitPara(initPara);
 	Tools.setToolsConnection(connection);
 	Logger.connection = connection;
+	CppCodeProcessor.setWorkspaceRootPath(initPara.rootPath);
 
 	Logger.DebugLog(Tools.getInitPara().rootPath);
 
@@ -121,6 +123,7 @@ connection.onInitialize((initPara: InitializeParams) => {
 	// 分析默认位置(扩展中)的lua文件
 	let resLuaPath = Tools.getVScodeExtensionPath() + '/res/lua';   //安装插件后地址
 	CodeSymbol.refreshPreLoadSymbals(resLuaPath);
+	CppCodeProcessor.loadIntelliSenseRes();
 
 	Logger.DebugLog("init success");
 
@@ -164,6 +167,13 @@ connection.onInitialize((initPara: InitializeParams) => {
 			}
 		};
 	}
+});
+
+
+connection.onNotification("preAnalysisCpp", (message) =>{
+	let msgObj = JSON.parse(message);
+	let anaPath = msgObj['path'];
+	CppCodeProcessor.processCppDir(anaPath);
 });
 
 connection.onInitialized(() => {
@@ -285,7 +295,7 @@ documents.onDidOpen(file => {
 		}else{
 			// 处理新的后缀类型
 			createSybwithExt(ext, Tools.getInitPara().rootPath);
-			setTimeout(Tools.refresh_FileName_Uri_Cache, 0);	
+			setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
 		}
 	}
 });

@@ -115,9 +115,13 @@ export function activate(context: ExtensionContext) {
 	// Start the client. This will also launch the server
 	client.start();
 	client.onReady().then(() => {
+        Tools.client = client;
         client.onNotification("showProgress", showProgress);
         client.onNotification("setRootFolder", setRootFolder);
         client.onNotification("setLuaPandaPath", setLuaPandaPath);
+        client.onNotification("showErrorMessage", showErrorMessage);
+        client.onNotification("showWarningMessage", showWarningMessage);
+        client.onNotification("showInformationMessage", showInformationMessage);
 	});
 
 }
@@ -125,7 +129,8 @@ export function activate(context: ExtensionContext) {
 export function deactivate() {
     if (!client) {
 		return undefined;
-	}
+    }
+    Tools.client = undefined;
 	return client.stop();
 }
 
@@ -296,4 +301,16 @@ function setRootFolder(message: string) {
 
 function setLuaPandaPath(message: string) {
     Tools.luapandaPathInUserProj = message;
+}
+
+function showErrorMessage(str: string) {
+    vscode.window.showErrorMessage(str);
+}
+
+function showWarningMessage(str: string) {
+    vscode.window.showWarningMessage(str);
+}
+
+function showInformationMessage(str: string) {
+    vscode.window.showInformationMessage(str);
 }

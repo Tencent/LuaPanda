@@ -432,6 +432,16 @@ export function showProgressMessage(progress: number, message: string) {
 	}
 }
 
+export function showTips(str: string, level?: number) {
+	if(level === 2 ){
+		connection.sendNotification("showErrorMessage", str);
+	}else if(level === 1 ){
+		connection.sendNotification("showWarningMessage", str);
+	}else{
+		connection.sendNotification("showInformationMessage", str);
+	}
+}
+
 // 新加入的方法，把dic转换为array
 export function  changeDicSymboltoArray(dic){
 	let array  = new Array();
