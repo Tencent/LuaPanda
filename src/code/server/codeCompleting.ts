@@ -62,6 +62,18 @@ export class CodeCompleting {
 		return completeItem;
 	}
 
+	private static commentVarTypeTips(uri: string, line: number): CompletionItem {
+		//TODO 这里要加入判断一下本行有没有数据
+		let completeItem = {
+			label: "@type",
+			kind: CompletionItemKind.Snippet,
+			insertText: "@type ",
+			detail: "comment var type",
+			insertTextFormat: InsertTextFormat.Snippet
+		};
+		return completeItem;
+	}
+
 	//把字符串按. 或者 ： 分割成数组。若不含: . 则数组中只有一个元素
 	private static splitStringwithTrigger(str){
 		let userInputTxt_DotToBlank =  str.replace(/[\.:]/g, ' ');
@@ -253,10 +265,11 @@ export class CodeCompleting {
 		let prefix = Tools.getTextByPosition(luaText , pos);
 		// 文档注释
 		if (prefix == "---") {
-			if (Tools.isNextLineHasFunction(luaText, pos) == false) {
-				return completingArray;
+			if (Tools.isNextLineHasFunction(luaText, pos) == true) {
+				completingArray.push(this.getDocCommentCompletingItem(uri, pos.line + 1));
 			}
-			completingArray.push(this.getDocCommentCompletingItem(uri, pos.line + 1));
+			
+			completingArray.push(this.commentVarTypeTips(uri, pos.line));
 			return completingArray;
 		}
 

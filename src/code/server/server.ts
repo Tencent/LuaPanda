@@ -43,8 +43,7 @@ import { CodeEditor } from './codeEditor';
 import { CodeFormat } from './codeFormat';
 import { CodeLinting } from './codeLinting';
 import { CodeReference } from './codeReference';
-import { CppCodeProcessor } from './cppCodeProcessor';
-
+import { NativeCodeExportBase } from './codeExport/nativeCodeExportBase';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -100,7 +99,6 @@ connection.onInitialize((initPara: InitializeParams) => {
 	Tools.setInitPara(initPara);
 	Tools.setToolsConnection(connection);
 	Logger.connection = connection;
-	CppCodeProcessor.setWorkspaceRootPath(initPara.rootPath);
 
 	Logger.DebugLog(Tools.getInitPara().rootPath);
 
@@ -123,8 +121,8 @@ connection.onInitialize((initPara: InitializeParams) => {
 	// 分析默认位置(扩展中)的lua文件
 	let resLuaPath = Tools.getVScodeExtensionPath() + '/res/lua';   //安装插件后地址
 	CodeSymbol.refreshPreLoadSymbals(resLuaPath);
-	CppCodeProcessor.loadIntelliSenseRes();
-
+	// 分析导出接口文件
+	NativeCodeExportBase.loadIntelliSenseRes();
 	Logger.DebugLog("init success");
 
 	//读取标记文件，如果关闭了标记，那么
@@ -173,7 +171,7 @@ connection.onInitialize((initPara: InitializeParams) => {
 connection.onNotification("preAnalysisCpp", (message) =>{
 	let msgObj = JSON.parse(message);
 	let anaPath = msgObj['path'];
-	CppCodeProcessor.processCppDir(anaPath);
+	NativeCodeExportBase.processNativeCodeDir(anaPath);
 });
 
 connection.onInitialized(() => {
@@ -257,6 +255,8 @@ connection.onDocumentSymbol(
 		let uri = handler.textDocument.uri;
 		let decUri = Tools.urlDecode(uri);
 		let retSyms = CodeSymbol.getCertainDocSymbolsReturnArray(decUri,  null, Tools.SearchRange.AllSymbols);
+		// Tools.createTrieTree(retSyms);
+
 		let retSymsArr: any[];
 		try {
 			retSymsArr = Tools.getOutlineSymbol(retSyms);

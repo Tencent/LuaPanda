@@ -8,9 +8,9 @@ import path = require('path');
 import dir = require('path-reader');
 import fs = require('fs');
 import { parseAst, Language, Node } from 'univac';
-import { Logger } from './codeLogManager';
-import { CodeSymbol } from './codeSymbol';
-import * as Tools from './codeTools';
+import { Logger } from '../codeLogManager';
+import { CodeSymbol } from '../codeSymbol';
+import * as Tools from '../codeTools';
 
 export class CppCodeProcessor {
 	// workspace 根目录，server初始化时设置。

@@ -282,10 +282,14 @@ export class CodeSymbol {
 	//在预制文档中搜索
 	public static searchPreLoadSymbols(symbolStr, searchMethod){
 		let retSymbols = new Array<Tools.SymbolInformation>();
+
 		this.preLoadSymbolMap.forEach(element => {
 			let res = element.searchMatchSymbal(symbolStr, searchMethod, Tools.SearchRange.AllSymbols);
-			retSymbols = retSymbols.concat(res);
+			if(res.length > 0){
+				retSymbols = retSymbols.concat(res);
+			}
 		});
+
 		return retSymbols;
 	}
 

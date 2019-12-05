@@ -37,6 +37,14 @@ export function getVScodeExtensionPath(){
 	return VScodeExtensionPath;
 }
 
+let VSCodeOpenedFolder;
+export function getVSCodeOpenedFolder(){
+	if(!VSCodeOpenedFolder){
+		VSCodeOpenedFolder = initParameter.rootPath;
+	}
+	return VSCodeOpenedFolder;
+}
+
 export function setVScodeExtensionPath(_VScodeExtensionPath:string){
 	VScodeExtensionPath = _VScodeExtensionPath;
 }
