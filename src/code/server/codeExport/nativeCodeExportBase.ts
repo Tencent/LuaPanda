@@ -26,6 +26,7 @@ export class NativeCodeExportBase {
     
     // 收到需要预处理的文件
     public static processNativeCodeDir(anaPath){
+        anaPath = anaPath.trim();
         CppCodeProcessor.processCppDir(anaPath);
         SluaCSharpProcessor.processluaCSDir(anaPath);    
     }

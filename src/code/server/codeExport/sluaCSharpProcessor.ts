@@ -37,15 +37,8 @@ export class SluaCSharpProcessor {
 		subDir = subDir.trim();
 		subDir = subDir.replace(/ /g, '-');
 
-        // 移除已有文件夹
-        // this.removeCppInterfaceIntelliSenseRes(path.join(this.cppInterfaceIntelliSenseResPath, subDir));
-        // 读取用户路径下的文件列表
-        // let cppHeaderFiles = this.getCppHeaderFiles(cppDir);
-		// let cppSourceFiles = this.getCppSourceFiles(cppDir);
-
         // 从cppDir中读出files列表
         let files = this.getCSharpFiles(cppDir);
-
 		this.readSluaCSSymbols(files, subDir);
         CodeSymbol.refreshPreLoadSymbals(intelLuaPath);
 		Tools.showTips('处理完成！');
@@ -67,16 +60,21 @@ export class SluaCSharpProcessor {
 	}
 
     public static readSluaCSSymbols(filepath, writepath){
-        let wtpath = this.sluaCSharpInterfaceIntelliSenseResPath + writepath;
-        this.makeDirSync(wtpath);
+        let sluaRootPath = this.sluaCSharpInterfaceIntelliSenseResPath + writepath;
+        this.makeDirSync(sluaRootPath);
+        // 建立一个UnityEngine符号
+        let engineFileName = "Lua_UnityEngine.lua";
+        let engineFileContent = "UnityEngine = {}";
+        fs.writeFileSync(sluaRootPath + '/' + engineFileName, engineFileContent);
+
         // 读取文件内容
         for (const file of filepath) {
             let codeTxt = Tools.getFileContent(file);
             if(codeTxt){
                 let luaTxt = this.parseSluaCSSymbols(codeTxt);
                 if(luaTxt && luaTxt != ""){
-                    let aaac = wtpath + '/' + path.basename(file, "cs") + "lua";
-                    fs.writeFileSync(aaac, luaTxt);
+                    let csFilePath = sluaRootPath + '/' + path.basename(file, "cs") + "lua";
+                    fs.writeFileSync(csFilePath, luaTxt);
                 }
             }
         }

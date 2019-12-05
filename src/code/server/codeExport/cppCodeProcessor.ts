@@ -14,16 +14,13 @@ import * as Tools from '../codeTools';
 
 export class CppCodeProcessor {
 	// workspace 根目录，server初始化时设置。
-	private static workspaceRootPath: string | null;
-	private static cppInterfaceIntelliSenseResPath: string | null;
-
-	/**
-	 * 设置工作空间根目录
-	 * @param workspaceRootPath 工作空间根目录。
-	 */
-	public static setWorkspaceRootPath(workspaceRootPath: string | null) {
-		this.workspaceRootPath = workspaceRootPath;
-		this.cppInterfaceIntelliSenseResPath = path.join(this.workspaceRootPath, '.vscode/LuaPanda/IntelliSenseRes/UECppInterface');
+	private static _cppInterfaceIntelliSenseResPath: string | null;
+    // sluaUE的分析路径
+	public static get cppInterfaceIntelliSenseResPath() {
+		if(!this._cppInterfaceIntelliSenseResPath){
+            this._cppInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolder() + "/.vscode/LuaPanda/IntelliSenseRes/UECppInterface/";        
+        }
+        return this._cppInterfaceIntelliSenseResPath;
 	}
 
 	public static loadIntelliSenseRes() {
