@@ -56,15 +56,23 @@ export class CppCodeProcessor {
 		let cppHeaderFiles = this.getCppHeaderFiles(cppDir);
 		let cppSourceFiles = this.getCppSourceFiles(cppDir);
 
-		this.parseCppFiles(cppHeaderFiles, CppFileType.CppHeaderFile, subDir);
-		this.parseCppFiles(cppSourceFiles, CppFileType.CppSourceFile, subDir);
+		this.processParse(cppHeaderFiles, cppSourceFiles, subDir);
+	}
 
-		Tools.showTips('处理完成！');
+	private static async processParse(cppHeaderFiles: string[], cppSourceFiles: string[], subDir: string) {
+		await this.parseCppFiles(cppHeaderFiles, CppFileType.CppHeaderFile, subDir);
+		await this.parseCppFiles(cppSourceFiles, CppFileType.CppSourceFile, subDir);
+
+		let totalProcessNum = cppHeaderFiles.length + cppSourceFiles.length;
+		Tools.showTips('处理完成！共解析' + totalProcessNum + '个文件。');
 	}
 
 	private static async parseCppFiles(filePaths: string[], cppFileType: CppFileType, subDir: string) {
 		for (let i = 0; i < filePaths.length; i++) {
-			let cppText = this.getCppCode(filePaths[i]);
+			let cppText = this.getCppCode(filePaths[i], cppFileType);
+			if (cppText === '') {
+				continue;
+			}
 
 			let astNode: Node;
 			try {
@@ -123,10 +131,42 @@ export class CppCodeProcessor {
 	 * 去除宏 DEPRECATED
 	 * @param filePath 文件路径。
 	 */
-	private static getCppCode(filePath): string {
+	private static getCppCode(filePath: string, cppFileType: CppFileType): string {
 		let content = Tools.getFileContent(filePath);
 		let regex: RegExp;
 		let result: RegExpExecArray | null;
+
+		let canIgnore: boolean = true;
+		switch (cppFileType) {
+			case CppFileType.CppHeaderFile:
+				regex = URegex.UCLASS
+				if ((result = regex.exec(content)) !== null) {
+					canIgnore = false;
+					break;
+				}
+				regex = URegex.USTRUCT
+				if ((result = regex.exec(content)) !== null) {
+					canIgnore = false;
+					break;
+				}
+				regex = URegex.UENUM
+				if ((result = regex.exec(content)) !== null) {
+					canIgnore = false;
+					break;
+				}
+				break;
+
+			case CppFileType.CppSourceFile:
+				regex = URegex.DefLuaClass;
+				if ((result = regex.exec(content)) !== null) {
+					canIgnore = false;
+				break;
+				}
+				break;
+		}
+		if (canIgnore === true) {
+			return '';
+		}
 
 		// 将 class XXX ClassName 替换为 class className
 		regex = /\s*(class\s+[A-Z0-9_]+)\s+\w+.+/;
@@ -773,7 +813,7 @@ export class CppCodeProcessor {
 				if (stat.isDirectory()) {
 					return fileFullPath;
 				}
-				return fileShortName.match(/\.h/)? fileFullPath : null;
+				return fileShortName.match(/\.h$/)? fileFullPath : null;
 			}
 		};
 
@@ -788,7 +828,7 @@ export class CppCodeProcessor {
 				if (stat.isDirectory()) {
 					return fileFullPath;
 				}
-				return fileShortName.match(/\.cpp/)? fileFullPath : null;
+				return fileShortName.match(/\.cpp$/)? fileFullPath : null;
 			}
 		};
 
