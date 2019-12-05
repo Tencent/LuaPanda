@@ -773,7 +773,7 @@ export class CppCodeProcessor {
 				if (stat.isDirectory()) {
 					return fileFullPath;
 				}
-				return fileShortName.match(/\.h/)? fileFullPath : null;
+				return fileShortName.match(/\.h$/)? fileFullPath : null;
 			}
 		};
 
@@ -788,7 +788,7 @@ export class CppCodeProcessor {
 				if (stat.isDirectory()) {
 					return fileFullPath;
 				}
-				return fileShortName.match(/\.cpp/)? fileFullPath : null;
+				return fileShortName.match(/\.cpp$/)? fileFullPath : null;
 			}
 		};
 
