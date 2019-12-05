@@ -64,7 +64,10 @@ export class CppCodeProcessor {
 
 	private static async parseCppFiles(filePaths: string[], cppFileType: CppFileType, subDir: string) {
 		for (let i = 0; i < filePaths.length; i++) {
-			let cppText = this.getCppCode(filePaths[i]);
+			let cppText = this.getCppCode(filePaths[i], cppFileType);
+			if (cppText === '') {
+				continue;
+			}
 
 			let astNode: Node;
 			try {
@@ -123,10 +126,42 @@ export class CppCodeProcessor {
 	 * 去除宏 DEPRECATED
 	 * @param filePath 文件路径。
 	 */
-	private static getCppCode(filePath): string {
+	private static getCppCode(filePath: string, cppFileType: CppFileType): string {
 		let content = Tools.getFileContent(filePath);
 		let regex: RegExp;
 		let result: RegExpExecArray | null;
+
+		let canIgnore: boolean = true;
+		switch (cppFileType) {
+			case CppFileType.CppHeaderFile:
+				regex = URegex.UCLASS
+				if ((result = regex.exec(content)) !== null) {
+					canIgnore = false;
+					break;
+				}
+				regex = URegex.USTRUCT
+				if ((result = regex.exec(content)) !== null) {
+					canIgnore = false;
+					break;
+				}
+				regex = URegex.UENUM
+				if ((result = regex.exec(content)) !== null) {
+					canIgnore = false;
+					break;
+				}
+				break;
+
+			case CppFileType.CppSourceFile:
+				regex = URegex.DefLuaClass;
+				if ((result = regex.exec(content)) !== null) {
+					canIgnore = false;
+				break;
+				}
+				break;
+		}
+		if (canIgnore === true) {
+			return '';
+		}
 
 		// 将 class XXX ClassName 替换为 class className
 		regex = /\s*(class\s+[A-Z0-9_]+)\s+\w+.+/;
