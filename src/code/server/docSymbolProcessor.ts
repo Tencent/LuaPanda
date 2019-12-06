@@ -30,6 +30,8 @@ import * as Tools from './codeTools';
 import { Logger } from './codeLogManager';
 import { CodeSymbol } from './codeSymbol';
 import { Location, Range, Position, SymbolKind } from 'vscode-languageserver';
+import { trieTree } from './trieTree';
+import { isArray } from 'util';
 // import { isArray } from 'util';
 
 // 遍历AST模式
@@ -40,6 +42,7 @@ enum travelMode {
 }
 
 export class DocSymbolProcessor {
+
 	private docInfo: Tools.docInformation; // 记录.lua文本中的所有信息
 	// 下面是临时记录信息的变量
 	// refs 引用相关
@@ -98,6 +101,11 @@ export class DocSymbolProcessor {
 		return this.docInfo.defineSymbols.allSymbols;
 	}
 
+	// 获取本文件 [所有符号列表] (Trie)
+	public getAllSymbolsTrie() {
+		return this.docInfo.defineSymbols.allSymbolsTrie;
+	}
+
 	// 获取本文件 [全局符号列表] (kv)
 	public getGlobalSymbolsDic() {
 		return this.docInfo.defineSymbols.globalSymbols;
@@ -123,9 +131,19 @@ export class DocSymbolProcessor {
 		return this.docInfo.defineSymbols.globalSymbolsArray;
 	}
 
+	// 获取本文件 [Global符号列表] (Trie)
+	public getGlobalSymbolsTrie() {
+		return this.docInfo.defineSymbols.globalSymbolsTrie;
+	}
+
 	// 获取本文件 [局部符号列表] (array)
 	public getLocalSymbolsArray() {
 		return this.docInfo.defineSymbols.localSymbolsArray;
+	}
+
+	// 获取本文件 [局部符号列表] (Trie)
+	public getLocalSymbolsTrie() {
+		return this.docInfo.defineSymbols.localSymbolsTrie;
 	}
 
 	// 获取本文件 [chunk信息列表] (array)
@@ -153,6 +171,17 @@ export class DocSymbolProcessor {
 		return this.docInfo.references = references;
 	}
 
+	//构建字典树(用于前缀搜索)
+	private buildSymbolTrie(){
+		let all = this.getAllSymbolsArray();
+		this.docInfo.defineSymbols.allSymbolsTrie = trieTree.createSymbolTree(all);
+		let global = this.getGlobalSymbolsArray();
+		this.docInfo.defineSymbols.globalSymbolsTrie = trieTree.createSymbolTree(global);
+		let local = this.getLocalSymbolsArray();
+		this.docInfo.defineSymbols.localSymbolsTrie = trieTree.createSymbolTree(local);
+	}
+
+
 //-----------------------------------------------------------------------------
 //-- 主要对外接口
 //-----------------------------------------------------------------------------
@@ -166,6 +195,7 @@ export class DocSymbolProcessor {
 		// 符号表后处理，记录comment和文件/函数返回值
 		this.buildSymbolTag();
 		this.buildSymbolReturns(); // 构建 B = require("A") , 记录B的类型
+		this.buildSymbolTrie();	//构建字典树
 		// Debug info 查看序列化的AST
 		// let tempStr = JSON.stringify(this.docInfo["docAST"]);
 		// DebugInfo
@@ -224,33 +254,37 @@ export class DocSymbolProcessor {
 				SymbolArrayForSearch = this.getLocalSymbolsDic();
 			}
 
-			//精确匹配 searchName
+			//如果输入存在: ，直接把：替换成.
+			if(symbalName.match(':')){
+				symbalName = symbalName.replace(/:/g,".");
+			}
+			
+			//精确匹配 searchName。保证SymbolArrayForSearch其中的key中只有.而没有:
 			let tgtSymbol = SymbolArrayForSearch[symbalName];
 			if(tgtSymbol){
+				//搜索到了，根据值类型不同（字典中存在冲突，可能是符号或是数组），放入返回符号表
 				if(Array.isArray(tgtSymbol)){
 					retSymbols = tgtSymbol;
 				}else{
 					retSymbols.push(tgtSymbol);
 				}
-			}else{
-				//把: 替换成.尝试再次匹配
-				symbalName = symbalName.replace(/:/g,".");
-				let tgtSymbol = SymbolArrayForSearch[symbalName];
-				if(!tgtSymbol){
-					symbalName = symbalName.replace(/\./g,":");
-					tgtSymbol = SymbolArrayForSearch[symbalName];
-				}
-
-				if(tgtSymbol){
-					if(Array.isArray(tgtSymbol)){
-						retSymbols = tgtSymbol;
-					}else{
-						retSymbols.push(tgtSymbol);
-					}
-				}
+			}
+		}else if(matchMode === Tools.SearchMode.FirstLetterContinuousMatching){
+			// 前缀搜索
+			let root;
+			if( searchRange == Tools.SearchRange.AllSymbols ){
+				root = this.getAllSymbolsTrie();
+			}else if( searchRange == Tools.SearchRange.GlobalSymbols){
+				root = this.getGlobalSymbolsTrie();
+			}else if( searchRange == Tools.SearchRange.LocalSymbols){
+				root = this.getLocalSymbolsTrie();
+			}
+			let trieRes =  trieTree.searchOnTrieTree(root, symbalName);
+			if(isArray(trieRes)){
+				retSymbols = trieRes;
 			}
 		}else{
-
+			// 模糊搜索
 			if( searchRange == Tools.SearchRange.AllSymbols ){
 				SymbolArrayForSearch = this.getAllSymbolsArray();
 			}else if( searchRange == Tools.SearchRange.GlobalSymbols){
@@ -356,10 +390,17 @@ export class DocSymbolProcessor {
 	private createSymbolInfo(name: string, searchName:string, originalName:string,
 		kind:SymbolKind, location:Location, isLocal:boolean,
 		containerName?:string, containerList?:Array<Tools.chunkClass>,  funcParamArray?:Array<string>, tagType? :string, reason?: Tools.TagReason): Tools.SymbolInformation{
+		
 			let showName = name;
 			if(isLocal){
 				showName = "local " + showName;
 			}
+
+			//searchName中的全部:被替换为 . , 目的是提高查找效率
+			if(searchName.match(':')){
+				searchName = searchName.replace(/:/g,".");
+			}
+
 		return{
 			name: showName,
 			searchName: searchName,

@@ -255,8 +255,6 @@ connection.onDocumentSymbol(
 		let uri = handler.textDocument.uri;
 		let decUri = Tools.urlDecode(uri);
 		let retSyms = CodeSymbol.getCertainDocSymbolsReturnArray(decUri,  null, Tools.SearchRange.AllSymbols);
-		// Tools.createTrieTree(retSyms);
-
 		let retSymsArr: any[];
 		try {
 			retSymsArr = Tools.getOutlineSymbol(retSyms);

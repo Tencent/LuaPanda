@@ -195,12 +195,15 @@ export class docInformation {
 		this.docUri = docUri;
 		this.docPath = docPath;
 		this.defineSymbols = new Object();
-		this.defineSymbols["allSymbols"] = new Array<SymbolInformation>();
+		this.defineSymbols["allSymbols"] = new Array<SymbolInformation>();//字典，以searchName为key
 		this.defineSymbols["allSymbolsArray"] = new Array<SymbolInformation>();
+		this.defineSymbols["allSymbolsTrie"];
 		this.defineSymbols["globalSymbols"] = new Array<SymbolInformation>();
 		this.defineSymbols["globalSymbolsArray"] = new Array<SymbolInformation>();
+		this.defineSymbols["globalSymbolsTrie"];
 		this.defineSymbols["localSymbols"] = new Array<SymbolInformation>();
 		this.defineSymbols["localSymbolsArray"] = new Array<SymbolInformation>();
+		this.defineSymbols["localSymbolsTrie"];
 		this.defineSymbols["chunks"] = new Array<SymbolInformation>(); 		//记录每个chunk中的名字，位置，global/local，(文件/函数)返回信息
 		this.defineSymbols["chunksArray"] = new Array<SymbolInformation>(); 		//记录每个chunk中的名字，位置，global/local，返回信息
 		this.requires = new Array<requireFileInfo>();
