@@ -151,7 +151,7 @@ connection.onInitialize((initPara: InitializeParams) => {
 				textDocumentSync: documents.syncKind,
 				//自动补全
 				completionProvider: {
-					triggerCharacters:['.', '-', ':'],
+					triggerCharacters:"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:".split(''),
 					resolveProvider: false
 				},
 				//重命名
