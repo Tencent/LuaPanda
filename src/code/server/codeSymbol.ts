@@ -368,20 +368,18 @@ export class CodeSymbol {
 		let newDocSymbol: DocSymbolProcessor = DocSymbolProcessor.create(luaText, uri);
 		if(newDocSymbol){
 			Tools.AddTo_FileName_Uri_Cache(Tools.getPathNameAndExt(uri)['name'] , uri)
-			if( !newDocSymbol.parseError){
-				//解析无误
+			if( newDocSymbol.docInfo.parseSucc ){
+				//解析无误，覆盖旧的
 				this.docSymbolMap.set(uri, newDocSymbol);
 				this.updateReference(oldDocSymbol, newDocSymbol);
 			}else{
 				//解析过程有误
 				if ( !this.docSymbolMap.get(uri) ){
-					//map中还未解析过这个table
+					//map中还未解析过这个table，放入本次解析结果
 					this.docSymbolMap.set(uri, newDocSymbol);
 				}else{
-					//map中已有
-					let oldLen = this.docSymbolMap.get(uri).getAllSymbolsArray().length;
-					let newLen = newDocSymbol.getAllSymbolsArray().length;
-					if (newLen > oldLen){
+					//map中已有, 且之前保存的同样是解析失败，覆盖
+					if (!this.docSymbolMap.get(uri).docInfo.parseSucc){
 						this.docSymbolMap.set(uri, newDocSymbol);
 						this.updateReference(oldDocSymbol, newDocSymbol);
 					}

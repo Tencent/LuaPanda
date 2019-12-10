@@ -43,33 +43,30 @@ enum travelMode {
 
 export class DocSymbolProcessor {
 
-	private docInfo: Tools.docInformation; // 记录.lua文本中的所有信息
+	public docInfo: Tools.docInformation; // 记录.lua文本中的所有信息
 	// 下面是临时记录信息的变量
 	// refs 引用相关
 	private searchInfo;	//记录被查找的符号信息
 	private refsLink; //引用符号队列
 	// 按位置查找符号
-	private searchPosition: Position;								  // 记录搜索符号所在的Position
+	private searchPosition: Position;						     // 记录搜索符号所在的Position
 	private posSearchRet: Tools.searchRet;						 // 记录按配置查找的结果
 	//解析相关
-	public parseError = false;											// 记录解析失败
-	public static tempSaveInstance; 								// 临时记录实例
+	private static tempSaveInstance; 								// 临时记录实例
 	//build 相关
 	private docCommentType;	//注释(等号)类型表 | 符号标记类型 记录标记的类型信息。标记来源于 1.用户注释 2.元表 3. 等号
 	private funcReturnRecoder; // 用来记录每个函数符号的返回值，并放入符号列表的 chunk 结构中
 	private callFunctionRecoder; //用来记录函数调用
 
 	// 静态创建方法，创建文件的 定义符号列表（定义符号tools.docInformation 数组）
-	public static create(luaText: string, uri: string, path?: string) {
+	public static create(luaText: string, uri: string) {
 		let instance: DocSymbolProcessor = new DocSymbolProcessor();
-		if(!path){
-			path = Tools.uriToPath(uri);
-		}
+		let path = Tools.uriToPath(uri);
 		try {
 			let AST = luaparse.parse(luaText, { locations: true, scope: true, comments: true});
 			instance.docInfo = new  Tools.docInformation(AST, uri, path);
 			instance.buildDocDefineSymbols();
-			instance.parseError = false;
+			instance.docInfo.parseSucc = true;
 			return instance;
 		} catch (error) {
 			Logger.ErrorLog("[Error] 解析文件 " + uri + " AST的过程中出错:");
@@ -82,7 +79,7 @@ export class DocSymbolProcessor {
 			try {
 				luaparse.parse(luaText, { locations: true, scope: true, onCreateNode: instance.onCreateNode});
 			}catch{}
-			instance.parseError = true;
+			instance.docInfo.parseSucc = false;
 			return instance;
 		}
 	}
