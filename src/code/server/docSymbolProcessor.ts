@@ -269,7 +269,7 @@ export class DocSymbolProcessor {
 					retSymbols.push(tgtSymbol);
 				}
 			}
-		}else if(matchMode === Tools.SearchMode.FirstLetterContinuousMatching){
+		}else if(matchMode === Tools.SearchMode.PrefixMatch){
 			// 前缀搜索
 			let root;
 			if( searchRange == Tools.SearchRange.AllSymbols ){
@@ -283,8 +283,8 @@ export class DocSymbolProcessor {
 			if(isArray(trieRes)){
 				retSymbols = trieRes;
 			}
-		}else{
-			// 模糊搜索
+		}else if(matchMode === Tools.SearchMode.FuzzyMatching){
+			// 模糊搜索，如果用户输入的字符串中有大写字母，则大小写敏感。否则大小写不敏感。目前模糊搜索使用的是便利的方式，效率较低
 			if( searchRange == Tools.SearchRange.AllSymbols ){
 				SymbolArrayForSearch = this.getAllSymbolsArray();
 			}else if( searchRange == Tools.SearchRange.GlobalSymbols){
@@ -293,39 +293,17 @@ export class DocSymbolProcessor {
 				SymbolArrayForSearch = this.getLocalSymbolsArray();
 			}
 
-			// let hasUpper = symbalName.match(reg);
 			for (let idx in SymbolArrayForSearch){
 				let sym = SymbolArrayForSearch[idx];
-				if (matchMode === Tools.SearchMode.ContinuousMatching) {
-					//连续查找 name
-					let res = sym.name.match(symbalName);
-					if (res != null) {
-						retSymbols.push(sym);
-					}
-				} else if (matchMode ===  Tools.SearchMode.FuzzyMatching) {
-					//模糊查找 当前只用于 @ # 的符号查找，所以搜索 name
-					let inputArray = symbalName.split('');
-					let pattStr = inputArray.join('.*?');
-					let pattRegExp = new RegExp(pattStr, "i");
-					let res = sym.name.match(pattRegExp);
-					if (res != null) {
-						retSymbols.push(sym);
-					}
-				} else if (matchMode ===  Tools.SearchMode.FirstLetterContinuousMatching) {
-					//在这种模式中，如果用户输入的字符串中有大写字母，则大小写敏感。否则大小写不敏感
-					let searchName = sym.searchName;
-					if(searchName){
-						let reg1 = new RegExp( /[\.:]/, 'g')
-						let symbalName_dot = symbalName.replace( reg1 , '.' );
-						let reg = new RegExp( '^' + symbalName_dot ,'i');
+				let searchName = sym.searchName;
+				if(searchName){
+					let reg1 = new RegExp( /[\.:]/, 'g')
+					let symbalName_dot = symbalName.replace( reg1 , '.' );
+					let reg = new RegExp( '^' + symbalName_dot ,'i');
 
-						let hit = searchName.match(reg);
-						if(hit){
-							retSymbols.push(sym);
-						}
-						//首字母起始连续查找 searchName
-						// searchName = searchName.replace(/:/g,".");
-						// symbalName = symbalName.replace(/:/g,".");
+					let hit = searchName.match(reg);
+					if(hit){
+						retSymbols.push(sym);
 					}
 				}
 			}
