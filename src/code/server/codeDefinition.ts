@@ -13,6 +13,7 @@ import { Logger } from './codeLogManager';
 import { CodeSymbol } from "./codeSymbol";
 import { TypeInfer } from "./typeInfer"
 import  * as Tools  from "./codeTools";
+import { isArray } from 'util';
 
 //查找定义的主函数
 export class CodeDefinition {
@@ -32,21 +33,29 @@ export class CodeDefinition {
 		if (symbRet != undefined && symbRet['sybinfo'] != undefined) {
 			let symbolInfo = symbRet['sybinfo'];
 			let containerList = symbRet['container'];
-			let symbInstance = TypeInfer.processDefineSymbolTag(symbolInfo, uri); // 查找定义
+			//先做一次普通搜索，如果有结果，就以普通搜索结果优先
+			let symbInstance = this.commonSearch(uri, symbolInfo.name, Tools.SearchMode.ExactlyEqual);
+			if(isArray(symbInstance) && symbInstance.length > 0 ){
+				// 已经搜到了结果
+			}else{
+				symbInstance = TypeInfer.SymbolTagForDefinitionEntry(symbolInfo, uri); // 查找定义
+			}
+
 			if(!symbInstance || symbInstance.length == 0) return;			// 未能查到定义			
 			Tools.transPosStartLineTo0(info.position);
+			let finalRetSymbols;
 			if(symbolInfo.isLocal){
 				// 同级优先，上方最近
-				symbInstance = this.judgeLocalDefinition(symbInstance, containerList, info);
+				finalRetSymbols = this.judgeLocalDefinition(symbInstance, containerList, info);
 			}else{
 				// 最远原则
-				symbInstance = symbInstance[0];
+				finalRetSymbols = symbInstance[0];
 			}
 			
 			// 此处应该保证 symbInstance是一个实例（不是数组）
-			if( !symbInstance )	return;   //没找到，或过滤后没有适合的符号
-			if(isRetSymbol) return symbInstance;	//回传符号，而不是位置信息
-			let retLoc = Location.create(symbInstance.containerURI, symbInstance.location.range);
+			if( !finalRetSymbols )	return;   //没找到，或过滤后没有适合的符号
+			if(isRetSymbol) return finalRetSymbols;	//回传符号，而不是位置信息
+			let retLoc = Location.create(finalRetSymbols['containerURI'], finalRetSymbols['location'].range);
 			return retLoc;
 		} else {
 			//没找到符号，判断require文件的情况
@@ -59,6 +68,10 @@ export class CodeDefinition {
 		}
 	}
 
+	private static commonSearch(uri, symbolStr, method){
+		//做一次普通搜索
+		return CodeSymbol.searchAllSymbolinRequireTreeforCompleting(uri, symbolStr, method);
+	}
 
 //-----------------------------------------------------------------------------
 //-- 局部变量的处理

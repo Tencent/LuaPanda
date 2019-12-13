@@ -120,14 +120,12 @@ connection.onInitialize((initPara: InitializeParams) => {
 	setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
 	// 分析默认位置(扩展中)的lua文件
 	let resLuaPath = Tools.getVScodeExtensionPath() + '/res/lua';   //安装插件后地址
-	CodeSymbol.refreshPreLoadSymbals(resLuaPath);
-	// 分析导出接口文件
-	NativeCodeExportBase.loadIntelliSenseRes();
+	CodeSymbol.refreshPreLoadSymbals(resLuaPath, 0);//更新lua预设符号文件
+	NativeCodeExportBase.loadIntelliSenseRes();//更新用户导出符号文件
 	Logger.DebugLog("init success");
 
 	//读取标记文件，如果关闭了标记，那么
 	let snippetsPath = Tools.getVScodeExtensionPath() + "/res/snippets";
-
 	if(!fs.existsSync(snippetsPath)){
 		return {
 			capabilities: {}
@@ -223,7 +221,7 @@ connection.onCompletion(
 		let uri = Tools.urlDecode(_textDocumentPosition.textDocument.uri);
 		let pos = _textDocumentPosition.position;
 		try{
-			return CodeCompleting.getCompletingArray(uri, pos);
+			return CodeCompleting.completionEntry(uri, pos);
 		} catch (error) {
 			Logger.InfoLog(error.stack);
 		}

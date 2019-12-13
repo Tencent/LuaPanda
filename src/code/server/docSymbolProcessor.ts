@@ -69,8 +69,8 @@ export class DocSymbolProcessor {
 			instance.docInfo.parseSucc = true;
 			return instance;
 		} catch (error) {
-			Logger.ErrorLog("[Error] 解析文件 " + uri + " AST的过程中出错:");
-			Logger.ErrorLog("[error stack]:" + error.stack );
+			// Logger.ErrorLog("[Error] 解析文件 " + uri + " AST的过程中出错:");
+			// Logger.ErrorLog("[error stack]:" + error.stack );
 
 			//建立空文件（没有AST）
 			instance.docInfo = new  Tools.docInformation(new Object, uri, path);
@@ -276,7 +276,7 @@ export class DocSymbolProcessor {
 			}else if( searchRange == Tools.SearchRange.LocalSymbols){
 				root = this.getLocalSymbolsTrie();
 			}
-			let trieRes =  trieTree.searchOnTrieTree(root, symbalName);
+			let trieRes =  trieTree.searchOnTrieTreeWithoutTableChildren(root, symbalName);
 			if(isArray(trieRes)){
 				retSymbols = trieRes;
 			}

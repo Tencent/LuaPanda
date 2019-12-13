@@ -68,17 +68,17 @@ export function setToolsConnection(conn: Connection) {
 }
 
 let rootFiles;
-let fileName_Uri_Cache;
-
+let fileName_Uri_Cache; //文件名 - path cache 
+let uriToPathCache = new Object(); 	//uri - path cache 
+let pathToUriCache = new Object();
 //-----------------------------------------------------------------------------
 //-- 枚举
 //-----------------------------------------------------------------------------
 //搜索类型
 export enum SearchMode{
-	ContinuousMatching,
-	ExactlyEqual,		//精确查找
-	FuzzyMatching,	  //模糊查找
-	FirstLetterContinuousMatching,	//前序匹配查找
+	ExactlyEqual,		//精确匹配
+	FuzzyMatching,	  //模糊匹配
+	PrefixMatch,	//前序匹配
 }
 
 //搜索范围
@@ -112,10 +112,10 @@ export interface SymbolInformation {
 	containerName?: string;   			  // 所属的函数名（展示用）
 	containerList?: Array<chunkClass>;		 // 容器列表array
 	funcParamArray?: Array<string>;   // 函数参数数组，生成注释用
-	tagType?: string; 						 // 用户标记此符号的类型，用于处理 local a = require("xxx") 等接收返回值的形式
-	requireFile?:string;					   // 符号是require文件的返回
-	funcRets?;						  // 如果此符号是function的返回值，记录对应的function . 值是{ name; local }结构
 	tagReason?: TagReason;				// 标记原因，有标记必须写原因
+	tagType?: string; 						 // 用户标记此符号的类型，用于处理 local a = require("xxx") 等接收返回值的形式
+	requireFile?:string;					   // 本符号是require文件的返回
+	funcRets?;						  // 	如果此符号是function的返回值，记录对应的function . 值是{ name; local }结构
 	chunk?:chunkClass;					   // 如果此符号是一个function, 对应的chunk结构
 }
 
@@ -181,6 +181,7 @@ export class chunkClass {
 // 一个lua文件中包含的所有信息
 export class docInformation {
 	// lua文本基础内容
+	parseSucc;	// 记录解析是否成功，默认true
 	docAST; //文本解析出的AST树
 	docUri:string; //文件URL
 	docPath :string; //文件路径
@@ -191,6 +192,7 @@ export class docInformation {
 	references: string[]; // require本文件的其他文件的uri(array)
 
 	constructor(docAST , docUri , docPath){
+		this.parseSucc = true;
 		this.docAST = docAST;
 		this.docUri = docUri;
 		this.docPath = docPath;
@@ -314,6 +316,10 @@ export function transWinDiskToUpper(uri: string):string{
 
 // path -> uri string
 export function pathToUri(pathStr : string): string{
+	if(pathToUriCache[pathStr]){
+		return pathToUriCache[pathStr];
+	}
+
 	let retUri;
 	if (os.type() == "Windows_NT") {
 		let pathArr = pathStr.split( path.sep );
@@ -325,12 +331,18 @@ export function pathToUri(pathStr : string): string{
 		retUri = 'file://' + pathStr;
 	}
 
+	pathToUriCache[pathStr] = retUri;
 	return retUri;
 }
 
 // uri string -> path
 export function uriToPath(uri: string): string {
-	return URI.parse(uri).fsPath;
+	if(uriToPathCache[uri]){
+		return uriToPathCache[uri];
+	}
+	let pathStr = URI.parse(uri).fsPath;
+	uriToPathCache[uri] = pathStr
+	return pathStr;
 }
 
 // 返回整个目录下的文件列表

@@ -16,11 +16,19 @@ import { Logger } from './codeLogManager';
 export class CodeSymbol {
 	// 用 kv 结构保存所有用户文件以及对应符号结构（包含定义符号和AST，以及方法）
 	public static docSymbolMap = new Map<string, DocSymbolProcessor>();
-	// 用 kv 结构保存所有预置文件以及对应符号结构（包含定义符号和AST，以及方法）
-	public static preLoadSymbolMap = new Map<string, DocSymbolProcessor>();
+	public static luaPreloadSymbolMap = new Map<string, DocSymbolProcessor>();
+	public static userPreloadSymbolMap = new Map<string, DocSymbolProcessor>();
+
 	// 已处理文件列表，这里是防止循环引用
 	private static alreadyProcessFile;
 
+
+	public static getCretainDocChunkDic(uri){
+		let processor = this.docSymbolMap.get(uri);
+		if(processor){
+			return processor.getChunksDic();
+		}
+	}
 //-----------------------------------------------------------------------------
 //-- 创建单文件、工作区、预加载区、特定文件符号
 //-----------------------------------------------------------------------------	
@@ -109,22 +117,24 @@ export class CodeSymbol {
 	}
 
 	// 刷新 PreLoad 所有文件的符号 [PreLoad批量刷新]
-	public static refreshPreLoadSymbals(path: string){
+	// 0:lua  1:user
+	public static refreshPreLoadSymbals(path: string, type: number = 1){
 		if(path === undefined || path === ''){
 			return;
 		}
 		let filesArray = Tools.getDirFiles( path );
 		filesArray.forEach(pathElement => {
-			this.createPreLoadSymbals( Tools.pathToUri(pathElement), pathElement );
+			this.createPreLoadSymbals( Tools.pathToUri(pathElement), type );
 		});
 	}
 
 	// 刷新 PreLoad 单个文件的符号 [PreLoad刷新]
-	public static refreshSinglePreLoadFile(filePath: string){
+	// 0:lua  1:user
+	public static refreshSinglePreLoadFile(filePath: string, type: number = 1){
 		if(filePath === undefined || filePath === ''){
 			return;
 		}
-		this.createPreLoadSymbals(Tools.pathToUri(filePath), filePath);
+		this.createPreLoadSymbals(Tools.pathToUri(filePath), type);
 	}
 
 	// 获取 workspace 中的全局符号, 以dictionary的形式返回
@@ -206,20 +216,28 @@ export class CodeSymbol {
 
 	// 在[本文件引用的其他文件]上搜索所有符合的符号，用于 [代码提示 auto completion]
 	public static searchAllSymbolinRequireTreeforCompleting (uri:string, symbolStr: string,  searchMethod: Tools.SearchMode): Tools.SymbolInformation[] {
+		let retSymbols = [];
 		if (symbolStr === '' || uri === '' ) {
 			return null;
 		}
-		//用户 > 系统
+		//搜索顺序 用户 > 系统
 		CodeSymbol.alreadyProcessFile = new Object();
-		let retS = this.recursiveSearchRequireTree(uri, symbolStr, searchMethod);
-		let preS = this.searchPreLoadSymbols(symbolStr, searchMethod);
-		if(retS){
-			retS = retS.concat(preS);
-		}else{
-			retS = preS;
+		let preS = this.recursiveSearchRequireTree(uri, symbolStr, searchMethod);
+		if(preS){
+			retSymbols = retSymbols.concat(preS);
 		}
-		// Logger.log("ret len = "+ retS.length);
-		return retS;
+
+		let preS1 = this.searchUserPreLoadSymbols(symbolStr, searchMethod);
+		if(preS1){
+			retSymbols = retSymbols.concat(preS1);
+		}
+
+		let preS2 = this.searchLuaPreLoadSymbols(symbolStr, searchMethod);
+		if(preS2){
+			retSymbols = retSymbols.concat(preS2);
+		}
+
+		return retSymbols;
 	}
 
 	/**
@@ -280,16 +298,25 @@ export class CodeSymbol {
 	}
 
 	//在预制文档中搜索
-	public static searchPreLoadSymbols(symbolStr, searchMethod){
+	public static searchLuaPreLoadSymbols(symbolStr, searchMethod){
 		let retSymbols = new Array<Tools.SymbolInformation>();
-
-		this.preLoadSymbolMap.forEach(element => {
+		this.luaPreloadSymbolMap.forEach(element => {
 			let res = element.searchMatchSymbal(symbolStr, searchMethod, Tools.SearchRange.AllSymbols);
 			if(res.length > 0){
 				retSymbols = retSymbols.concat(res);
 			}
 		});
+		return retSymbols;
+	}
 
+	public static searchUserPreLoadSymbols(symbolStr, searchMethod){
+		let retSymbols = new Array<Tools.SymbolInformation>();
+		this.userPreloadSymbolMap.forEach(element => {
+			let res = element.searchMatchSymbal(symbolStr, searchMethod, Tools.SearchRange.AllSymbols);
+			if(res.length > 0){
+				retSymbols = retSymbols.concat(res);
+			}
+		});
 		return retSymbols;
 	}
 
@@ -392,16 +419,16 @@ export class CodeSymbol {
 
 	// 创建前置搜索文件的所有符号
 	// @uri	 文件uri
-	// @text  文件内容
-	private static createPreLoadSymbals(uri: string, path?:string){
-		if(!path){
-			path = Tools.uriToPath(uri);
-		}
+	// @type  0lua预制 1用户导出
+	private static createPreLoadSymbals(uri: string, type:number){
+		let path = Tools.uriToPath(uri);
 		let luaText = Tools.getFileContent(path);
-		let docSymbol: DocSymbolProcessor = DocSymbolProcessor.create(luaText, uri, path);
-		this.preLoadSymbolMap.set(uri, docSymbol);
-
-		this.docSymbolMap.set(uri, docSymbol);
+		let docSymbol: DocSymbolProcessor = DocSymbolProcessor.create(luaText, uri);
+		if(type === 0){
+			this.luaPreloadSymbolMap.set(uri, docSymbol);
+		}else{
+			this.userPreloadSymbolMap.set(uri, docSymbol);
+		}
 	}
 
 	// 获取某个文件的引用树列表
