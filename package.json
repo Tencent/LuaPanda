@@ -266,6 +266,11 @@
 								"type": "boolean",
 								"description": "是否使用自动路径模式",
 								"default": true
+							},
+							"updateTips": {
+								"type": "boolean",
+								"description": "是否打开 LuaPanda 自动升级提示",
+								"default": true
 							}
 						}
 					}

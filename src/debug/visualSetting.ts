@@ -6,6 +6,32 @@ import { DebugLogger } from '../common/logManager';
 
 export class VisualSetting {
 
+    // 修改launch.json中的一项
+    public static setLaunchjson(key, value, config = "LuaPanda"){
+        let settings = this.readLaunchjson();
+        for (const keyLaunch in settings.configurations) {
+            let valueLaunch = settings.configurations[keyLaunch]
+            if(valueLaunch["name"] === config){
+                valueLaunch[key] = value;
+            }
+        }
+
+        //序列化并写入
+        let launchJson = JSON.stringify(settings, null,  4);
+        Tools.writeFileContent(Tools.VSCodeOpenedFolder + "/.vscode/launch.json" ,launchJson);
+    }
+
+    // 获取launch.json中的一项
+    public static getLaunchjson(key, config = "LuaPanda"){
+        let settings = this.readLaunchjson();
+        for (const keyLaunch in settings.configurations) {
+            let valueLaunch = settings.configurations[keyLaunch]
+            if(valueLaunch["name"] === config){
+                return valueLaunch[key];
+            }
+        }
+    }
+
     private static readLaunchjson(){
         let launchPath = Tools.VSCodeOpenedFolder + "/.vscode/launch.json";
         //如果文件不存在，就创建一个

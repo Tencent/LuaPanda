@@ -57,6 +57,16 @@
                 <span class="onoffswitch-switch"></span>
             </label>
         </div> <br>
+
+        <label class="lab" title="是否打开 LuaPanda 自动升级提示"><font size="3" face="Arial">updateTips: </font></label>
+        <div class="onoffswitch" style="margin:20px">
+            <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="updateTips">
+            <label class="onoffswitch-label" for="updateTips">
+                <span class="onoffswitch-inner"></span>
+                <span class="onoffswitch-switch"></span>
+            </label>
+        </div> <br>
+
         <label class="lab"></label>
         <input id="save" class="btn_st" style="margin:20px" type="button" value="保存配置" onclick="saveConfig();" />
     </form>
@@ -141,6 +151,7 @@
             let luaFileExtension = document.getElementById('luaFileExtension');
             let connectionPort = document.getElementById('connectionPort');
             let cwd = document.getElementById('cwd');
+            let updateTips = document.getElementById('updateTips');
 
             let pathCaseSensitivity = document.getElementById('pathCaseSensitivity');
             let stopOnEntry = document.getElementById('stopOnEntry');
@@ -154,6 +165,12 @@
             luapanda["luaFileExtension"] = luaFileExtension.value;
             luapanda["connectionPort"] = parseInt(connectionPort.value);
             luapanda["cwd"] = cwd.value;
+
+            if(updateTips.checked){
+                luapanda["updateTips"] = true;
+            }else{
+                luapanda["updateTips"] = false;
+            }
 
             if (pathCaseSensitivity.checked) {
                 luapanda["pathCaseSensitivity"] = true;
@@ -242,11 +259,18 @@
                             setInputContent("autoPathMode", true);
                         }
 
+                        if (message["LuaPanda"]["updateTips"]) {
+                            setCheckboxStatue("updateTips", message["LuaPanda"]["updateTips"]);
+                        } else {
+                            setInputContent("updateTips", true);
+                        }           
+
                         if (message["isOpenAnalyzer"]) {
                             setCheckboxStatue("luaAnalyzerSwitch", message["isOpenAnalyzer"]);
                         } else {
                             setInputContent("luaAnalyzerSwitch", true);
                         }
+
                     }
                     break;
             }

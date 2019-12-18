@@ -258,6 +258,10 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             config.autoReconnect = false;
         }
 
+        if (config.updateTips == undefined) {
+            config.updateTips = true;
+        }
+
         //隐藏属性
         if (config.DebugMode == undefined) {
             config.DebugMode = false;
