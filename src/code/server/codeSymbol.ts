@@ -20,9 +20,9 @@ export class CodeSymbol {
 	public static userPreloadSymbolMap = new Map<string, DocSymbolProcessor>();
 
 	// 已处理文件列表，这里是防止循环引用
-	private static alreadyProcessFile;
+	private static alreadySearchList; //TODO 要标记一下这个变量被哪些函数使用了
 
-
+	// 获取指定文件中的chunk列表
 	public static getCretainDocChunkDic(uri){
 		let processor = this.docSymbolMap.get(uri);
 		if(processor){
@@ -34,24 +34,24 @@ export class CodeSymbol {
 //-----------------------------------------------------------------------------	
 	// 单文件内符号处理
 	// 指定文件的符号 [单文件创建] | 无返回 . 如文档的符号已建立则直接返回
-	public static createCertainDocSymbols(uri: string, luaText?: string) {
+	public static createOneDocSymbols(uri: string, luaText?: string) {
 		if ( ! this.docSymbolMap.has(uri)) {
-			this.refreshCertainDocSymbols(uri, luaText);
+			this.refreshOneDocSymbols(uri, luaText);
 		}
 	}
 
 	// 指定文件的符号 [单文件刷新] | 无返回， 强制刷新
-	public static refreshCertainDocSymbols(uri: string, luaText?: string) {
+	public static refreshOneDocSymbols(uri: string, luaText?: string) {
 		if(luaText == undefined){
 			luaText = CodeEditor.getCode(uri);
 		}
 		this.createDocSymbol(uri, luaText);
 	}
 
-	// 获取指定文件的所有符号 ,  并返回Array形式
-	public static getCertainDocSymbolsReturnArray(uri: string, luaText?: string, range?:Tools.SearchRange): Tools.SymbolInformation[] {
+	// 获取指定文件的所有符号 ,  返回Array形式
+	public static getOneDocSymbolsArray(uri: string, luaText?: string, range?:Tools.SearchRange): Tools.SymbolInformation[] {
 		let docSymbals: Tools.SymbolInformation[] = [];
-		this.createCertainDocSymbols(uri, luaText);
+		this.createOneDocSymbols(uri, luaText);
 		switch(range){
 			case Tools.SearchRange.GlobalSymbols:
 				docSymbals = this.docSymbolMap.get(uri).getGlobalSymbolsArray(); break;
@@ -63,10 +63,10 @@ export class CodeSymbol {
 		return docSymbals;
 	}
 
-	// 获取指定文件的所有符号 ,  并返回Dictionary形式
-	public static getCertainDocSymbolsReturnDic(uri: string, luaText?: string, range?:Tools.SearchRange): Tools.SymbolInformation[] {
+	// 获取指定文件的所有符号 ,  返回Dictionary形式
+	public static getOneDocSymbolsDic(uri: string, luaText?: string, range?:Tools.SearchRange): Tools.SymbolInformation[] {
 		let docSymbals: Tools.SymbolInformation[] = [];
-		this.createCertainDocSymbols(uri, luaText);
+		this.createOneDocSymbols(uri, luaText);
 		switch(range){
 			case Tools.SearchRange.GlobalSymbols:
 				docSymbals = this.docSymbolMap.get(uri).getGlobalSymbolsDic(); break;
@@ -79,8 +79,8 @@ export class CodeSymbol {
 	}	
 
 	// 获取指定文件的返回值，如无返回null
-	public static getCertainDocReturnValue(uri):string{
-		this.createCertainDocSymbols(uri);
+	public static getOneDocReturnSymbol(uri):string{
+		this.createOneDocSymbols(uri);
 		let docSymbals = this.docSymbolMap.get(uri);
 		if(docSymbals){
 			return docSymbals.getFileReturnArray();
@@ -92,7 +92,7 @@ export class CodeSymbol {
 
 	// 指定文件夹中的符号处理
 	// 创建指定文件夹中所有文件的符号 [批量创建]
-	public static createFolderDocSymbols(path: string){
+	public static createFolderSymbols(path: string){
 		if(path === undefined || path === ''){
 			return;
 		}
@@ -105,8 +105,8 @@ export class CodeSymbol {
 		});
 	}
 
-	// 刷新指定文件夹中所有文件的符号 [批量刷新]
-	public static refreshFolderDocSymbols(path: string){
+	// 刷新 指定文件夹中所有文件的符号 [批量刷新]
+	public static refreshFolderSymbols(path: string){
 		if(path === undefined || path === ''){
 			return;
 		}
@@ -116,25 +116,34 @@ export class CodeSymbol {
 		});
 	}
 
-	// 刷新 PreLoad 所有文件的符号 [PreLoad批量刷新]
-	// 0:lua  1:user
-	public static refreshPreLoadSymbals(path: string, type: number = 1){
+	// 创建 lua预制的符号表 参数是文件夹路径
+	public static createLuaPreloadSymbols(path: string){
 		if(path === undefined || path === ''){
 			return;
 		}
 		let filesArray = Tools.getDirFiles( path );
 		filesArray.forEach(pathElement => {
-			this.createPreLoadSymbals( Tools.pathToUri(pathElement), type );
+			this.createPreLoadSymbals( Tools.pathToUri(pathElement), 0 );
 		});
 	}
 
-	// 刷新 PreLoad 单个文件的符号 [PreLoad刷新]
-	// 0:lua  1:user
-	public static refreshSinglePreLoadFile(filePath: string, type: number = 1){
+	// 刷新 用户PreLoad 所有文件的符号 [PreLoad批量刷新] 参数是文件夹路径
+	public static refreshUserPreloadSymbals(path: string){
+		if(path === undefined || path === ''){
+			return;
+		}
+		let filesArray = Tools.getDirFiles( path );
+		filesArray.forEach(pathElement => {
+			this.createPreLoadSymbals( Tools.pathToUri(pathElement), 1 );
+		});
+	}
+
+	// 刷新 PreLoad 单个文件的符号 [PreLoad刷新] 通常lua预制符号只需要创建，无需刷新。 
+	public static refreshOneUserPreloadDocSymbols(filePath: string){
 		if(filePath === undefined || filePath === ''){
 			return;
 		}
-		this.createPreLoadSymbals(Tools.pathToUri(filePath), type);
+		this.createPreLoadSymbals(Tools.pathToUri(filePath), 1);
 	}
 
 	// 获取 workspace 中的全局符号, 以dictionary的形式返回
@@ -144,7 +153,7 @@ export class CodeSymbol {
 		let g_symb = {};
 
 		for (const fileUri in filesMap) {
-			let g_s = this.getCertainDocSymbolsReturnDic( filesMap[fileUri], null, range);
+			let g_s = this.getOneDocSymbolsDic( filesMap[fileUri], null, range);
 			for (const key in g_s) {
 				const element = g_s[key];
 				g_symb[key] = element;
@@ -154,24 +163,6 @@ export class CodeSymbol {
 		return g_symb;
 	}
 
-	// 获取Require文件中的全局符号（本文件引用的其他文件）, 以dictionary的形式返回 
-	// public static getRequireTreeGlobalSymbols(uri: string){
-	// 	if(uri === undefined || uri === ''){
-	// 		return;
-	// 	}
-
-	// 	let fileList = this.getRequireTreeList(uri);
-	// 	let g_symb = {};
-	// 	for (let index = 0; index < fileList.length; index++) {
-	// 		let g_s = this.getCertainDocSymbolsReturnDic( fileList[index], null, Tools.SearchRange.GlobalSymbols);
-	// 		for (const key in g_s) {
-	// 			const element = g_s[key];
-	// 			g_symb[key] = element;
-	// 		}
-	// 	}
-	// 	return g_symb;
-	// }
-
 	//reference处理
 	public static searchSymbolReferenceinDoc(searchSymbol) {
 		let uri = searchSymbol.containerURI;
@@ -179,33 +170,13 @@ export class CodeSymbol {
 		return docSymbals.searchDocSymbolReference(searchSymbol);
 	}
 
-
 //-----------------------------------------------------------------------------
 //-- 搜索符号
-//-----------------------------------------------------------------------------		
-	// 在[工作空间]查找符号（模糊匹配，用作搜索符号）
-	public static searchSymbolinWorkSpace(symbolStr: string, searchMethod: Tools.SearchMode, searchRange?: Tools.SearchRange): Tools.SymbolInformation[] {
-		if (symbolStr === '') {
-			return null;
-		} else {
-			let retSymbols: Tools.SymbolInformation[] = [];
-			for (let [ , value] of this.docSymbolMap) {
-				let docSymbals = value.searchMatchSymbal(symbolStr, searchMethod, searchRange);
-				retSymbols = retSymbols.concat(docSymbals);
-			}
-
-			// 处理预制lua文件
-			// let preS = this.searchPreLoadSymbols(symbolStr, searchMethod);
-			// retSymbols = retSymbols.concat(preS);
-
-			return retSymbols;
-		}
-	}
-
-	//在[指定文件]查找符号（模糊匹配，用作搜索符号）
+//-----------------------------------------------------------------------------	
+	// 在[指定文件]查找符号（模糊匹配，用作搜索符号）
 	// @return 返回值得到的排序:
 	// 如果是Equal搜索，从dic中检索，按照AST深度遍历顺序返回
-	public static searchSymbolinDoc(uri:string, symbolStr: string, searchMethod: Tools.SearchMode, range?:Tools.SearchRange): Tools.SymbolInformation[] {
+	public static searchSymbolinDoc(uri:string, symbolStr: string, searchMethod: Tools.SearchMode, range:Tools.SearchRange = Tools.SearchRange.AllSymbols): Tools.SymbolInformation[] {
 		if (symbolStr === '' || uri === '' ) {
 			return null;
 		}
@@ -214,136 +185,118 @@ export class CodeSymbol {
 		return retSymbols;
 	}
 
-	// 在[本文件引用的其他文件]上搜索所有符合的符号，用于 [代码提示 auto completion]
-	public static searchAllSymbolinRequireTreeforCompleting (uri:string, symbolStr: string,  searchMethod: Tools.SearchMode): Tools.SymbolInformation[] {
-		let retSymbols = [];
-		if (symbolStr === '' || uri === '' ) {
-			return null;
+	// 在[工作空间]查找符号, 主要用于模糊搜索。搜索文件顺序完全随机( isSearchPreload = false 全局符号模糊查找默认不展示预制变量)
+	// useAlreadySearchList 是否使用已经搜索列表。需要使用一搜索列表的场景是 先进行了引用树搜素，之后进行全局搜索，为了避免重读降低效率，此项设置为true
+	public static searchSymbolinWorkSpace(symbolStr: string, searchMethod: Tools.SearchMode = Tools.SearchMode.FuzzyMatching, searchRange: Tools.SearchRange = Tools.SearchRange.AllSymbols, isSearchPreload = false , useAlreadySearchList = false): Tools.SymbolInformation[] {
+		if (symbolStr === '') {
+			return [];
 		}
+
+		let retSymbols: Tools.SymbolInformation[] = [];
+		for (let [ key , value] of this.docSymbolMap) {
+			if(useAlreadySearchList){
+				if(this.alreadySearchList[key]){
+					continue;
+				}
+			}
+
+			let docSymbals = value.searchMatchSymbal(symbolStr, searchMethod, searchRange);
+			retSymbols = retSymbols.concat(docSymbals);
+		}
+
+		if(isSearchPreload){
+			let preS = this.searchUserPreLoadSymbols(symbolStr, searchMethod);
+			retSymbols = retSymbols.concat(preS);
+			preS = this.searchLuaPreLoadSymbols(symbolStr, searchMethod);
+			retSymbols = retSymbols.concat(preS);	
+		}
+
+		return retSymbols;
+	}
+
+	// 搜索全局变量的定义，查找顺序是本文件，引用树，全局
+	// 不优先搜全局，不搜预制
+	public static searchSymbolforGlobalDefinition (uri:string, symbolStr: string,  searchMethod: Tools.SearchMode = Tools.SearchMode.ExactlyEqual, searchRange: Tools.SearchRange = Tools.SearchRange.AllSymbols): Tools.SymbolInformation[] {
+		if (symbolStr === '' || uri === '' ) {
+			return [];
+		}
+
+		let retSymbols: Tools.SymbolInformation[] = [];
 		//搜索顺序 用户 > 系统
-		CodeSymbol.alreadyProcessFile = new Object();
+		CodeSymbol.alreadySearchList = new Object(); // 记录已经搜索过的文件。避免重复搜索耗时
 		let preS = this.recursiveSearchRequireTree(uri, symbolStr, searchMethod);
 		if(preS){
 			retSymbols = retSymbols.concat(preS);
 		}
 
-		let preS1 = this.searchUserPreLoadSymbols(symbolStr, searchMethod);
-		if(preS1){
-			retSymbols = retSymbols.concat(preS1);
+		// 这里建议搜到了，就不查全局文件了，因为全局查找是无序的。 这里最好有一个记录措施，避免同一个文件被多次查找，降低效率。
+		if(retSymbols.length === 0){
+			// 全局查找, 不含预制文件
+			let preS0 = this.searchSymbolinWorkSpace(symbolStr, searchMethod, Tools.SearchRange.GlobalSymbols, false, true);
+			if(preS0){
+				retSymbols = retSymbols.concat(preS0);
+			}
+		}
+		return retSymbols;
+	}
+
+	// 在[本文件引用的其他文件]上搜索所有符合的符号，用于 [代码提示 auto completion]
+	// 一定会搜全局，搜预制. 比较通用的一种方式，但是比较慢。（因为加入了预制搜索）
+	public static searchSymbolforCompletion (uri:string, symbolStr: string,  searchMethod: Tools.SearchMode = Tools.SearchMode.PrefixMatch, searchRange: Tools.SearchRange = Tools.SearchRange.AllSymbols): Tools.SymbolInformation[] {
+		if (symbolStr === '' || uri === '' ) {
+			return [];
 		}
 
-		let preS2 = this.searchLuaPreLoadSymbols(symbolStr, searchMethod);
-		if(preS2){
-			retSymbols = retSymbols.concat(preS2);
+		let retSymbols: Tools.SymbolInformation[] = [];
+		//搜索顺序 用户 > 系统
+		CodeSymbol.alreadySearchList = new Object();
+		let preS = this.recursiveSearchRequireTree(uri, symbolStr, searchMethod);
+		if(preS){
+			retSymbols = retSymbols.concat(preS);
+		}
+
+		// 全局, 含有预制文件
+		let preS0 = this.searchSymbolinWorkSpace(symbolStr, searchMethod, Tools.SearchRange.AllSymbols, true, true);
+		if(preS0){
+			retSymbols = retSymbols.concat(preS0);
 		}
 
 		return retSymbols;
 	}
 
-	/**
-	 * 向上遍历引用树，搜索全局变量定义（引用本文件的文件） |   这个方法主要适用于在引用树上查找全局变量
-	 * 搜索的原则为在引用树上优先搜索最近的定义，即先搜本文件，然后逆序搜索require的文件，再逆序搜索reference
-	 * @param symbolInfo    要搜索的符号名
-	 * @param uri           查找的文件
-	 * @param searchedFiles 标记已经搜索过的文件，上层调用该方法时可以不传
-	 * @return              搜索结果，SymbolInformation数组
-	 */
-	public static searchGlobalInRequireTree(symbolName: string, uri: string ,  searchMethod: Tools.SearchMode , searchedFiles?: Map<string, boolean>, isFirstEntry?: boolean): Tools.SymbolInformation[] {
-		if (searchedFiles == undefined) {
-			searchedFiles = new Map<string, boolean>();
-		}
-
-		if(isFirstEntry == undefined){
-			isFirstEntry = true;
-		}
-
-		let result: Tools.SymbolInformation[] = new Array<Tools.SymbolInformation>();
-
-		// uri为空直接返回
-		if (uri == "") {
-			return result;
-		}
-
-		// 判断文件是否已搜索过
-		if (searchedFiles.get(uri) == true) {
-			return result;
-		}
-		// 在单个文件中搜索全局变量
-		let docSymbol = this.docSymbolMap.get(uri);
-		let searchResult;
-		if(isFirstEntry){
-			searchResult = docSymbol.searchMatchSymbal(symbolName, searchMethod, Tools.SearchRange.AllSymbols);
-		}else{
-			searchResult = docSymbol.searchMatchSymbal(symbolName, searchMethod, Tools.SearchRange.GlobalSymbols);
-		}
-		result = result.concat(searchResult);
-		searchedFiles.set(uri, true);
-
-		let requireFiles = this.docSymbolMap.get(uri).getRequiresArray();
-		let references = this.docSymbolMap.get(uri).getReferencesArray();
-
-		// 搜索的原则为在引用树上优先搜索最近的定义，即先搜本文件，然后逆序搜索require的文件，再逆序搜索reference
-		// 搜索require的文件
-		for (let i = requireFiles.length - 1; i >= 0; i--) {
-			let searchResult = this.searchGlobalInRequireTree(symbolName, Tools.transFileNameToUri(requireFiles[i].reqName), searchMethod, searchedFiles, false);
-			result = result.concat(searchResult);
-		}
-		// 搜索require本文件的文件(references)
-		for (let i  = references.length - 1; i >= 0; i--) {
-			let searchResult = this.searchGlobalInRequireTree(symbolName, references[i], searchMethod, searchedFiles, false);
-			result = result.concat(searchResult);
-		}
-
-		return result;
-	}
-
-	//在预制文档中搜索
-	public static searchLuaPreLoadSymbols(symbolStr, searchMethod){
-		let retSymbols = new Array<Tools.SymbolInformation>();
-		this.luaPreloadSymbolMap.forEach(element => {
-			let res = element.searchMatchSymbal(symbolStr, searchMethod, Tools.SearchRange.AllSymbols);
-			if(res.length > 0){
-				retSymbols = retSymbols.concat(res);
-			}
-		});
-		return retSymbols;
-	}
-
-	public static searchUserPreLoadSymbols(symbolStr, searchMethod){
-		let retSymbols = new Array<Tools.SymbolInformation>();
-		this.userPreloadSymbolMap.forEach(element => {
-			let res = element.searchMatchSymbal(symbolStr, searchMethod, Tools.SearchRange.AllSymbols);
-			if(res.length > 0){
-				retSymbols = retSymbols.concat(res);
-			}
-		});
-		return retSymbols;
-	}
-
-	//查找符合某一深度的符号
-	public static selectSymbolinCertainContainer(symbolList, containerList){
-		if(!symbolList) return;
-		let retSymoblList = new Array();
-		for (let index = 0; index < symbolList.length; index++) {
-			const symbol = symbolList[index];
-			if(symbol.containerList.length == containerList.length){
-				for (let containerIdx = 0; containerIdx < containerList.length; containerIdx++) {
-					if(containerList[containerIdx] != symbol.containerList[containerIdx]){
-						//出现层级不相等
-						break;
-					}
-					if(containerIdx == containerList.length - 1){
-						//深度相等
-						retSymoblList.push(symbol);
-					}
-				}
-			}
-		}
-		return retSymoblList;
-	}
 //-----------------------------------------------------------------------------
 //-- 私有方法
 //-----------------------------------------------------------------------------		
+
+	// 搜索预制lua符号
+	private static searchLuaPreLoadSymbols(symbolStr, searchMethod){
+		if(!symbolStr || symbolStr === ''){
+			return [];
+		}
+		let retSymbols = new Array<Tools.SymbolInformation>();
+		this.luaPreloadSymbolMap.forEach(element => {
+			let res = element.searchMatchSymbal(symbolStr, searchMethod, Tools.SearchRange.GlobalSymbols);
+			if(res.length > 0){
+				retSymbols = retSymbols.concat(res);
+			}
+		});
+		return retSymbols;
+	}
+
+	// 搜索用户预制符号
+	private static searchUserPreLoadSymbols(symbolStr, searchMethod){
+		if(!symbolStr || symbolStr === ''){
+			return [];
+		}
+		let retSymbols = new Array<Tools.SymbolInformation>();
+		this.userPreloadSymbolMap.forEach(element => {
+			let res = element.searchMatchSymbal(symbolStr, searchMethod, Tools.SearchRange.GlobalSymbols);
+			if(res.length > 0){
+				retSymbols = retSymbols.concat(res);
+			}
+		});
+		return retSymbols;
+	}
 
 	/**
 	 * 重新分析文件后，根据require的文件的变动，更新本文件require的文件的reference，保留本文件的reference
@@ -385,8 +338,8 @@ export class CodeSymbol {
 	// 创建某个lua文件的符号
 	// @uri	 文件uri
 	// @text  文件内容
-	private static createDocSymbol(uri: string, luaText?: string): Tools.SymbolInformation[] {
-		if(uri == null) return null;
+	private static createDocSymbol(uri: string, luaText?: string){
+		if(uri == null) return;
 		if (luaText == undefined) {
 			luaText = Tools.getFileContent(Tools.uriToPath(uri));
 		}
@@ -413,7 +366,7 @@ export class CodeSymbol {
 				}
 			}
 		}else{
-			return null;
+			return;
 		}
 	}
 
@@ -431,68 +384,24 @@ export class CodeSymbol {
 		}
 	}
 
-	// 获取某个文件的引用树列表
-	// private static getRequireTreeList(uri: string){
-	// 	if(uri === undefined || uri === ''){
-	// 		return;
-	// 	}
-
-	// 	function recursiveGetRequireTreeList(uri: string, fileList: string[]){
-	// 		if(uri === undefined || uri === ''){
-	// 			return;
-	// 		}
-	// 		// 如果 uri 的符号列表不存在，创建
-	// 		if (!CodeSymbol.docSymbolMap.has(uri)) {
-	// 			Logger.log("createDocSymbals : "+ uri);
-	// 			let luaText = CodeEditor.getCode(uri);
-	// 			CodeSymbol.createDocSymbol(uri, luaText);
-	// 		}
-
-	// 		//如果uri所在文件存在错误，则无法创建成功。这里docProcesser == null
-	// 		let docProcesser = CodeSymbol.docSymbolMap.get(uri);
-	// 		if(docProcesser == null || docProcesser.getRequiresArray == null){
-	// 			Logger.log("get docProcesser or getRequireFiles error!");
-	// 			return;
-	// 		}
-
-	// 		//当前文件已经在递归处理过了
-	// 		if(alreadyProcessFile[uri] == 1){
-	// 			return;
-	// 		}else{
-	// 			alreadyProcessFile[uri] = 1;
-	// 		}
-
-	// 		let reqFiles =  docProcesser.getRequiresArray();
-	// 		for(let idx = 0, len = reqFiles.length ; idx < len ; idx++ ){
-	// 			let newuri =  Tools.transFileNameToUri(reqFiles[idx]['reqName'])
-	// 			recursiveGetRequireTreeList(newuri, fileList);
-	// 		}
-	// 		fileList.push(uri);
-	// 		return fileList;
-	// 	}
-
-	// 	let fileList = new Array<string>();
-	// 	let alreadyProcessFile = new Object(); //防止循环引用
-	// 	recursiveGetRequireTreeList(uri, fileList);
-	// 	return fileList;
-	// }
-
-
 	private static deepCounter = 0;
 	// 递归搜索 引用树，查找符号
 	// @fileName 文件名
 	// @symbolStr 符号名
 	// @uri
-	private static recursiveSearchRequireTree(uri: string, symbolStr, searchMethod :Tools.SearchMode, isFirstEntry?:boolean){
-		if(uri === undefined || uri === ''){
-			return;
+	private static recursiveSearchRequireTree(uri: string, symbolStr, searchMethod :Tools.SearchMode, isFirstEntry:boolean = true){
+		if(!uri || uri === ''){
+			return [];
+		}
+
+		if(!symbolStr || symbolStr === ''){
+			return [];
 		}
 
 		let retSymbArray = new Array<Tools.SymbolInformation>();
 
-		if(isFirstEntry == undefined){
+		if(isFirstEntry){
 			// 首次进入
-			isFirstEntry = true;
 			this.deepCounter = 0;
 		}else{
 			//递归中
@@ -517,10 +426,10 @@ export class CodeSymbol {
 		}
 
 		//当前文件已经在递归处理中了
-		if(this.alreadyProcessFile[uri] == 1){
+		if(this.alreadySearchList[uri] == 1){
 			return;
 		}else{
-			this.alreadyProcessFile[uri] = 1;
+			this.alreadySearchList[uri] = 1;
 		}
 
 		// Logger.log("recursiveSearchRequireTree process :" + uri);

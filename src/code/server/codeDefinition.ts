@@ -70,7 +70,7 @@ export class CodeDefinition {
 
 	private static commonSearch(uri, symbolStr, method){
 		//做一次普通搜索
-		return CodeSymbol.searchAllSymbolinRequireTreeforCompleting(uri, symbolStr, method);
+		return CodeSymbol.searchSymbolforGlobalDefinition(uri, symbolStr, method);
 	}
 
 //-----------------------------------------------------------------------------
@@ -180,7 +180,7 @@ export class CodeDefinition {
 
 	// 按行号查询function
 	public static getFunctionInfoByLine(uri: string, line: number): { functionName: string, functionParam: string[] } {
-		let displaySymbolArray = CodeSymbol.getCertainDocSymbolsReturnArray(uri, null, Tools.SearchRange.AllSymbols);
+		let displaySymbolArray = CodeSymbol.getOneDocSymbolsArray(uri, null, Tools.SearchRange.AllSymbols);
 		let result = { functionName: "", functionParam: [] };
 		for (const key in displaySymbolArray) {
 			const docDisplaySymbol = displaySymbolArray[key];

@@ -180,7 +180,7 @@ export class CodeCompletion {
 	// 普通搜索。这里返回的必须是一个数组，哪怕是一个空数组
 	private static commonCompletionSearch(uri, searchPrefix){
 		//searchAllSymbolinRequireTreeforCompleting这个实际搜索函数中，应该包含数量控制逻辑
-		let retSymb = CodeSymbol.searchAllSymbolinRequireTreeforCompleting(uri, searchPrefix, Tools.SearchMode.PrefixMatch);
+		let retSymb = CodeSymbol.searchSymbolforCompletion(uri, searchPrefix, Tools.SearchMode.PrefixMatch);
 		if(!isArray(retSymb)){
 			return [];
 		}

@@ -38,7 +38,7 @@ import  * as Tools  from "./codeTools";
 import { Logger } from './codeLogManager';
 import { CodeSymbol } from './codeSymbol';
 import { CodeDefinition } from './codeDefinition';
-import { CodeCompleting } from './codeCompleting';
+import { CodeCompletion } from './codeCompletion';
 import { CodeEditor } from './codeEditor';
 import { CodeFormat } from './codeFormat';
 import { CodeLinting } from './codeLinting';
@@ -120,7 +120,7 @@ connection.onInitialize((initPara: InitializeParams) => {
 	setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
 	// 分析默认位置(扩展中)的lua文件
 	let resLuaPath = Tools.getVScodeExtensionPath() + '/res/lua';   //安装插件后地址
-	CodeSymbol.refreshPreLoadSymbals(resLuaPath, 0);//更新lua预设符号文件
+	CodeSymbol.createLuaPreloadSymbols(resLuaPath);//更新lua预设符号文件
 	NativeCodeExportBase.loadIntelliSenseRes();//更新用户导出符号文件
 	Logger.DebugLog("init success");
 
@@ -221,7 +221,7 @@ connection.onCompletion(
 		let uri = Tools.urlDecode(_textDocumentPosition.textDocument.uri);
 		let pos = _textDocumentPosition.position;
 		try{
-			return CodeCompleting.completionEntry(uri, pos);
+			return CodeCompletion.completionEntry(uri, pos);
 		} catch (error) {
 			Logger.InfoLog(error.stack);
 		}
@@ -252,7 +252,7 @@ connection.onDocumentSymbol(
 	(handler: DocumentSymbolParams): DocumentSymbol[] => {
 		let uri = handler.textDocument.uri;
 		let decUri = Tools.urlDecode(uri);
-		let retSyms = CodeSymbol.getCertainDocSymbolsReturnArray(decUri,  null, Tools.SearchRange.AllSymbols);
+		let retSyms = CodeSymbol.getOneDocSymbolsArray(decUri,  null, Tools.SearchRange.AllSymbols);
 		let retSymsArr: any[];
 		try {
 			retSymsArr = Tools.getOutlineSymbol(retSyms);
@@ -270,7 +270,7 @@ connection.onDocumentSymbol(
 connection.onWorkspaceSymbol(
 	(handler: WorkspaceSymbolParams): SymbolInformation[] => {
 		try{
-			return CodeSymbol.searchSymbolinWorkSpace(handler.query, Tools.SearchMode.FuzzyMatching, Tools.SearchRange.AllSymbols);
+			return  CodeSymbol.searchSymbolinWorkSpace(handler.query);
 		} catch (error) {
 			Logger.InfoLog(error.stack);
 		}
@@ -302,7 +302,7 @@ documents.onDidChangeContent(change => {
 		const uri = Tools.urlDecode(change.document.uri);
 		const text = change.document.getText();
 		CodeEditor.saveCode(uri, text); //先保存代码
-		CodeSymbol.refreshCertainDocSymbols(uri, text);
+		CodeSymbol.refreshOneDocSymbols(uri, text);
 
 		// 运行语法检查
 		getDocumentSettings(uri).then(
@@ -420,7 +420,7 @@ function createSybwithExt(luaExtname: string, rootpath: string) {
 	let exp = new RegExp(luaExtname + '$', "i");
 	dir.readFiles(rootpath, { match: exp }, function (err, content, filePath, next) {
 		if (!err) {
-			CodeSymbol.getCertainDocSymbolsReturnArray(Tools.pathToUri(filePath), content);
+			CodeSymbol.getOneDocSymbolsArray(Tools.pathToUri(filePath), content);
 		}
 		next();
 	}, (err) => {

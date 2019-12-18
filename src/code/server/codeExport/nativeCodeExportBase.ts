@@ -20,7 +20,7 @@ export class NativeCodeExportBase {
         // 如果文件存在，刷新
         let dirPath = this.LuaPandaInterfaceIntelliSenseResPath;
         if (fs.existsSync(dirPath)) {
-            CodeSymbol.refreshPreLoadSymbals(dirPath);
+            CodeSymbol.refreshUserPreloadSymbals(dirPath);
 		}
 	}
     

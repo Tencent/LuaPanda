@@ -16,12 +16,13 @@ export class TypeInfer {
 //-- 对外接口
 //-----------------------------------------------------------------------------			
 	private static retArray = []; //用来记录 Completion 和 Definition 返回数组
-	
+	private static startMS;
 	// 定义查找接口
 	// @symbolInfo 是符号名
 	public static SymbolTagForDefinitionEntry(symbolInfo, uri){
 		let symbolName = symbolInfo.name;
-		this.retArray = []
+		this.retArray = [];
+		this.startMS = Date.now();
 		this.recursiveProcessSymbolTagForDefinition(uri, symbolName, [], true)
 		return this.retArray;
 	}
@@ -30,11 +31,41 @@ export class TypeInfer {
 	// @searchPrefix 是一个字符串，标记要查找的用户输入，可以是不完全的比如 aactor.el...
 	// 返回值是symbol数组
 	public static SymbolTagForCompletionEntry(uri, searchPrefix){
-		this.retArray = []
+		this.retArray = [];
+		this.startMS = Date.now();
 		this.recursiveProcessSymbolTagForCompletion(uri, searchPrefix, [], true)
 		return this.retArray;
 	}
 	
+	// 循环查tag for definition
+	private static recursiveSearchTagForDefinition(element, uri, searchPrefix, tailListCache,  isStripping = true){
+		// 找到tag对应的符号。 searchTag函数的本意是找到 findTagRetSymbArray[key] 这个符号的所有对应tag符号，以便继续的合并搜索
+		let findoutArr = this.searchTag( element, uri ) || [];
+		for (const value of findoutArr) {
+			let uri = value.containerURI;
+			//[尝试]向上补全, 所以补全这边的 tailListCache 要拷贝
+			this.recursiveProcessSymbolTagForDefinition(uri, value.searchName, tailListCache, false);
+			if(this.retArray.length === 0){
+				this.recursiveSearchTagForDefinition(value, uri, searchPrefix, tailListCache, isStripping);
+			}
+		}
+	}
+
+
+	// 循环查tag for conpletion
+	private static recursiveSearchTagForCompletion(element, uri, searchPrefix, tailListCache,  isStripping = true){
+		// 找到tag对应的符号。 searchTag函数的本意是找到 findTagRetSymbArray[key] 这个符号的所有对应tag符号，以便继续的合并搜索
+		let findoutArr = this.searchTag( element, uri );
+		for (const value of findoutArr) {
+			let uri = value.containerURI;
+			//[尝试]向上补全, 所以补全这边的 tailListCache 要拷贝
+			this.recursiveProcessSymbolTagForCompletion(uri, value.searchName, tailListCache, false);
+			if(this.retArray.length === 0){
+				this.recursiveSearchTagForCompletion(value, uri, searchPrefix, tailListCache, isStripping);
+			}
+		}
+	}
+
 //-----------------------------------------------------------------------------
 //-- 私有方法
 //-----------------------------------------------------------------------------		
@@ -44,7 +75,8 @@ export class TypeInfer {
 	// @tailListCache 用来在剥离时，记录被剥离后缀的数组
 	// @isStripping 剥离模式/合并模式
 	public static recursiveProcessSymbolTagForDefinition(uri, searchPrefix, tailListCache, isStripping = true){
-		if(isStripping){		
+		if(isStripping){
+			if(this.startMS + 2000 < Date.now()) return;	//超时返回
 			let searchPrefixArray = Tools.splitToArrayByDot(searchPrefix);
 			for (let index = searchPrefixArray.length - 1; index >= 0; index--) {
 				// 切断用户输入 a.b.c => [a,b,c], 拼接, 开始循环(每次pop一个成员){
@@ -57,36 +89,38 @@ export class TypeInfer {
 				// 找到了。遍历查tag（循环）
 				for (const key in findTagRetSymbArray) {
 					let uri = findTagRetSymbArray[key].containerURI;
+					this.recursiveSearchTagForDefinition(findTagRetSymbArray[key] , uri, searchPrefix, tailListCache, isStripping);
+
 					// 找到tag对应的符号。 searchTag函数的本意是找到 findTagRetSymbArray[key] 这个符号的所有对应tag符号，以便继续的合并搜索
-					let findout = this.searchTag(findTagRetSymbArray[key], searchPrefix, uri, tailListCache, SCHName);
-					// let findout = this.searchTagNew(uri, findTagRetSymbArray[key]);
-					// 递归 isStripping = false
-					for (const key2 in findout) {
-						let nn = findout[key2];
-						this.recursiveProcessSymbolTagForCompletion(uri, nn.searchName, tailListCache, false)
-					}
+					// let findout = this.searchTag(findTagRetSymbArray[key], searchPrefix, uri, tailListCache, SCHName);
+					// // 递归 isStripping == false
+					// for (const key2 in findout) {
+					// 	let nn = findout[key2];
+					// 	//尝试向上补全
+					// 	this.recursiveProcessSymbolTagForDefinition(uri, nn.searchName, tailListCache, false);
+
+					// }
 				}
 			}
 		}else{	
 			// up
 			// 从 tailListCache 取出变量忘 searchPrefix上拼接，并查找结果有没有符号，符号有没有tag
-			let newName = searchPrefix + '.' + tailListCache.pop()
-			let xxArray = this.searchMethod(uri, newName, Tools.SearchMode.ExactlyEqual);// prefix search with no children
-			for (const key3 in xxArray) {
-				if(xxArray[key3].tagType){
+			let temptailCache = tailListCache.concat();
+			let newName = searchPrefix + '.' + temptailCache.pop(0);
+			let addPrefixSerachArray = this.searchMethod(uri, newName, Tools.SearchMode.ExactlyEqual);// prefix search with no children
+			for (const element of addPrefixSerachArray) {
+				if(element.tagType){
 					// TODO 如果有符号，有tag，切换成符号，递归
-
-
 				}else{
 					// 如果有符号，不论有无tag，继续合并
-					if(tailListCache.length > 0){
-						this.recursiveProcessSymbolTagForCompletion(uri, newName, tailListCache, false);
+					if(temptailCache.length > 0){
+						this.recursiveProcessSymbolTagForDefinition(uri, newName, temptailCache, false);
 					}else{
-						this.retArray.push(xxArray[key3]);
+						this.retArray.push(element);
 					}
 				}
 			}
-			// 如果没有符号，over
+			// 如果没有符号
 		}	
 	}
 
@@ -97,7 +131,8 @@ export class TypeInfer {
 	// @isStripping 剥离模式/合并模式
 	public static recursiveProcessSymbolTagForCompletion(uri, searchPrefix, tailListCache, isStripping = true){
 		// 防止循环遍历，记录[文件名] -- [符号名]
-		if(isStripping){		
+		if(isStripping){	
+			if(this.startMS + 2000 < Date.now()) return;	//超时返回	
 			let searchPrefixArray = Tools.splitToArrayByDot(searchPrefix);
 			for (let index = searchPrefixArray.length - 1; index >= 0; index--) {
 				// 切断用户输入 a.b.c => [a,b,c], 拼接, 开始循环(每次pop一个成员){
@@ -110,59 +145,54 @@ export class TypeInfer {
 				// 找到了。遍历查tag（循环）
 				for (const key in findTagRetSymbArray) {
 					let uri = findTagRetSymbArray[key].containerURI;
-					// 找到tag对应的符号。 searchTag函数的本意是找到 findTagRetSymbArray[key] 这个符号的所有对应tag符号，以便继续的合并搜索
-					let findout = this.searchTag(findTagRetSymbArray[key], searchPrefix, uri, tailListCache, SCHName);
-					// let findout = this.searchTagNew(uri, findTagRetSymbArray[key]);
-					// 递归 isStripping = false
-					for (const key2 in findout) {
-						let nn = findout[key2];
-						this.recursiveProcessSymbolTagForCompletion(uri, nn.searchName, tailListCache, false)
-					}
+					this.recursiveSearchTagForCompletion(findTagRetSymbArray[key] , uri, searchPrefix, tailListCache, isStripping);
+
+					// // 找到tag对应的符号。 searchTag函数的本意是找到 findTagRetSymbArray[key] 这个符号的所有对应tag符号，以便继续的合并搜索
+					// let findout = this.searchTag(findTagRetSymbArray[key], uri);
+					// // let findout = this.searchTagNew(uri, findTagRetSymbArray[key]);
+					// // 递归 isStripping = false
+					// for (const key2 in findout) {
+					// 	let nn = findout[key2];
+					// 	this.recursiveProcessSymbolTagForCompletion(uri, nn.searchName, tailListCache, false)
+					// }
 				}
 			}
 		}else{	
 			// up
 			// 从 tailListCache 取出变量忘 searchPrefix上拼接，并查找结果有没有符号，符号有没有tag
 			let newName = searchPrefix + '.' + tailListCache.pop()
-			let xxArray = this.searchMethod(uri, newName, Tools.SearchMode.PrefixMatch);// prefix search with no children
-			for (const key3 in xxArray) {
-				if(xxArray[key3].tagType){
+			let addPrefixSearchArray = this.searchMethod(uri, newName, Tools.SearchMode.PrefixMatch);// prefix search with no children
+			for (const element of addPrefixSearchArray) {
+				if(element.tagType){
 					// TODO 如果有符号，有tag，切换成符号，递归
-
-
 				}else{
 					// 如果有符号，不论有无tag，继续合并
 					if(tailListCache.length > 0){
 						this.recursiveProcessSymbolTagForCompletion(uri, newName, tailListCache, false);
 					}else{
-						this.retArray.push(xxArray[key3]);
+						this.retArray.push(element);
 					}
 				}
 			}
-			// 如果没有符号，over
+			// 如果没有符号，结束
 		}
-		//所有走完结束
 	}
 
 	// 普通搜索, local => global, 用什么样的搜索方式ExactlyEqual ，在哪个范围（含预制）
 	private static searchMethod(uri, SCHName , method = Tools.SearchMode.ExactlyEqual){
 		let findTagRetSymbArray = CodeSymbol.searchSymbolinDoc(uri , SCHName ,method);
 		if (findTagRetSymbArray == null || (findTagRetSymbArray &&findTagRetSymbArray.length <= 0)){
-			findTagRetSymbArray = CodeSymbol.searchAllSymbolinRequireTreeforCompleting(uri ,SCHName, method);
+			findTagRetSymbArray = CodeSymbol.searchSymbolforCompletion(uri ,SCHName, method);
 		}
 		return findTagRetSymbArray;
 	}
 
-	private static searchTag(element, searchPrefix, uri, prefixStrList, SCHName){
-		//搜索tag
-		// let alreadySearchNameList = [];
-		// let symbolInfo = { name : searchPrefix};
+	//搜索tag
+	private static searchTag(element, uri){
 		let findoutSymbs;
 		if(element.tagType && (element.tagReason === Tools.TagReason.UserTag || element.tagReason === Tools.TagReason.Equal) ){																//USERTag
-			// findoutSymbs = this.processUserTag(element, symbolInfo, uri, prefixStrList, alreadySearchNameList, searchPrefix,  SCHName);
 			findoutSymbs = this.searchUserTag(uri, element)
 		}else if(element.tagType && element.tagReason == Tools.TagReason.MetaTable ){	
-			// findoutSymbs = this.processMetaTable(element, symbolInfo, uri, prefixStrList, alreadySearchNameList, searchPrefix,  SCHName);
 			findoutSymbs = this.searchMetaTable(uri, element);
 		}else if(element.requireFile && element.requireFile.length > 0){		// 符号源于文件返回值
 			// let checkName = DotToBlankArr.join('.');
@@ -171,7 +201,7 @@ export class TypeInfer {
 			findoutSymbs = this.searchFunctionReturn(element);
 		}else if(element.chunk && element.chunk.returnSymbol){
 			let chunkRet  = element.chunk.returnSymbol;
-			findoutSymbs = CodeSymbol.searchAllSymbolinRequireTreeforCompleting(uri ,chunkRet, Tools.SearchMode.ExactlyEqual);
+			findoutSymbs = CodeSymbol.searchSymbolforCompletion(uri ,chunkRet, Tools.SearchMode.ExactlyEqual);
 		}
 		return findoutSymbs;
 	}
@@ -179,7 +209,7 @@ export class TypeInfer {
 	// 处理引用标记
 	private static searchRequire(element){
 		let beRequiredUri = Tools.transFileNameToUri(element.requireFile);
-		let beRequiredFilesRet = CodeSymbol.getCertainDocReturnValue(beRequiredUri);
+		let beRequiredFilesRet = CodeSymbol.getOneDocReturnSymbol(beRequiredUri);
 		if(beRequiredFilesRet && beRequiredFilesRet.length > 0){
 			let searchReturnSymbolInBeReqFile = CodeSymbol.searchSymbolinDoc(beRequiredUri, beRequiredFilesRet, Tools.SearchMode.ExactlyEqual);
 			return  searchReturnSymbolInBeReqFile;
@@ -187,14 +217,13 @@ export class TypeInfer {
 		return [];
 	}
 
-
 	private static searchFunctionReturn(element){
 		let uri = element.containerURI;
 		let searchName = element.funcRets.name;
 		//优先本文件，之后调用树，在之后全工程。 应该封装对应的搜索接口
 		let returnFuncList = CodeSymbol.searchSymbolinDoc(uri , searchName , Tools.SearchMode.ExactlyEqual);
 		if (returnFuncList == null || ( returnFuncList && returnFuncList.length <= 0) ){
-			returnFuncList = CodeSymbol.searchAllSymbolinRequireTreeforCompleting(uri ,searchName ,Tools.SearchMode.ExactlyEqual);
+			returnFuncList = CodeSymbol.searchSymbolforCompletion(uri ,searchName ,Tools.SearchMode.ExactlyEqual);
 		}		
 		//
 		let retrunSymbol = new Array();
@@ -202,16 +231,14 @@ export class TypeInfer {
 			// for (let index = 0; index < returnFuncList.length; index++) {
 				// 遍历所有的函数，并在函数中查找返回类型
 				const retFuncSymbol = returnFuncList[0];
-
 				let chunks =CodeSymbol.getCretainDocChunkDic(retFuncSymbol.containerURI);
-				console.log(chunks);
 				if( chunks[retFuncSymbol.searchName] ){
 					// 找到函数符号的
 					let chunkRetSymbolName = chunks[retFuncSymbol.searchName].returnSymbol;
 					//然后再chunk 所在文件，查找chunkRetSymbolName
 					retrunSymbol = CodeSymbol.searchSymbolinDoc(uri , chunkRetSymbolName , Tools.SearchMode.ExactlyEqual);
 					if (retrunSymbol == null || ( retrunSymbol && retrunSymbol.length <= 0) ){
-						retrunSymbol = CodeSymbol.searchAllSymbolinRequireTreeforCompleting(uri ,chunkRetSymbolName ,Tools.SearchMode.ExactlyEqual);
+						retrunSymbol = CodeSymbol.searchSymbolforCompletion(uri ,chunkRetSymbolName ,Tools.SearchMode.ExactlyEqual);
 					}
 					return retrunSymbol;
 				}
@@ -225,7 +252,7 @@ export class TypeInfer {
 	private static searchUserTag(uri, element){
 		let tag_type = element.tagType;
 		if(tag_type){
-			return CodeSymbol.searchAllSymbolinRequireTreeforCompleting(uri, tag_type, Tools.SearchMode.ExactlyEqual) || [];
+			return CodeSymbol.searchSymbolforCompletion(uri, tag_type, Tools.SearchMode.ExactlyEqual) || [];
 		}else{
 			return [];
 		}
@@ -234,10 +261,19 @@ export class TypeInfer {
 	private static searchMetaTable(uri, element){
 		let tag_type = element.tagType + ".__index";
 		if(tag_type){
-			return CodeSymbol.searchAllSymbolinRequireTreeforCompleting(uri, tag_type, Tools.SearchMode.ExactlyEqual) || [];
-		}else{
-			return [];
+			// 得到 a.__index 的符号
+			let index_symbol = CodeSymbol.searchSymbolforCompletion(uri, tag_type, Tools.SearchMode.ExactlyEqual) || [];
+			for (const element of index_symbol) {
+				if(!element.tagType){
+					continue;
+				}
+				let searchName = element.tagType; // a.__index 对应的tag
+				let tagRes = CodeSymbol.searchSymbolforCompletion(element.containerURI, searchName , Tools.SearchMode.ExactlyEqual); 
+				if(tagRes){
+					return tagRes;
+				}
+			}
 		}
+		return [];
 	}
-
 }

@@ -25,7 +25,7 @@ export class CppCodeProcessor {
 
 	public static loadIntelliSenseRes() {
 		if (fs.existsSync(this.cppInterfaceIntelliSenseResPath)) {
-			CodeSymbol.refreshPreLoadSymbals(this.cppInterfaceIntelliSenseResPath);
+			CodeSymbol.refreshUserPreloadSymbals(this.cppInterfaceIntelliSenseResPath);
 		}
 	}
 
@@ -229,7 +229,7 @@ export class CppCodeProcessor {
 				if (result.className !== '') {
 					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, subDir, result.className + '.lua');
 					this.appendText2File(result.luaText, filePath);
-					CodeSymbol.refreshSinglePreLoadFile(filePath);
+					CodeSymbol.refreshOneUserPreloadDocSymbols(filePath);
 				}
 			} else if (foundUSTRUCT === true) {
 				let result = this.handleUSTRUCT(child);
@@ -237,7 +237,7 @@ export class CppCodeProcessor {
 				if (result.structName !== '') {
 					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, subDir, result.structName + '.lua');
 					this.appendText2File(result.luaText, filePath);
-					CodeSymbol.refreshSinglePreLoadFile(filePath);
+					CodeSymbol.refreshOneUserPreloadDocSymbols(filePath);
 				}
 			} else if (foundUENUM === true) {
 				let result = this.handleUENUM(child);
@@ -245,7 +245,7 @@ export class CppCodeProcessor {
 				if (result.enumType !== '') {
 					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, subDir, result.enumType + '.lua');
 					this.appendText2File(result.luaText, filePath);
-					CodeSymbol.refreshSinglePreLoadFile(filePath);
+					CodeSymbol.refreshOneUserPreloadDocSymbols(filePath);
 				}
 				// 外层有namespace的情况，要放到UENUM后面，UENUM后面的节点有可能是namespace
 				child.children.forEach((child: Node) => {
@@ -705,7 +705,7 @@ export class CppCodeProcessor {
 					let filePath = path.join(this.cppInterfaceIntelliSenseResPath, subDir, className + '.lua');
 					let luaText = this.assembleLuaClassText(className, baseClass, methodList);
 					this.appendText2File(luaText, filePath);
-					CodeSymbol.refreshSinglePreLoadFile(filePath);
+					CodeSymbol.refreshOneUserPreloadDocSymbols(filePath);
 					className = '';
 					baseClass.length = 0;
 					methodList.length = 0;
@@ -875,7 +875,7 @@ export class CppCodeProcessor {
 					// 删除preload symbol
 					// 先清空文件内容，然后刷新symbol，再删除文件。
 					fs.writeFileSync(currentPath, '');
-					CodeSymbol.refreshSinglePreLoadFile(currentPath);
+					CodeSymbol.refreshOneUserPreloadDocSymbols(currentPath);
 					fs.unlinkSync(currentPath);
 				}
 			});

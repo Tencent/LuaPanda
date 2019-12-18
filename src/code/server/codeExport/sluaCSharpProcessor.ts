@@ -10,7 +10,7 @@ export class SluaCSharpProcessor {
 
     // 加载原生接口导出的分析结果
 	public static loadIntelliSenseRes() {
-        CodeSymbol.refreshPreLoadSymbals(this.sluaCSharpInterfaceIntelliSenseResPath);
+        CodeSymbol.refreshUserPreloadSymbals(this.sluaCSharpInterfaceIntelliSenseResPath);
 	}
 
     // sluaUE的分析路径
@@ -40,7 +40,7 @@ export class SluaCSharpProcessor {
         // 从cppDir中读出files列表
         let files = this.getCSharpFiles(cppDir);
 		this.readSluaCSSymbols(files, subDir);
-        CodeSymbol.refreshPreLoadSymbals(intelLuaPath);
+        CodeSymbol.refreshUserPreloadSymbals(intelLuaPath);
 		Tools.showTips('处理完成！');
     }
 
@@ -147,7 +147,7 @@ export class SluaCSharpProcessor {
 
         }
         // luaCode 写入文件
-        console.log(luaCode);
+        // console.log(luaCode);
         return luaCode;
     }
 }

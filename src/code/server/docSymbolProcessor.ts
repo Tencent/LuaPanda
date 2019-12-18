@@ -472,6 +472,11 @@ export class DocSymbolProcessor {
 	}
 
 	private pushToChunkList(name, chunk){
+
+		if(name.match(':')){
+			name = name.replace(/:/g,".");
+		}
+
 		if(this.docInfo.defineSymbols["chunks"][name]){
 			let travlSymbol = this.docInfo.defineSymbols["chunks"][name];
 			if ( Array.isArray(travlSymbol) ){
@@ -602,7 +607,7 @@ export class DocSymbolProcessor {
 
 		// 被require的文件还没有处理，先创建符号
 		if (CodeSymbol.docSymbolMap.has(requireFileUri) == false) {
-			CodeSymbol.createCertainDocSymbols(requireFileUri);
+			CodeSymbol.createOneDocSymbols(requireFileUri);
 		}
 		let references = CodeSymbol.docSymbolMap.get(requireFileUri).getReferencesArray();
 		if (references.includes(fileUri)) {
