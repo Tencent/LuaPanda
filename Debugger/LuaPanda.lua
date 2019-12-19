@@ -2292,7 +2292,11 @@ function this.getVariableRef( refStr )
     if tostring(type(variableRefTab[varRef])) == "table" then
         for n,v in pairs(variableRefTab[varRef]) do
             local var = {};
-            var.name = tostring(n);
+            if type(n) == "string" then
+                var.name = '"' .. tostring(n) .. '"';
+            else
+                var.name = tostring(n);
+            end
             var.type = tostring(type(v));
             xpcall(function() var.value = tostring(v) end , function() var.value = tostring(type(v)) .. " [value can't trans to string]" end );
             var.variablesReference = "0";
