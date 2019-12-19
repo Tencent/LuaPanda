@@ -32,7 +32,7 @@ export class VisualSetting {
         }
     }
 
-    private static readLaunchjson(){
+    public static readLaunchjson(){
         let launchPath = Tools.VSCodeOpenedFolder + "/.vscode/launch.json";
         //如果文件不存在，就创建一个
         let launchExist = fs.existsSync(launchPath);

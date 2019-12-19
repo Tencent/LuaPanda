@@ -293,6 +293,11 @@
 					{
 						"type": "lua",
 						"request": "launch",
+						"name": "LuaPanda-Attach"
+					},
+					{
+						"type": "lua",
+						"request": "launch",
 						"name": "LuaPanda-DebugFile",
 						"luaPath": "",
 						"packagePath": [],

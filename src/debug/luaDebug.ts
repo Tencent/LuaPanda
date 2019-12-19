@@ -147,7 +147,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         }
 
         // 普通模式下才需要检查升级，单文件调试不用
-        if( args.name === 'LuaPanda' ){      
+        if( args.name != 'LuaPanda-DebugFile' ){      
             UpdateManager.checkIfLuaPandaNeedUpdate();
         }
 
