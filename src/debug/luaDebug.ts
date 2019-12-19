@@ -46,6 +46,10 @@ export class LuaDebugSession extends LoggingDebugSession {
     private _runtime: LuaDebugRuntime;
     private UseLoadstring: boolean = false;
 
+    //terminal实例，便于销毁
+    private static _debugFileTermianl;
+    private static _programTermianl;
+
     public getRuntime() {
         return this._runtime;
     }
@@ -267,8 +271,11 @@ export class LuaDebugSession extends LoggingDebugSession {
             }
             let filePath = retObject["filePath"];
 
-            const terminal = vscode.window.createTerminal({
-                name: "Run Lua File (LuaPanda)",
+            if(LuaDebugSession._debugFileTermianl){
+                LuaDebugSession._debugFileTermianl.dispose();
+            }
+            LuaDebugSession._debugFileTermianl = vscode.window.createTerminal({
+                name: "Debug Lua File (LuaPanda)",
                 env: {}, 
             });
 
@@ -291,16 +298,19 @@ export class LuaDebugSession extends LoggingDebugSession {
             }else{
                 LuaCMD = "lua -e ";
             }
-            terminal.sendText( LuaCMD + runCMD , true);
-            terminal.show();
+            LuaDebugSession._debugFileTermianl.sendText( LuaCMD + runCMD , true);
+            LuaDebugSession._debugFileTermianl.show();
         }
         else{
             // 非单文件调试模式下，拉起program
             let fs = require('fs');
             if(fs.existsSync(args.program) && fs.statSync(args.program).isFile()){
                 //program 和 args 分开
-                const terminal = vscode.window.createTerminal({
-                    name: "Run program file (LuaPanda)",
+                if(LuaDebugSession._programTermianl){
+                    LuaDebugSession._programTermianl.dispose();
+                }
+                LuaDebugSession._programTermianl = vscode.window.createTerminal({
+                    name: "Run Program File (LuaPanda)",
                     env: {}, 
                 });
 
@@ -309,8 +319,10 @@ export class LuaDebugSession extends LoggingDebugSession {
                     progaamCmdwithArgs = progaamCmdwithArgs + " " + arg;
                 }
                 
-                terminal.sendText(progaamCmdwithArgs , true);
-                terminal.show(); 
+                LuaDebugSession._programTermianl.sendText(progaamCmdwithArgs , true);
+                LuaDebugSession._programTermianl.show(); 
+            }else{
+                vscode.window.showErrorMessage("launch.json 文件中 program 设置的路径错误： 文件 " + args.program + " 不存在，请修改后再试。" , "好的");
             }
         }
     }

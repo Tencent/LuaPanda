@@ -164,16 +164,20 @@ export class VisualSetting {
         }
     }
 
+    private static ADBRevTerminal;
     private static processADBReverse(messageObj) {
         let connectionPort = messageObj["connectionPort"];
-        const terminal = vscode.window.createTerminal({
+        if(this.ADBRevTerminal){
+            this.ADBRevTerminal.dispose();
+        }
+        this.ADBRevTerminal = vscode.window.createTerminal({
             name: "ADB Reverse (LuaPanda)",
             env: {}, 
         });
 
         let cmd = "adb reverse tcp:" + connectionPort + " tcp:" + connectionPort;       
-        terminal.sendText(cmd , true);
-        terminal.show(); 
+        this.ADBRevTerminal.sendText(cmd , true);
+        this.ADBRevTerminal.show(); 
     }
 
     private static processSaveSettings(messageObj) {

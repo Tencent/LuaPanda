@@ -136,6 +136,7 @@ export function deactivate() {
 // debug启动时的配置项处理
 class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
     private _server?: Net.Server;
+    private static RunFileTerminal;
     resolveDebugConfiguration(folder: vscode.WorkspaceFolder | undefined, config: vscode.DebugConfiguration, token?: vscode.CancellationToken): vscode.ProviderResult<vscode.DebugConfiguration> {
         // if launch.json is missing or empty
         if (!config.type && !config.name) {
@@ -158,7 +159,10 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             }
             let filePath = retObject["filePath"];
 
-            const terminal = vscode.window.createTerminal({
+            if(LuaConfigurationProvider.RunFileTerminal){
+                LuaConfigurationProvider.RunFileTerminal.dispose();
+            }
+            LuaConfigurationProvider.RunFileTerminal = vscode.window.createTerminal({
                 name: "Run Lua File (LuaPanda)",
                 env: {}, 
             });
@@ -182,8 +186,8 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             }else{
                 LuaCMD = "lua -e ";
             }
-            terminal.sendText( LuaCMD + runCMD , true);
-            terminal.show();
+            LuaConfigurationProvider.RunFileTerminal.sendText( LuaCMD + runCMD , true);
+            LuaConfigurationProvider.RunFileTerminal.show();
             return ;
         }
 
