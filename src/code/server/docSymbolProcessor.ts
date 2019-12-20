@@ -641,6 +641,11 @@ export class DocSymbolProcessor {
 
 	// 记录一个符号的标记和标记原因（准备删除）
 	private setTagTypeToSymbolInfo(symbol: Tools.SymbolInformation, tagType, tagReason){
+		if(symbol.tagReason && symbol.tagReason == Tools.TagReason.UserTag){
+			// 用户标记的类型权重 > 赋值类型权重
+			return;
+		}
+
 		symbol.tagType = tagType;
 		symbol.tagReason = tagReason;
 	}
