@@ -200,7 +200,6 @@ export class TypeInfer {
 		}else if(element.tagType && element.tagReason == Tools.TagReason.MetaTable ){	
 			findoutSymbs = this.searchMetaTable(uri, element, operation);
 		}else if(element.requireFile && element.requireFile.length > 0){		// 符号源于文件返回值
-			// let checkName = DotToBlankArr.join('.');
 			findoutSymbs = this.searchRequire(element);
 		}else if(element.funcRets){		 // 符号源于函数返回值
 			findoutSymbs = this.searchFunctionReturn(element);
@@ -223,6 +222,7 @@ export class TypeInfer {
 	// 处理引用标记
 	private static searchRequire(element){
 		let beRequiredUri = Tools.transFileNameToUri(element.requireFile);
+		if(beRequiredUri.length === 0) return;
 		let beRequiredFilesRet = CodeSymbol.getOneDocReturnSymbol(beRequiredUri);
 		if(beRequiredFilesRet && beRequiredFilesRet.length > 0){
 			let searchReturnSymbolInBeReqFile = CodeSymbol.searchSymbolinDoc(beRequiredUri, beRequiredFilesRet, Tools.SearchMode.ExactlyEqual);

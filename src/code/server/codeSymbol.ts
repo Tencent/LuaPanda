@@ -326,6 +326,7 @@ export class CodeSymbol {
 			});
 			if (needDeleteReference) {
 				let lastRequireFileUri = Tools.transFileNameToUri(lastRequireFile.reqName);
+				if(lastRequireFileUri.length === 0) return;
 				let lastRequireFileDocSymbol = this.docSymbolMap.get(lastRequireFileUri);
 				let lastRequireFileReference = lastRequireFileDocSymbol.getReferencesArray();
 				let index = lastRequireFileReference.indexOf(newDocSymbol.getUri());
@@ -422,12 +423,12 @@ export class CodeSymbol {
 		let docProcessor = this.docSymbolMap.get(uri);
 		if(docProcessor == null || docProcessor.getRequiresArray == null){
 			Logger.log("get docProcessor or getRequireFiles error!");
-			return;
+			return [];
 		}
 
 		//当前文件已经在递归处理中了
 		if(this.alreadySearchList[uri] == 1){
-			return;
+			return [];
 		}else{
 			this.alreadySearchList[uri] = 1;
 		}
@@ -445,6 +446,7 @@ export class CodeSymbol {
 		let reqFiles = docProcessor.getRequiresArray();
 		for(let idx = reqFiles.length -1; idx >= 0; idx--){
 			let newuri = Tools.transFileNameToUri(reqFiles[idx]['reqName']);
+			if(newuri.length === 0) return retSymbArray;
 			let retSymbols = this.recursiveSearchRequireTree(newuri, symbolStr, searchMethod,  searchRange, false);
 			if(retSymbols != null && retSymbols.length > 0){
 				retSymbArray = retSymbArray.concat(retSymbols);
