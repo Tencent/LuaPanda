@@ -216,7 +216,7 @@ export class CodeSymbol {
 
 	// 搜索全局变量的定义，查找顺序是本文件，引用树，全局
 	// 不优先搜全局，不搜预制
-	public static searchSymbolforGlobalDefinition (uri:string, symbolStr: string,  searchMethod: Tools.SearchMode = Tools.SearchMode.ExactlyEqual, searchRange: Tools.SearchRange = Tools.SearchRange.AllSymbols): Tools.SymbolInformation[] {
+	public static searchSymbolforGlobalDefinition (uri:string, symbolStr: string,  searchMethod: Tools.SearchMode = Tools.SearchMode.ExactlyEqual, searchRange: Tools.SearchRange = Tools.SearchRange.GlobalSymbols): Tools.SymbolInformation[] {
 		if (symbolStr === '' || uri === '' ) {
 			return [];
 		}
@@ -224,7 +224,7 @@ export class CodeSymbol {
 		let retSymbols: Tools.SymbolInformation[] = [];
 		//搜索顺序 用户 > 系统
 		CodeSymbol.alreadySearchList = new Object(); // 记录已经搜索过的文件。避免重复搜索耗时
-		let preS = this.recursiveSearchRequireTree(uri, symbolStr, searchMethod);
+		let preS = this.recursiveSearchRequireTree(uri, symbolStr, searchMethod, searchRange);
 		if(preS){
 			retSymbols = retSymbols.concat(preS);
 		}
@@ -250,7 +250,7 @@ export class CodeSymbol {
 		let retSymbols: Tools.SymbolInformation[] = [];
 		//搜索顺序 用户 > 系统
 		CodeSymbol.alreadySearchList = new Object();
-		let preS = this.recursiveSearchRequireTree(uri, symbolStr, searchMethod);
+		let preS = this.recursiveSearchRequireTree(uri, symbolStr, searchMethod, searchRange);
 		if(preS){
 			retSymbols = retSymbols.concat(preS);
 		}
@@ -389,7 +389,7 @@ export class CodeSymbol {
 	// @fileName 文件名
 	// @symbolStr 符号名
 	// @uri
-	private static recursiveSearchRequireTree(uri: string, symbolStr, searchMethod :Tools.SearchMode, isFirstEntry:boolean = true){
+	private static recursiveSearchRequireTree(uri: string, symbolStr, searchMethod :Tools.SearchMode, searchRange:Tools.SearchRange = Tools.SearchRange.AllSymbols, isFirstEntry:boolean = true){
 		if(!uri || uri === ''){
 			return [];
 		}
@@ -436,7 +436,7 @@ export class CodeSymbol {
 		// 在引用树上搜索符号，搜索的原则为优先搜索最近的定义，即先搜本文件，然后逆序搜索require的文件，再逆序搜索reference
 		// 分析自身文件的符号.  本文件，要查找所有符号，引用文件，仅查找global符号。这里要求符号分析分清楚局部和全局符号
 		let docS = this.docSymbolMap.get(uri);
-		let retSymbols = docS.searchMatchSymbal(symbolStr, searchMethod, Tools.SearchRange.AllSymbols);
+		let retSymbols = docS.searchMatchSymbal(symbolStr, searchMethod, searchRange);
 		if(retSymbols.length > 0){
 			//找到了，查找全部符号，压入数组
 			retSymbArray = retSymbArray.concat(retSymbols);
@@ -445,7 +445,7 @@ export class CodeSymbol {
 		let reqFiles = docProcessor.getRequiresArray();
 		for(let idx = reqFiles.length -1; idx >= 0; idx--){
 			let newuri = Tools.transFileNameToUri(reqFiles[idx]['reqName']);
-			let retSymbols = this.recursiveSearchRequireTree(newuri, symbolStr, searchMethod, false);
+			let retSymbols = this.recursiveSearchRequireTree(newuri, symbolStr, searchMethod,  searchRange, false);
 			if(retSymbols != null && retSymbols.length > 0){
 				retSymbArray = retSymbArray.concat(retSymbols);
 			}
@@ -454,7 +454,7 @@ export class CodeSymbol {
 		let refFiles = docProcessor.getReferencesArray();
 		for(let idx = refFiles.length -1; idx >= 0; idx--){
 			let newuri = refFiles[idx];
-			let retSymbols = this.recursiveSearchRequireTree(newuri, symbolStr, searchMethod, false);
+			let retSymbols = this.recursiveSearchRequireTree(newuri, symbolStr, searchMethod,  searchRange, false);
 			if (retSymbols != null && retSymbols.length > 0) {
 				retSymbArray = retSymbArray.concat(retSymbols);
 			}

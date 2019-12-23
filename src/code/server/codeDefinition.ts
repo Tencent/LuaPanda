@@ -29,12 +29,12 @@ export class CodeDefinition {
 		}
 		// 根据VSCode提供的符号位置查询查号名
 		let symbRet = astContainer.searchDocSymbolfromPosition(info.position);
-		//全局查找定义
+		// 全局查找定义
 		if (symbRet != undefined && symbRet['sybinfo'] != undefined) {
 			let symbolInfo = symbRet['sybinfo'];
 			let containerList = symbRet['container'];
 			//先做一次普通搜索，如果有结果，就以普通搜索结果优先
-			let symbInstance = this.commonSearch(uri, symbolInfo.name, Tools.SearchMode.ExactlyEqual);
+			let symbInstance = this.directSearch(uri, symbolInfo.name, Tools.SearchMode.ExactlyEqual);
 			if(isArray(symbInstance) && symbInstance.length > 0 ){
 				// 已经搜到了结果
 			}else{
@@ -58,7 +58,7 @@ export class CodeDefinition {
 			let retLoc = Location.create(finalRetSymbols['containerURI'], finalRetSymbols['location'].range);
 			return retLoc;
 		} else {
-			//没找到符号，判断require文件的情况
+			// 没找到符号，判断require文件的情况
 			let reqFileName  = astContainer.searchDocRequireFileNameFromPosition(info.position);
 			let uri = Tools.transFileNameToUri(reqFileName);
 			if(uri.length > 0){
@@ -68,9 +68,13 @@ export class CodeDefinition {
 		}
 	}
 
-	private static commonSearch(uri, symbolStr, method){
-		//做一次普通搜索
-		return CodeSymbol.searchSymbolforGlobalDefinition(uri, symbolStr, method);
+	// 直接搜索，其逻辑应该是搜索本文件的所有变量 -> 引用文件的全局变量 -> 所有文件的全局变量
+	private static directSearch(uri, symbolStr, method){
+		let ret = CodeSymbol.searchSymbolinDoc(uri, symbolStr, method) || [];
+		if(ret.length === 0){
+			ret = CodeSymbol.searchSymbolforGlobalDefinition(uri, symbolStr, method, Tools.SearchRange.GlobalSymbols) || [];
+		}
+		return ret;
 	}
 
 //-----------------------------------------------------------------------------

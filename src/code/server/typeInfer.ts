@@ -41,7 +41,7 @@ export class TypeInfer {
 	// 循环查tag for definition
 	private static recursiveSearchTagForDefinition(element, uri, searchPrefix, tailListCache,  isStripping = true){
 		// 找到tag对应的符号。 searchTag函数的本意是找到 findTagRetSymbArray[key] 这个符号的所有对应tag符号，以便继续的合并搜索
-		let findoutArr = this.searchTag( element, uri ) || [];
+		let findoutArr = this.searchTag( element, uri, 0 ) || [];
 		for (const value of findoutArr) {
 			let uri = value.containerURI;
 			//[尝试]向上补全, 所以补全这边的 tailListCache 要拷贝
@@ -56,7 +56,7 @@ export class TypeInfer {
 	// 循环查tag for conpletion
 	private static recursiveSearchTagForCompletion(element, uri, searchPrefix, tailListCache,  isStripping = true){
 		// 找到tag对应的符号。 searchTag函数的本意是找到 findTagRetSymbArray[key] 这个符号的所有对应tag符号，以便继续的合并搜索
-		let findoutArr = this.searchTag( element, uri ) || [];
+		let findoutArr = this.searchTag( element, uri, 1 ) || [];
 		if (findoutArr.length > this.maxSymbolCount) findoutArr.length = this.maxSymbolCount;
 		for (const value of findoutArr) {
 			let uri = value.containerURI;
@@ -85,7 +85,7 @@ export class TypeInfer {
 				tailListCache.push(searchPrefixArray.pop());
 				let SCHName = searchPrefixArray.join('.');
 				// 先搜索本文件，如果找不到再搜索调用树
-				let findTagRetSymbArray = this.searchMethod(uri, SCHName); // 这里的搜索范围？
+				let findTagRetSymbArray = this.searchMethodforDef(uri, SCHName); // 这里的搜索范围？
 				// 没找到，继续pop循环
 				if(!findTagRetSymbArray || findTagRetSymbArray.length == 0) continue;
 				// 找到了。遍历查tag（循环）
@@ -100,7 +100,7 @@ export class TypeInfer {
 			// 从 tailListCache 取出变量忘 searchPrefix上拼接，并查找结果有没有符号，符号有没有tag
 			let temptailCache = tailListCache.concat();
 			let newName = searchPrefix + '.' + temptailCache.pop();
-			let addPrefixSearchArray = this.searchMethod(uri, newName, Tools.SearchMode.ExactlyEqual);// prefix search with no children
+			let addPrefixSearchArray = this.searchMethodforComp(uri, newName, Tools.SearchMode.ExactlyEqual);// prefix search with no children
 			if(addPrefixSearchArray.length > this.maxSymbolCount) addPrefixSearchArray.length = this.maxSymbolCount;
 			for (const element of addPrefixSearchArray) {
 				if(element.tagType){
@@ -132,7 +132,7 @@ export class TypeInfer {
 				tailListCache.push(searchPrefixArray.pop());
 				let SCHName = searchPrefixArray.join('.');
 				// 先搜索本文件，如果找不到再搜索调用树
-				let findTagRetSymbArray = this.searchMethod(uri, SCHName); // 这里的搜索范围？
+				let findTagRetSymbArray = this.searchMethodforComp(uri, SCHName); // 这里的搜索范围？
 				// 没找到，继续pop循环
 				if(!findTagRetSymbArray || findTagRetSymbArray.length == 0) continue;
 				// 找到了。遍历查tag（循环）
@@ -147,7 +147,7 @@ export class TypeInfer {
 			// 从 tailListCache 取出变量忘 searchPrefix上拼接，并查找结果有没有符号，符号有没有tag
 			let temptailCache = tailListCache.concat();
 			let newName = searchPrefix + '.' + temptailCache.pop();
-			let addPrefixSearchArray = this.searchMethod(uri, newName, Tools.SearchMode.PrefixMatch);// prefix search with no children
+			let addPrefixSearchArray = this.searchMethodforComp(uri, newName, Tools.SearchMode.PrefixMatch);// prefix search with no children
 			if(addPrefixSearchArray.length > this.maxSymbolCount) addPrefixSearchArray.length = this.maxSymbolCount;
 			for (const element of addPrefixSearchArray) {
 				if(element.tagType){
@@ -165,22 +165,40 @@ export class TypeInfer {
 		}
 	}
 
+	private static searchMethodCommon(uri, SCHName , method = Tools.SearchMode.ExactlyEqual,operation) {
+		if(operation === 0){
+			return this.searchMethodforDef(uri, SCHName, method) || [];
+		}else if(operation === 1){
+			return this.searchMethodforComp(uri, SCHName, method)|| [];
+		}
+	}
+
 	// 普通搜索, local => global, 用什么样的搜索方式ExactlyEqual ，在哪个范围（含预制）
-	private static searchMethod(uri, SCHName , method = Tools.SearchMode.ExactlyEqual){
+	private static searchMethodforComp(uri, SCHName , method = Tools.SearchMode.ExactlyEqual){
 		let findTagRetSymbArray = CodeSymbol.searchSymbolinDoc(uri , SCHName ,method);
 		if (findTagRetSymbArray == null || (findTagRetSymbArray &&findTagRetSymbArray.length <= 0)){
-			findTagRetSymbArray = CodeSymbol.searchSymbolforCompletion(uri ,SCHName, method);
+			findTagRetSymbArray = CodeSymbol.searchSymbolforCompletion(uri ,SCHName, method, Tools.SearchRange.GlobalSymbols) || [];
 		}
 		return findTagRetSymbArray;
 	}
 
-	//搜索tag
-	private static searchTag(element, uri){
+	// 普通搜索, local => global, 用什么样的搜索方式ExactlyEqual ，在哪个范围（含预制）
+	private static searchMethodforDef(uri, SCHName , method = Tools.SearchMode.ExactlyEqual){
+		let findTagRetSymbArray = CodeSymbol.searchSymbolinDoc(uri , SCHName ,method);
+		if (findTagRetSymbArray == null || (findTagRetSymbArray &&findTagRetSymbArray.length <= 0)){
+			findTagRetSymbArray = CodeSymbol.searchSymbolforGlobalDefinition(uri ,SCHName, method, Tools.SearchRange.GlobalSymbols) || [];
+		}
+		return findTagRetSymbArray;
+	}
+
+	// 搜索tag
+	// DEF = 0 comp = 1
+	private static searchTag(element, uri, operation){
 		let findoutSymbs;
 		if(element.tagType && (element.tagReason === Tools.TagReason.UserTag || element.tagReason === Tools.TagReason.Equal) ){																//USERTag
-			findoutSymbs = this.searchUserTag(uri, element)
+			findoutSymbs = this.searchUserTag(uri, element, operation);
 		}else if(element.tagType && element.tagReason == Tools.TagReason.MetaTable ){	
-			findoutSymbs = this.searchMetaTable(uri, element);
+			findoutSymbs = this.searchMetaTable(uri, element, operation);
 		}else if(element.requireFile && element.requireFile.length > 0){		// 符号源于文件返回值
 			// let checkName = DotToBlankArr.join('.');
 			findoutSymbs = this.searchRequire(element);
@@ -188,7 +206,7 @@ export class TypeInfer {
 			findoutSymbs = this.searchFunctionReturn(element);
 		}else if(element.chunk && element.chunk.returnSymbol){
 			let chunkRet  = element.chunk.returnSymbol;
-			findoutSymbs = CodeSymbol.searchSymbolforCompletion(uri ,chunkRet, Tools.SearchMode.ExactlyEqual);
+			findoutSymbs = this.searchMethodCommon(uri ,chunkRet, Tools.SearchMode.ExactlyEqual, operation);
 		}
 
 		// 为了避免 local common = common 导致搜索到自己的定义，最终无限循环。
@@ -245,26 +263,26 @@ export class TypeInfer {
 
 	}
 
-	private static searchUserTag(uri, element){
+	private static searchUserTag(uri, element, operation){
 		let tag_type = element.tagType;
 		if(tag_type){
-			return CodeSymbol.searchSymbolforCompletion(uri, tag_type, Tools.SearchMode.ExactlyEqual) || [];
+			return this.searchMethodCommon(uri, tag_type, Tools.SearchMode.ExactlyEqual, operation);
 		}else{
 			return [];
 		}
 	}
 
-	private static searchMetaTable(uri, element){
+	private static searchMetaTable(uri, element , operation){
 		let tag_type = element.tagType + ".__index";
 		if(tag_type){
 			// 得到 a.__index 的符号
-			let index_symbol = CodeSymbol.searchSymbolforCompletion(uri, tag_type, Tools.SearchMode.ExactlyEqual) || [];
+			let index_symbol = this.searchMethodCommon(uri, tag_type, Tools.SearchMode.ExactlyEqual, operation);
 			for (const element of index_symbol) {
 				if(!element.tagType){
 					continue;
 				}
 				let searchName = element.tagType; // a.__index 对应的tag
-				let tagRes = CodeSymbol.searchSymbolforCompletion(element.containerURI, searchName , Tools.SearchMode.ExactlyEqual); 
+				let tagRes = this.searchMethodCommon(element.containerURI, searchName, Tools.SearchMode.ExactlyEqual, operation);
 				if(tagRes){
 					return tagRes;
 				}
