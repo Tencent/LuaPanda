@@ -19,7 +19,7 @@ import { TypeInfer } from './typeInfer';
 import { isArray } from 'util';
 
 export class CodeCompletion {
-	//代码补全入口文件
+	// 代码补全入口函数
 	public static completionEntry(uri : string, pos: Position): CompletionItem[]{
 		// 获取用户输入的前缀
 		let luaText = CodeEditor.getCode(uri);
@@ -29,50 +29,38 @@ export class CodeCompletion {
 			let completingArray = this.completionComment(uri, pos, luaText);
 			return completingArray;
 		}
-		
-		// 后面的查找分为几方面
-		// 1. 用户输入a.Com时，去除全面的a. 对Com进行一次补全 适用于：self.transform:Find("showloading"):GetComponent("Button");  是否应该当用户输入中有:时才做？
-		// 2. 用户输入a.Com时，分析a的tag，得到可能的Com值（推导）
-		// 3. 用户输入的代码没有.:时，不用进行tag搜过
 
-		// 如果用输入的代码不含.:  那么不用进行tag搜索，只需要进行一次普通遍历（包含用户代码，用户导出代码，lua代码）
-		// 如果用输入的代码含有.:  那么先对用户输入信息做一次普通搜索 | 对于分隔符之前的，做tag搜索 | 取得最后一个分隔符之后的数据，进行一次普通遍历
-		
+		// 先对[用户的完整输入]做一次[直接搜索]
+		let searchResArray = this.commonCompletionSearch(uri, userInputString) || [];  // 这里搜索的范围应该是用户代码， 所有预制文件
+		// 如果用户输入字段中含有分隔符[.:], 准备分段处理,检索tag
 		let userInputSplitArr = this.splitStringwithTrigger(userInputString); //userInputSplitArr 用户输入的字符串
-		// 先对用户的全输入做一次普通检索
-		let commonSearchRes = [];
-		commonSearchRes = commonSearchRes.concat(this.commonCompletionSearch(uri, userInputString) || []) ; // TODO 这里搜索的范围应该是用户代码， 预制文件， lua预制文件
-		// 之后准备分段处理，检索tag
-		if(userInputSplitArr && userInputSplitArr.length === 1){
-			//用户只输入了一段，上面已经检索过了
-		}else if(userInputSplitArr && userInputSplitArr.length > 1){
-			// let lastprefix = userInputSplitArr.pop();	//最后一位
-			// tagprefix = userInputSplitArr.join('.');  //出去最后一位之前的部分	
-			// 对tagprefix使用tag搜索
-			// this.searchTagEntry(tagprefixArray[0], userInputString, uri, 99);
-			// let indexarr = TypeInfer.processCompleting(tagprefix ,uri);
-
-			// 如有结果，返回结果，如无结果，使用预制（lua预制和用户预制）
-			// let lastPrefixSearchRet = this.commonCompletionSearch(uri, lastprefix) || [];	//用户输入了多段，这里是否用该只进入用户预制搜索？
-			// commonSearchRes = commonSearchRes.concat(lastPrefixSearchRet);
-
-			if(commonSearchRes.length === 0){
+		if(userInputSplitArr && userInputSplitArr.length > 1){
+			if(searchResArray.length === 0){
+				// 使用类型推导
 				let lastPrefixSearchRet = TypeInfer.SymbolTagForCompletionEntry(uri, userInputString) || [];
-				lastPrefixSearchRet = this.keepSuffix(lastPrefixSearchRet);
-				commonSearchRes = commonSearchRes.concat(lastPrefixSearchRet);
+				if(lastPrefixSearchRet.length > 0){
+					lastPrefixSearchRet = this.keepSuffix(lastPrefixSearchRet);
+				}else{
+					// 类型推导也没有搜索到的处理方式  -STUART TODO-  使用最后一个字符直接搜索是否有必要？
+					// let lastPrefix = Tools.splitToArrayByDot(userInputString).pop();
+					// if(lastPrefix != ''){
+					// 	lastPrefixSearchRet = this.commonCompletionSearch(uri, lastPrefix) || [];
+					// }
+				}
+				searchResArray = searchResArray.concat(lastPrefixSearchRet);
 			}else{
-				//common 去除前缀
-				commonSearchRes = commonSearchRes.concat(this.keepSuffix(commonSearchRes));
+				// 把带有分隔符，的直搜结果去除前缀，仅保留要补全的后缀
+				searchResArray = searchResArray.concat(this.keepSuffix(searchResArray));
 			}
 		}
 
 		// 处理搜索到的符号
-		let retCompletionArray = this.symbolToCompletionArray(commonSearchRes);
+		let retCompletionArray = this.symbolToCompletionArray(searchResArray);
 		let retCompleteItem = this.completeItemDuplicateRemoval(retCompletionArray);
 		return retCompleteItem;
 	}
 
-	// 仅保留后缀
+	// 把用户输入的前缀去除，仅保留要补全的后缀
 	private static keepSuffix(symbolsArray) {
 		for (const key in symbolsArray) {
 			const element = symbolsArray[key];
@@ -140,6 +128,7 @@ export class CodeCompletion {
 		return userInputArr;
 	}
 
+	// 把符号数组转换为VSCode能够识别的补全数组
 	private static symbolToCompletionArray(retSymb){
 		if (!isArray(retSymb)) {
 			return [];
@@ -179,7 +168,6 @@ export class CodeCompletion {
 
 	// 普通搜索。这里返回的必须是一个数组，哪怕是一个空数组
 	private static commonCompletionSearch(uri, searchPrefix){
-		//searchAllSymbolinRequireTreeforCompleting这个实际搜索函数中，应该包含数量控制逻辑
 		let retSymb = CodeSymbol.searchSymbolforCompletion(uri, searchPrefix, Tools.SearchMode.PrefixMatch);
 		if(!isArray(retSymb)){
 			return [];
@@ -197,7 +185,7 @@ export class CodeCompletion {
 		return completingArray;
 	}
 
-	//消除重复的符号
+	// 删除重复的符号
 	private static completeItemDuplicateRemoval(completingArray){
 		let retCompItemList = new Array();
 		for (let index = 0; index < completingArray.length; index++) {

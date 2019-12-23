@@ -8,7 +8,6 @@
 //包含 前缀的去除 ， 查找， 补回查找
 import * as Tools from './codeTools';
 import { CodeSymbol } from "./codeSymbol";
-// import { Logger } from './codeLogManager';
 
 //类型推断文件
 export class TypeInfer {
@@ -17,6 +16,8 @@ export class TypeInfer {
 //-----------------------------------------------------------------------------			
 	private static retArray = []; //用来记录 Completion 和 Definition 返回数组
 	private static startMS;
+
+	private static maxSymbolCount = 20;
 	// 定义查找接口
 	// @symbolInfo 是符号名
 	public static SymbolTagForDefinitionEntry(symbolInfo, uri){
@@ -55,7 +56,8 @@ export class TypeInfer {
 	// 循环查tag for conpletion
 	private static recursiveSearchTagForCompletion(element, uri, searchPrefix, tailListCache,  isStripping = true){
 		// 找到tag对应的符号。 searchTag函数的本意是找到 findTagRetSymbArray[key] 这个符号的所有对应tag符号，以便继续的合并搜索
-		let findoutArr = this.searchTag( element, uri );
+		let findoutArr = this.searchTag( element, uri ) || [];
+		if (findoutArr.length > this.maxSymbolCount) findoutArr.length = this.maxSymbolCount;
 		for (const value of findoutArr) {
 			let uri = value.containerURI;
 			//[尝试]向上补全, 所以补全这边的 tailListCache 要拷贝
@@ -87,28 +89,20 @@ export class TypeInfer {
 				// 没找到，继续pop循环
 				if(!findTagRetSymbArray || findTagRetSymbArray.length == 0) continue;
 				// 找到了。遍历查tag（循环）
+				if(findTagRetSymbArray.length > this.maxSymbolCount) findTagRetSymbArray.length = this.maxSymbolCount; // 同一个符号，处理太多结果会很慢，这里限制数量20
 				for (const key in findTagRetSymbArray) {
 					let uri = findTagRetSymbArray[key].containerURI;
 					this.recursiveSearchTagForDefinition(findTagRetSymbArray[key] , uri, searchPrefix, tailListCache, isStripping);
-
-					// 找到tag对应的符号。 searchTag函数的本意是找到 findTagRetSymbArray[key] 这个符号的所有对应tag符号，以便继续的合并搜索
-					// let findout = this.searchTag(findTagRetSymbArray[key], searchPrefix, uri, tailListCache, SCHName);
-					// // 递归 isStripping == false
-					// for (const key2 in findout) {
-					// 	let nn = findout[key2];
-					// 	//尝试向上补全
-					// 	this.recursiveProcessSymbolTagForDefinition(uri, nn.searchName, tailListCache, false);
-
-					// }
 				}
 			}
 		}else{	
 			// up
 			// 从 tailListCache 取出变量忘 searchPrefix上拼接，并查找结果有没有符号，符号有没有tag
 			let temptailCache = tailListCache.concat();
-			let newName = searchPrefix + '.' + temptailCache.pop(0);
-			let addPrefixSerachArray = this.searchMethod(uri, newName, Tools.SearchMode.ExactlyEqual);// prefix search with no children
-			for (const element of addPrefixSerachArray) {
+			let newName = searchPrefix + '.' + temptailCache.pop();
+			let addPrefixSearchArray = this.searchMethod(uri, newName, Tools.SearchMode.ExactlyEqual);// prefix search with no children
+			if(addPrefixSearchArray.length > this.maxSymbolCount) addPrefixSearchArray.length = this.maxSymbolCount;
+			for (const element of addPrefixSearchArray) {
 				if(element.tagType){
 					// TODO 如果有符号，有tag，切换成符号，递归
 				}else{
@@ -120,7 +114,6 @@ export class TypeInfer {
 					}
 				}
 			}
-			// 如果没有符号
 		}	
 	}
 
@@ -134,7 +127,7 @@ export class TypeInfer {
 		if(isStripping){	
 			if(this.startMS + 2000 < Date.now()) return;	//超时返回	
 			let searchPrefixArray = Tools.splitToArrayByDot(searchPrefix);
-			for (let index = searchPrefixArray.length - 1; index >= 0; index--) {
+			for (let index = searchPrefixArray.length - 1; index > 0; index--) {
 				// 切断用户输入 a.b.c => [a,b,c], 拼接, 开始循环(每次pop一个成员){
 				tailListCache.push(searchPrefixArray.pop());
 				let SCHName = searchPrefixArray.join('.');
@@ -143,32 +136,26 @@ export class TypeInfer {
 				// 没找到，继续pop循环
 				if(!findTagRetSymbArray || findTagRetSymbArray.length == 0) continue;
 				// 找到了。遍历查tag（循环）
+				if(findTagRetSymbArray.length > this.maxSymbolCount) findTagRetSymbArray.length = this.maxSymbolCount; // 同一个符号，处理太多结果会很慢，这里限制数量20
 				for (const key in findTagRetSymbArray) {
 					let uri = findTagRetSymbArray[key].containerURI;
 					this.recursiveSearchTagForCompletion(findTagRetSymbArray[key] , uri, searchPrefix, tailListCache, isStripping);
-
-					// // 找到tag对应的符号。 searchTag函数的本意是找到 findTagRetSymbArray[key] 这个符号的所有对应tag符号，以便继续的合并搜索
-					// let findout = this.searchTag(findTagRetSymbArray[key], uri);
-					// // let findout = this.searchTagNew(uri, findTagRetSymbArray[key]);
-					// // 递归 isStripping = false
-					// for (const key2 in findout) {
-					// 	let nn = findout[key2];
-					// 	this.recursiveProcessSymbolTagForCompletion(uri, nn.searchName, tailListCache, false)
-					// }
 				}
 			}
 		}else{	
 			// up
 			// 从 tailListCache 取出变量忘 searchPrefix上拼接，并查找结果有没有符号，符号有没有tag
-			let newName = searchPrefix + '.' + tailListCache.pop()
+			let temptailCache = tailListCache.concat();
+			let newName = searchPrefix + '.' + temptailCache.pop();
 			let addPrefixSearchArray = this.searchMethod(uri, newName, Tools.SearchMode.PrefixMatch);// prefix search with no children
+			if(addPrefixSearchArray.length > this.maxSymbolCount) addPrefixSearchArray.length = this.maxSymbolCount;
 			for (const element of addPrefixSearchArray) {
 				if(element.tagType){
 					// TODO 如果有符号，有tag，切换成符号，递归
 				}else{
 					// 如果有符号，不论有无tag，继续合并
-					if(tailListCache.length > 0){
-						this.recursiveProcessSymbolTagForCompletion(uri, newName, tailListCache, false);
+					if(temptailCache.length > 0){
+						this.recursiveProcessSymbolTagForCompletion(uri, newName, temptailCache, false);
 					}else{
 						this.retArray.push(element);
 					}
@@ -203,6 +190,15 @@ export class TypeInfer {
 			let chunkRet  = element.chunk.returnSymbol;
 			findoutSymbs = CodeSymbol.searchSymbolforCompletion(uri ,chunkRet, Tools.SearchMode.ExactlyEqual);
 		}
+
+		// 为了避免 local common = common 导致搜索到自己的定义，最终无限循环。
+		for (const iterator in findoutSymbs) {
+			if(findoutSymbs[iterator] === element){
+				delete findoutSymbs[iterator];
+				break;
+			}
+		}
+
 		return findoutSymbs;
 	}
 

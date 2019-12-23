@@ -132,7 +132,7 @@ export class CodeDefinition {
 			}
 		}
 
-		let minSymbolIdx;
+		let minSymbolIdx = 0;
 		for (let index = 0; index < distanceLineNumber.length; index++) {
 			if (minComDep == distanceLineNumber[index]){
 				minSymbolIdx = index;

@@ -920,7 +920,7 @@ function this.dataProcess( dataStr )
             elseif tonumber(newValue) and needFindVariable == true then newValue = tonumber(newValue); needFindVariable = false;
             end
 
-            -- 如果新值是基础类型，则不需边历
+            -- 如果新值是基础类型，则不需遍历
             if dataTable.info.stackId ~= nil and tonumber(dataTable.info.stackId) ~= nil and tonumber(dataTable.info.stackId) > 1 then
                 this.curStackId = tonumber(dataTable.info.stackId);
             else
