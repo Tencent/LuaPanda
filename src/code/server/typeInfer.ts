@@ -148,7 +148,7 @@ export class TypeInfer {
 			let temptailCache = tailListCache.concat();
 			let newName = searchPrefix + '.' + temptailCache.pop();
 			let addPrefixSearchArray = this.searchMethodforComp(uri, newName, Tools.SearchMode.PrefixMatch);// prefix search with no children
-			if(addPrefixSearchArray.length > this.maxSymbolCount) addPrefixSearchArray.length = this.maxSymbolCount;
+			// if(addPrefixSearchArray.length > this.maxSymbolCount) addPrefixSearchArray.length = this.maxSymbolCount; 补全这里不能做限制，否则会影响到输出的结果
 			for (const element of addPrefixSearchArray) {
 				if(element.tagType){
 					// TODO 如果有符号，有tag，切换成符号，递归

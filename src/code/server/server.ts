@@ -31,7 +31,6 @@ import {
 	ReferenceParams,
 	DocumentSymbol
 } from 'vscode-languageserver';
-let dir = require('path-reader');
 let path = require('path');  /*nodejs自带的模块*/
 import * as fs from "fs";
 import  * as Tools  from "./codeTools";
@@ -99,9 +98,6 @@ connection.onInitialize((initPara: InitializeParams) => {
 	Tools.setInitPara(initPara);
 	Tools.setToolsConnection(connection);
 	Logger.connection = connection;
-
-	Logger.DebugLog(Tools.getInitPara().rootPath);
-
 	// Does the client support the `workspace/configuration` request?
 	// If not, we will fall back using global settings
 	hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
@@ -114,8 +110,9 @@ connection.onInitialize((initPara: InitializeParams) => {
 	// 清空loadedExt, 初始化 name - uri 对应 cache
 	Tools.setVScodeExtensionPath(path.dirname(path.dirname(path.dirname(__dirname))) );
 	Tools.initLoadedExt();
-	createSybwithExt('lua', Tools.getInitPara().rootPath);
-	createSybwithExt('lua.bytes', Tools.getInitPara().rootPath);
+	// 创建对应后缀的文件符号
+	CodeSymbol.createSymbolswithExt('lua', Tools.getInitPara().rootPath);
+	CodeSymbol.createSymbolswithExt('lua.bytes', Tools.getInitPara().rootPath);
 	// 异步执行，建立uri -> 完整路径对应表
 	setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
 	// 分析默认位置(扩展中)的lua文件
@@ -290,7 +287,7 @@ documents.onDidOpen(file => {
 			return;
 		}else{
 			// 处理新的后缀类型
-			createSybwithExt(ext, Tools.getInitPara().rootPath);
+			CodeSymbol.createSymbolswithExt(ext, Tools.getInitPara().rootPath);
 			setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
 		}
 	}
@@ -301,8 +298,14 @@ documents.onDidChangeContent(change => {
 	if(change.document.languageId == 'lua'){
 		const uri = Tools.urlDecode(change.document.uri);
 		const text = change.document.getText();
-		CodeEditor.saveCode(uri, text); //先保存代码
-		CodeSymbol.refreshOneDocSymbols(uri, text);
+		CodeEditor.saveCode(uri, text); //保存代码
+
+		// 过滤掉预分析文件
+		if(!Tools.isinPreloadFolder(uri)){	
+			CodeSymbol.refreshOneDocSymbols(uri, text);
+		}else{
+			CodeSymbol.refreshOneUserPreloadDocSymbols( Tools.uriToPath(uri));
+		}
 
 		// 运行语法检查
 		getDocumentSettings(uri).then(
@@ -409,24 +412,6 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 	)
 	.catch(() => {
 		connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: [] });
-	});
-}
-
-//创建指定后缀的lua文件的符号
-function createSybwithExt(luaExtname: string, rootpath: string) {
-	//记录此后缀代表lua
-	Tools.setLoadedExt(luaExtname);
-	//解析workSpace中同后缀文件
-	let exp = new RegExp(luaExtname + '$', "i");
-	dir.readFiles(rootpath, { match: exp }, function (err, content, filePath, next) {
-		if (!err) {
-			CodeSymbol.getOneDocSymbolsArray(Tools.pathToUri(filePath), content);
-		}
-		next();
-	}, (err) => {
-		if (err) {
-			return;
-		}
 	});
 }
 

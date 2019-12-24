@@ -63,10 +63,6 @@ export class SluaCSharpProcessor {
     public static readSluaCSSymbols(filepath, writepath){
         let sluaRootPath = this.sluaCSharpInterfaceIntelliSenseResPath + writepath;
         this.makeDirSync(sluaRootPath);
-        // 建立一个UnityEngine符号
-        let engineFileName = "Lua_UnityEngine.lua";
-        let engineFileContent = "UnityEngine = {}";
-        fs.writeFileSync(sluaRootPath + '/' + engineFileName, engineFileContent);
         let fileCount = 0;
         // 读取文件内容
         for (const file of filepath) {
@@ -79,6 +75,13 @@ export class SluaCSharpProcessor {
                     fs.writeFileSync(csFilePath, luaTxt);
                 }
             }
+        }
+
+        if(fileCount > 0){
+            // 建立一个UnityEngine符号
+            let engineFileName = "Lua_UnityEngine.lua";
+            let engineFileContent = "UnityEngine = {}";
+            fs.writeFileSync(sluaRootPath + '/' + engineFileName, engineFileContent);
         }
         return fileCount;
     }

@@ -49,7 +49,7 @@ export function setVScodeExtensionPath(_VScodeExtensionPath:string){
 	VScodeExtensionPath = _VScodeExtensionPath;
 }
 
-let loadedExt;	// 已经过处理的文件后缀
+let loadedExt;	// 记录已被处理的文件后缀
 export function initLoadedExt(){
 	loadedExt = new Object();
 }
@@ -242,6 +242,16 @@ export function AddTo_FileName_Uri_Cache(name , uri){
 	fileName_Uri_Cache[name] = urlDecode(uri);
 }
 
+export function isinPreloadFolder(uri):boolean{
+	if(!uri) return false;
+	let matchRes = uri.match('.vscode/LuaPanda/IntelliSenseRes');
+	if(matchRes){
+		return true;
+	}
+	return false;
+}
+
+
 // 刷新Cache
 export function refresh_FileName_Uri_Cache(){
 	//Cache 中没有找到，遍历RootPath
@@ -285,7 +295,7 @@ export function refresh_FileName_Uri_Cache(){
 	showProgressMessage(100, "done!");
 }
 
-// 把文件名转换为 uri
+// 把文件名转换为 uri 凡是调用本函数，要判断返回值
 // @fileName 文件名
 // @return uri string
 export function transFileNameToUri(requireName : string): string{

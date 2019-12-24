@@ -12,19 +12,20 @@ import * as Tools from './codeTools';
 import { CodeEditor } from './codeEditor';
 import { DocSymbolProcessor } from './docSymbolProcessor';
 import { Logger } from './codeLogManager';
+let dir = require('path-reader');
 
 export class CodeSymbol {
 	// 用 kv 结构保存所有用户文件以及对应符号结构（包含定义符号和AST，以及方法）
-	public static docSymbolMap = new Map<string, DocSymbolProcessor>();
-	public static luaPreloadSymbolMap = new Map<string, DocSymbolProcessor>();
-	public static userPreloadSymbolMap = new Map<string, DocSymbolProcessor>();
+	public static docSymbolMap = new Map<string, DocSymbolProcessor>();		// 用户代码中的lua文件
+	public static luaPreloadSymbolMap = new Map<string, DocSymbolProcessor>();	// lua预制文件（LuaPanda集成）
+	public static userPreloadSymbolMap = new Map<string, DocSymbolProcessor>();	// 用户的lua导出接口
 
 	// 已处理文件列表，这里是防止循环引用
 	private static alreadySearchList; //TODO 要标记一下这个变量被哪些函数使用了
 
 	// 获取指定文件中的chunk列表
 	public static getCretainDocChunkDic(uri){
-		let processor = this.docSymbolMap.get(uri);
+		let processor = this.getFileSymbolsFromCache(uri);
 		if(processor){
 			return processor.getChunksDic();
 		}
@@ -48,17 +49,40 @@ export class CodeSymbol {
 		this.createDocSymbol(uri, luaText);
 	}
 
+		//创建指定后缀的lua文件的符号
+	public static createSymbolswithExt(luaExtname: string, rootpath: string) {
+		//记录此后缀代表lua
+		Tools.setLoadedExt(luaExtname);
+		//解析workSpace中同后缀文件
+		let exp = new RegExp(luaExtname + '$', "i");
+		dir.readFiles(rootpath, { match: exp }, function (err, content, filePath, next) {
+			if (!err) {
+				let uri = Tools.pathToUri(filePath);
+				if(!Tools.isinPreloadFolder(uri)){
+					CodeSymbol.createOneDocSymbols(uri, content);
+				}else{
+					CodeSymbol.refreshOneUserPreloadDocSymbols( Tools.uriToPath(uri));
+				}
+			}
+			next();
+		}, (err) => {
+			if (err) {
+				return;
+			}
+		});
+	}
+
 	// 获取指定文件的所有符号 ,  返回Array形式
 	public static getOneDocSymbolsArray(uri: string, luaText?: string, range?:Tools.SearchRange): Tools.SymbolInformation[] {
 		let docSymbals: Tools.SymbolInformation[] = [];
 		this.createOneDocSymbols(uri, luaText);
 		switch(range){
 			case Tools.SearchRange.GlobalSymbols:
-				docSymbals = this.docSymbolMap.get(uri).getGlobalSymbolsArray(); break;
+				docSymbals = this.getFileSymbolsFromCache(uri).getGlobalSymbolsArray(); break;
 			case Tools.SearchRange.LocalSymbols:
-				docSymbals = this.docSymbolMap.get(uri).getLocalSymbolsArray(); break;
+				docSymbals = this.getFileSymbolsFromCache(uri).getLocalSymbolsArray(); break;
 			case Tools.SearchRange.AllSymbols:
-				docSymbals = this.docSymbolMap.get(uri).getAllSymbolsArray(); break;
+				docSymbals = this.getFileSymbolsFromCache(uri).getAllSymbolsArray(); break;
 		}
 		return docSymbals;
 	}
@@ -69,11 +93,11 @@ export class CodeSymbol {
 		this.createOneDocSymbols(uri, luaText);
 		switch(range){
 			case Tools.SearchRange.GlobalSymbols:
-				docSymbals = this.docSymbolMap.get(uri).getGlobalSymbolsDic(); break;
+				docSymbals = this.getFileSymbolsFromCache(uri).getGlobalSymbolsDic(); break;
 			case Tools.SearchRange.LocalSymbols:
-				docSymbals = this.docSymbolMap.get(uri).getLocalSymbolsDic(); break;
+				docSymbals = this.getFileSymbolsFromCache(uri).getLocalSymbolsDic(); break;
 			case Tools.SearchRange.AllSymbols:
-				docSymbals = this.docSymbolMap.get(uri).getAllSymbolsDic(); break;
+				docSymbals = this.getFileSymbolsFromCache(uri).getAllSymbolsDic(); break;
 		}
 		return docSymbals;
 	}	
@@ -166,7 +190,7 @@ export class CodeSymbol {
 	//reference处理
 	public static searchSymbolReferenceinDoc(searchSymbol) {
 		let uri = searchSymbol.containerURI;
-		let docSymbals = this.docSymbolMap.get(uri);
+		let docSymbals = this.getFileSymbolsFromCache(uri);
 		return docSymbals.searchDocSymbolReference(searchSymbol);
 	}
 
@@ -180,9 +204,20 @@ export class CodeSymbol {
 		if (symbolStr === '' || uri === '' ) {
 			return null;
 		}
-		let docSymbals = this.docSymbolMap.get(uri);
+		let docSymbals = this.getFileSymbolsFromCache(uri);;
 		let retSymbols = docSymbals.searchMatchSymbal(symbolStr, searchMethod, range);
 		return retSymbols;
+	}
+
+	public static getFileSymbolsFromCache(uri){
+		let docSymbals = this.docSymbolMap.get(uri);
+		if(!docSymbals){
+			docSymbals = this.userPreloadSymbolMap.get(uri);
+		}
+		if(!docSymbals){
+			docSymbals = this.luaPreloadSymbolMap.get(uri);
+		}
+		return docSymbals;
 	}
 
 	// 在[工作空间]查找符号, 主要用于模糊搜索。搜索文件顺序完全随机( isSearchPreload = false 全局符号模糊查找默认不展示预制变量)
@@ -345,7 +380,7 @@ export class CodeSymbol {
 			luaText = Tools.getFileContent(Tools.uriToPath(uri));
 		}
 
-		let oldDocSymbol = this.docSymbolMap.get(uri);
+		let oldDocSymbol = this.getFileSymbolsFromCache(uri);
 		let newDocSymbol: DocSymbolProcessor = DocSymbolProcessor.create(luaText, uri);
 		if(newDocSymbol){
 			Tools.AddTo_FileName_Uri_Cache(Tools.getPathNameAndExt(uri)['name'] , uri)
@@ -355,12 +390,12 @@ export class CodeSymbol {
 				this.updateReference(oldDocSymbol, newDocSymbol);
 			}else{
 				//解析过程有误
-				if ( !this.docSymbolMap.get(uri) ){
+				if ( !this.getFileSymbolsFromCache(uri) ){
 					//map中还未解析过这个table，放入本次解析结果
 					this.docSymbolMap.set(uri, newDocSymbol);
 				}else{
 					//map中已有, 且之前保存的同样是解析失败，覆盖
-					if (!this.docSymbolMap.get(uri).docInfo.parseSucc){
+					if (!this.getFileSymbolsFromCache(uri).docInfo.parseSucc){
 						this.docSymbolMap.set(uri, newDocSymbol);
 						this.updateReference(oldDocSymbol, newDocSymbol);
 					}
