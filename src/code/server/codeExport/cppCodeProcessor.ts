@@ -54,14 +54,16 @@ export class CppCodeProcessor {
 		let cppSourceFiles = this.getCppSourceFiles(cppDir);
 
 		this.processParse(cppHeaderFiles, cppSourceFiles, subDir);
+		let totalProcessNum = cppHeaderFiles.length + cppSourceFiles.length;
+		return totalProcessNum;
 	}
 
 	private static async processParse(cppHeaderFiles: string[], cppSourceFiles: string[], subDir: string) {
 		await this.parseCppFiles(cppHeaderFiles, CppFileType.CppHeaderFile, subDir);
 		await this.parseCppFiles(cppSourceFiles, CppFileType.CppSourceFile, subDir);
 
-		let totalProcessNum = cppHeaderFiles.length + cppSourceFiles.length;
-		Tools.showTips('处理完成！共解析' + totalProcessNum + '个文件。');
+		// let totalProcessNum = cppHeaderFiles.length + cppSourceFiles.length;
+		// Tools.showTips('CPP 导出文件处理完成！共解析 ' + totalProcessNum + ' 个文件。');
 	}
 
 	private static async parseCppFiles(filePaths: string[], cppFileType: CppFileType, subDir: string) {

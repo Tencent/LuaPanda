@@ -120,6 +120,11 @@ export class VisualSetting {
                 if(!messageObj.path || messageObj.path.trim() == ''){
                     DebugLogger.showTips("C++ 文件分析失败，传入路径为空!",2);
                 }else{
+                    if (!fs.existsSync(messageObj.path.trim())) {
+                        DebugLogger.showTips("输入了不存在的路径!", 2);
+                        return;
+                    }
+
                     Tools.client.sendNotification('preAnalysisCpp', message.webInfo);
                 }
                 break;

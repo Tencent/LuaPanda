@@ -39,9 +39,10 @@ export class SluaCSharpProcessor {
 
         // 从cppDir中读出files列表
         let files = this.getCSharpFiles(cppDir);
-		this.readSluaCSSymbols(files, subDir);
+		let fileCount = this.readSluaCSSymbols(files, subDir);
         CodeSymbol.refreshUserPreloadSymbals(intelLuaPath);
-		Tools.showTips('处理完成！');
+        // Tools.showTips('CS导出符号处理完成！共解析 ' + fileCount + ' 个文件');
+        return fileCount;
     }
 
     private static getCSharpFiles(dirPath: string) {
@@ -66,18 +67,20 @@ export class SluaCSharpProcessor {
         let engineFileName = "Lua_UnityEngine.lua";
         let engineFileContent = "UnityEngine = {}";
         fs.writeFileSync(sluaRootPath + '/' + engineFileName, engineFileContent);
-
+        let fileCount = 0;
         // 读取文件内容
         for (const file of filepath) {
             let codeTxt = Tools.getFileContent(file);
             if(codeTxt){
                 let luaTxt = this.parseSluaCSSymbols(codeTxt);
                 if(luaTxt && luaTxt != ""){
+                    fileCount ++;
                     let csFilePath = sluaRootPath + '/' + path.basename(file, "cs") + "lua";
                     fs.writeFileSync(csFilePath, luaTxt);
                 }
             }
         }
+        return fileCount;
     }
 
 	private static makeDirSync(dirPath: string) {
@@ -100,6 +103,11 @@ export class SluaCSharpProcessor {
 
         if(dver && dver.length === 2){
             let paramsArray = dver[1].split(',');
+            if(paramsArray.length === 4 && paramsArray[3].trim().search('typeof') != 0){
+                // "typeof(System.Collections.Generic.Dictionary<System.StringSystem.String>)" 也被逗号打断了，拼合回去
+                paramsArray[2] = paramsArray[2] + paramsArray.pop();
+            }
+
             if(paramsArray.length === 3){
                 // 无继承关系
                 currentClass = paramsArray[2].trim().match(/typeof\((.*)\)/)[1];
