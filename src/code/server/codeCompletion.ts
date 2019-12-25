@@ -30,6 +30,7 @@ export class CodeCompletion {
 			return completingArray;
 		}
 
+		userInputString = userInputString.replace(/:/g,"."); //因为chunk，符号列表中的: 都被转换为 . 这里也要转换，否则查不到
 		// 先对[用户的完整输入]做一次[直接搜索]
 		let searchResArray = this.commonCompletionSearch(uri, userInputString) || [];  // 这里搜索的范围应该是用户代码， 所有预制文件
 		// 如果用户输入字段中含有分隔符[.:], 准备分段处理,检索tag
