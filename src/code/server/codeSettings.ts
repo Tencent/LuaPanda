@@ -8,7 +8,13 @@ export enum LogLevel{
 }
 
 export class CodeSettings{
-    public static logLevel = LogLevel.RELEASE;
-    // 调试的时候，为了方便查看信息，这里设置true . 发布版本改为 false
-    public static isOpenDebugInfo = false;
+    //DEV SETTINGS
+    public static logLevel = LogLevel.DEBUG;
+    public static isOpenDebugCode = true;  //是否打开debug代码段
+    public static isAllowDefJumpPreload = true; //是否允许定义跳转到预置文件
+
+    //RELEASE SETTINGS
+    // public static logLevel = LogLevel.RELEASE;
+    // public static isOpenDebugCode = false;  //是否打开debug代码段
+    // public static isAllowDefJumpPreload = true; //是否允许定义跳转到预置文件 
 }

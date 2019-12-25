@@ -12,6 +12,7 @@ import * as Tools from './codeTools';
 import { CodeEditor } from './codeEditor';
 import { DocSymbolProcessor } from './docSymbolProcessor';
 import { Logger } from './codeLogManager';
+import { CodeSettings } from './codeSettings';
 let dir = require('path-reader');
 
 export class CodeSymbol {
@@ -177,10 +178,12 @@ export class CodeSymbol {
 		let g_symb = {};
 
 		for (const fileUri in filesMap) {
-			let g_s = this.getOneDocSymbolsDic( filesMap[fileUri], null, range);
-			for (const key in g_s) {
-				const element = g_s[key];
-				g_symb[key] = element;
+			if(!Tools.isinPreloadFolder(filesMap[fileUri])){
+				let g_s = this.getOneDocSymbolsDic( filesMap[fileUri], null, range);
+				for (const key in g_s) {
+					const element = g_s[key];
+					g_symb[key] = element;
+				}
 			}
 		}
 
@@ -267,7 +270,7 @@ export class CodeSymbol {
 		// 这里建议搜到了，就不查全局文件了，因为全局查找是无序的。 这里最好有一个记录措施，避免同一个文件被多次查找，降低效率。
 		if(retSymbols.length === 0){
 			// 全局查找, 不含预制文件
-			let preS0 = this.searchSymbolinWorkSpace(symbolStr, searchMethod, Tools.SearchRange.GlobalSymbols, false, true);
+			let preS0 = this.searchSymbolinWorkSpace(symbolStr, searchMethod, Tools.SearchRange.GlobalSymbols, CodeSettings.isAllowDefJumpPreload , true);
 			if(preS0){
 				retSymbols = retSymbols.concat(preS0);
 			}
