@@ -582,12 +582,20 @@ export class DocSymbolProcessor {
 			for (let j = 0; j < strArr.length; j++) {
 				const element = strArr[j];
 				if(element.match('-@type')){
+					let commentTypeIdx = j+1;
+					for (let k = j+1; k < strArr.length; k++) {
+						if(strArr[k] != ''){
+							commentTypeIdx = k;
+							break;
+						}
+					}
 					let info = {
 						reason: Tools.TagReason.UserTag,
-						newType: strArr[j + 1],
+						newType: strArr[commentTypeIdx],
 						location : commentArray[idx].loc
 					}
 					this.pushToCommentList(info);
+					break;
 				}
 			}
 		}

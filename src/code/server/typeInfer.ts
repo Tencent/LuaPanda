@@ -211,7 +211,8 @@ export class TypeInfer {
 		// 为了避免 local common = common 导致搜索到自己的定义，最终无限循环。
 		for (const iterator in findoutSymbs) {
 			if(findoutSymbs[iterator] === element){
-				delete findoutSymbs[iterator];
+				// delete findoutSymbs[iterator];
+				findoutSymbs.splice(iterator, 1);
 				break;
 			}
 		}
