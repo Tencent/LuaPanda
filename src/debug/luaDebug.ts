@@ -303,26 +303,28 @@ export class LuaDebugSession extends LoggingDebugSession {
         }
         else{
             // 非单文件调试模式下，拉起program
-            let fs = require('fs');
-            if(fs.existsSync(args.program) && fs.statSync(args.program).isFile()){
-                //program 和 args 分开
-                if(LuaDebugSession._programTermianl){
-                    LuaDebugSession._programTermianl.dispose();
+            if(args.program != undefined && args.program.trim() != ''){
+                let fs = require('fs');
+                if(fs.existsSync(args.program) && fs.statSync(args.program).isFile()){
+                    //program 和 args 分开
+                    if(LuaDebugSession._programTermianl){
+                        LuaDebugSession._programTermianl.dispose();
+                    }
+                    LuaDebugSession._programTermianl = vscode.window.createTerminal({
+                        name: "Run Program File (LuaPanda)",
+                        env: {}, 
+                    });
+    
+                    let progaamCmdwithArgs = args.program;
+                    for (const arg of args.args) {
+                        progaamCmdwithArgs = progaamCmdwithArgs + " " + arg;
+                    }
+                    
+                    LuaDebugSession._programTermianl.sendText(progaamCmdwithArgs , true);
+                    LuaDebugSession._programTermianl.show(); 
+                }else{
+                    vscode.window.showErrorMessage("launch.json 文件中 program 设置的路径错误： 文件 " + args.program + " 不存在，请修改后再试。" , "好的");
                 }
-                LuaDebugSession._programTermianl = vscode.window.createTerminal({
-                    name: "Run Program File (LuaPanda)",
-                    env: {}, 
-                });
-
-                let progaamCmdwithArgs = args.program;
-                for (const arg of args.args) {
-                    progaamCmdwithArgs = progaamCmdwithArgs + " " + arg;
-                }
-                
-                LuaDebugSession._programTermianl.sendText(progaamCmdwithArgs , true);
-                LuaDebugSession._programTermianl.show(); 
-            }else{
-                vscode.window.showErrorMessage("launch.json 文件中 program 设置的路径错误： 文件 " + args.program + " 不存在，请修改后再试。" , "好的");
             }
         }
     }
