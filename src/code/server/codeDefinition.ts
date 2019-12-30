@@ -34,6 +34,9 @@ export class CodeDefinition {
 			let symbolInfo = symbRet['sybinfo'];
 			let containerList = symbRet['container'];
 			//先做一次普通搜索，如果有结果，就以普通搜索结果优先
+			if(symbolInfo.name.match(':')){
+				symbolInfo.name = symbolInfo.name.replace(/:/g,".");
+			}
 			let symbInstance = this.directSearch(uri, symbolInfo.name, Tools.SearchMode.ExactlyEqual);
 			if(isArray(symbInstance) && symbInstance.length > 0 ){
 				// 已经搜到了结果

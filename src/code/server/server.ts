@@ -267,7 +267,8 @@ connection.onDocumentSymbol(
 connection.onWorkspaceSymbol(
 	(handler: WorkspaceSymbolParams): SymbolInformation[] => {
 		try{
-			return  CodeSymbol.searchSymbolinWorkSpace(handler.query);
+			let userInput = handler.query;
+			return  CodeSymbol.searchSymbolinWorkSpace(userInput);
 		} catch (error) {
 			Logger.InfoLog(error.stack);
 		}

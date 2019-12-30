@@ -250,11 +250,6 @@ export class DocSymbolProcessor {
 			}else if( searchRange == Tools.SearchRange.LocalSymbols){
 				SymbolArrayForSearch = this.getLocalSymbolsDic();
 			}
-
-			//如果输入存在: ，直接把：替换成.
-			if(symbalName.match(':')){
-				symbalName = symbalName.replace(/:/g,".");
-			}
 			
 			//精确匹配 searchName。保证SymbolArrayForSearch其中的key中只有.而没有:
 			let tgtSymbol = SymbolArrayForSearch[symbalName];
@@ -292,19 +287,15 @@ export class DocSymbolProcessor {
 
 			for (let idx in SymbolArrayForSearch){
 				let sym = SymbolArrayForSearch[idx];
-				let searchName = sym.searchName;
+				let searchName = sym.name;
 				if(searchName){
-					let reg1 = new RegExp( /[\.:]/, 'g')
-					let symbalName_dot = symbalName.replace( reg1 , '.' );
-					let reg = new RegExp( '^' + symbalName_dot ,'i');
-
+					let reg = new RegExp(symbalName ,'i');
 					let hit = searchName.match(reg);
 					if(hit){
 						retSymbols.push(sym);
 					}
 				}
 			}
-
 		}
 		return retSymbols;
 	}
