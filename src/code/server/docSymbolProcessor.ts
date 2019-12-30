@@ -365,19 +365,13 @@ export class DocSymbolProcessor {
 	private createSymbolInfo(name: string, searchName:string, originalName:string,
 		kind:SymbolKind, location:Location, isLocal:boolean,
 		containerName?:string, containerList?:Array<Tools.chunkClass>,  funcParamArray?:Array<string>, tagType? :string, reason?: Tools.TagReason): Tools.SymbolInformation{
-		
-			let showName = name;
-			if(isLocal){
-				showName = "local " + showName;
-			}
-
 			//searchName中的全部:被替换为 . , 目的是提高查找效率
 			if(searchName.match(':')){
 				searchName = searchName.replace(/:/g,".");
 			}
 
 		return{
-			name: showName,
+			name: name,
 			searchName: searchName,
 			originalName: originalName,
 			kind: kind,

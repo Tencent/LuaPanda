@@ -8,6 +8,7 @@
 //包含 前缀的去除 ， 查找， 补回查找
 import * as Tools from './codeTools';
 import { CodeSymbol } from "./codeSymbol";
+import { CodeSettings } from './codeSettings';
 
 //类型推断文件
 export class TypeInfer {
@@ -17,7 +18,7 @@ export class TypeInfer {
 	private static retArray = []; //用来记录 Completion 和 Definition 返回数组
 	private static startMS;
 
-	private static maxSymbolCount = 20;
+	private static maxSymbolCount = 1;
 	// 定义查找接口
 	// @symbolInfo 是符号名
 	public static SymbolTagForDefinitionEntry(symbolInfo, uri){
@@ -62,7 +63,7 @@ export class TypeInfer {
 			let uri = value.containerURI;
 			//[尝试]向上补全, 所以补全这边的 tailListCache 要拷贝
 			this.recursiveProcessSymbolTagForCompletion(uri, value.searchName, tailListCache, false);
-			if(this.retArray.length === 0){
+			if(value.tagType){
 				this.recursiveSearchTagForCompletion(value, uri, searchPrefix, tailListCache, isStripping);
 			}
 		}
@@ -78,7 +79,9 @@ export class TypeInfer {
 	// @isStripping 剥离模式/合并模式
 	public static recursiveProcessSymbolTagForDefinition(uri, searchPrefix, tailListCache, isStripping = true){
 		if(isStripping){
-			if(this.startMS + 2000 < Date.now()) return;	//超时返回
+			if(CodeSettings.isOpenDebugCode === false){
+				if(this.startMS + 2000 < Date.now()) return;	//超时返回 ReleaseCode
+			}
 			let searchPrefixArray = Tools.splitToArrayByDot(searchPrefix);
 			for (let index = searchPrefixArray.length - 1; index >= 0; index--) {
 				// 切断用户输入 a.b.c => [a,b,c], 拼接, 开始循环(每次pop一个成员){
@@ -124,8 +127,10 @@ export class TypeInfer {
 	// @isStripping 剥离模式/合并模式
 	public static recursiveProcessSymbolTagForCompletion(uri, searchPrefix, tailListCache, isStripping = true){
 		// 防止循环遍历，记录[文件名] -- [符号名]
-		if(isStripping){	
-			if(this.startMS + 2000 < Date.now()) return;	//超时返回	
+		if(isStripping){
+			if(CodeSettings.isOpenDebugCode === false){
+				if(this.startMS + 2000 < Date.now()) return;	//超时返回	ReleaseCode
+			}	
 			let searchPrefixArray = Tools.splitToArrayByDot(searchPrefix);
 			for (let index = searchPrefixArray.length - 1; index > 0; index--) {
 				// 切断用户输入 a.b.c => [a,b,c], 拼接, 开始循环(每次pop一个成员){
@@ -242,26 +247,31 @@ export class TypeInfer {
 		}		
 		//
 		let retrunSymbol = new Array();
-		if(returnFuncList && returnFuncList.length > 0){
-			// for (let index = 0; index < returnFuncList.length; index++) {
-				// 遍历所有的函数，并在函数中查找返回类型
-				const retFuncSymbol = returnFuncList[0];
-				let chunks =CodeSymbol.getCretainDocChunkDic(retFuncSymbol.containerURI);
-				if( chunks[retFuncSymbol.searchName] ){
-					// 找到函数符号的
-					let chunkRetSymbolName = chunks[retFuncSymbol.searchName].returnSymbol;
-					//然后再chunk 所在文件，查找chunkRetSymbolName
-					retrunSymbol = CodeSymbol.searchSymbolinDoc(uri , chunkRetSymbolName , Tools.SearchMode.ExactlyEqual);
-					if (retrunSymbol == null || ( retrunSymbol && retrunSymbol.length <= 0) ){
-						retrunSymbol = CodeSymbol.searchSymbolforCompletion(uri ,chunkRetSymbolName ,Tools.SearchMode.ExactlyEqual);
-					}
-					return retrunSymbol;
-				}
-			// }
-		}else{
-			//等式右边的符号无法被直接搜索到
+		if(returnFuncList && returnFuncList.length == 0){
+			//等式右边的符号无法被直接搜索到，使用递归搜索
+			let tempRetArray = this.retArray;
+			this.retArray = [];
+			this.recursiveProcessSymbolTagForDefinition(uri, searchName, []);
+			if(this.retArray.length>0){
+				returnFuncList = this.retArray;
+				this.retArray = tempRetArray;
+			}
 		}
-
+		if(returnFuncList && returnFuncList.length > 0){
+			// 遍历所有的函数，并在函数中查找返回类型
+			const retFuncSymbol = returnFuncList[0];
+			let chunks =CodeSymbol.getCretainDocChunkDic(retFuncSymbol.containerURI);
+			if( chunks[retFuncSymbol.searchName] ){
+				// 找到函数符号的
+				let chunkRetSymbolName = chunks[retFuncSymbol.searchName].returnSymbol;
+				// 然后再chunk 所在文件，查找chunkRetSymbolName
+				retrunSymbol = CodeSymbol.searchSymbolinDoc(uri , chunkRetSymbolName , Tools.SearchMode.ExactlyEqual);
+				if (retrunSymbol == null || ( retrunSymbol && retrunSymbol.length <= 0) ){
+					retrunSymbol = CodeSymbol.searchSymbolforCompletion(uri ,chunkRetSymbolName ,Tools.SearchMode.ExactlyEqual);
+				}
+				return retrunSymbol;
+			}
+		}
 	}
 
 	private static searchUserTag(uri, element, operation){

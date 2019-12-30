@@ -33,44 +33,24 @@ export class CodeCompletion {
 		userInputString = userInputString.replace(/:/g,"."); //因为chunk，符号列表中的: 都被转换为 . 这里也要转换，否则查不到
 		// 先对[用户的完整输入]做一次[直接搜索]
 		let searchResArray = this.commonCompletionSearch(uri, userInputString) || [];  // 这里搜索的范围应该是用户代码， 所有预制文件
-		// 如果用户输入字段中含有分隔符[.:], 准备分段处理,检索tag
+		// 保存Completion信息的数组
+		let retCompletionArray;
+		// 如果用户输入字段中含有分隔符[.:], 准备分段处理, 检索tag
 		let userInputSplitArr = this.splitStringwithTrigger(userInputString); //userInputSplitArr 用户输入的字符串
 		if(userInputSplitArr && userInputSplitArr.length > 1){
-			if(searchResArray.length === 0){
-				// 使用类型推导
-				let lastPrefixSearchRet = TypeInfer.SymbolTagForCompletionEntry(uri, userInputString) || [];
-				if(lastPrefixSearchRet.length > 0){
-					lastPrefixSearchRet = this.keepSuffix(lastPrefixSearchRet);
-				}else{
-					// 类型推导也没有搜索到的处理方式  -STUART TODO-  使用最后一个字符直接搜索是否有必要？
-					// let lastPrefix = Tools.splitToArrayByDot(userInputString).pop();
-					// if(lastPrefix != ''){
-					// 	lastPrefixSearchRet = this.commonCompletionSearch(uri, lastPrefix) || [];
-					// }
-				}
-				searchResArray = searchResArray.concat(lastPrefixSearchRet);
-			}else{
-				// 把带有分隔符，的直搜结果去除前缀，仅保留要补全的后缀
-				searchResArray = searchResArray.concat(this.keepSuffix(searchResArray));
-			}
+			// 用户输入中含有分隔符[.:]
+			let lastPrefixSearchRet = TypeInfer.SymbolTagForCompletionEntry(uri, userInputString) || [];
+			searchResArray = searchResArray.concat(lastPrefixSearchRet);
+			// 把带有分隔符，的直搜结果去除前缀，仅保留要补全的后缀
+			retCompletionArray = this.symbolToCompletionArray(searchResArray, true);
+		}else{
+			// 处理直接搜索到的, 不含分隔符[.:]
+			retCompletionArray = this.symbolToCompletionArray(searchResArray);
 		}
 
-		// 处理搜索到的符号
-		let retCompletionArray = this.symbolToCompletionArray(searchResArray);
-		let retCompleteItem = this.completeItemDuplicateRemoval(retCompletionArray);
-		return retCompleteItem;
+		let retCompletionItem = this.completeItemDuplicateRemoval(retCompletionArray);
+		return retCompletionItem;
 	}
-
-	// 把用户输入的前缀去除，仅保留要补全的后缀
-	private static keepSuffix(symbolsArray) {
-		for (const key in symbolsArray) {
-			const element = symbolsArray[key];
-			let userInputSplitArr = this.splitStringwithTrigger(element.searchName);
-			element.searchName = userInputSplitArr.pop();	
-		}
-		return symbolsArray;
-	}	
-
 
 	private static fmtParamToSnippet(paramArray: string[]): string {
 		let snippet = '(' + paramArray.map((param, i) => `\${${i + 1}:${param}}`).join(', ') + ')';
@@ -130,7 +110,8 @@ export class CodeCompletion {
 	}
 
 	// 把符号数组转换为VSCode能够识别的补全数组
-	private static symbolToCompletionArray(retSymb){
+	// @onlyKeepPostfix 仅保留后缀
+	private static symbolToCompletionArray(retSymb, onlyKeepPostfix = false){
 		if (!isArray(retSymb)) {
 			return [];
 		}
@@ -139,6 +120,10 @@ export class CodeCompletion {
 		for (let idx = 0; idx < retSymb.length; idx++) {
 		
 			let finalInsertText = retSymb[idx].searchName;
+			if(onlyKeepPostfix){
+				let userInputSplitArr = this.splitStringwithTrigger(finalInsertText);
+				finalInsertText = userInputSplitArr.pop();	
+			}
 			let completeKind : CompletionItemKind
 			let labelTxt = finalInsertText;
 			switch(retSymb[idx].kind){
