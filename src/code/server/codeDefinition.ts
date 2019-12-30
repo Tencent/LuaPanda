@@ -50,6 +50,10 @@ export class CodeDefinition {
 			if(symbolInfo.isLocal){
 				// 同级优先，上方最近
 				finalRetSymbols = this.judgeLocalDefinition(symbInstance, containerList, info);
+				if(!finalRetSymbols && symbInstance && symbInstance.length > 0){
+					// 因为可以使用@type标记，所以搜出的结果并不在同一个文件中，导致judgeLocalDefinition误判为没有定义
+					finalRetSymbols = symbInstance[0];
+				}
 			}else{
 				// 最远原则
 				finalRetSymbols = symbInstance[0];

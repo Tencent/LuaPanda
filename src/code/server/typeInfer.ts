@@ -265,9 +265,9 @@ export class TypeInfer {
 				// 找到函数符号的
 				let chunkRetSymbolName = chunks[retFuncSymbol.searchName].returnSymbol;
 				// 然后再chunk 所在文件，查找chunkRetSymbolName
-				retrunSymbol = CodeSymbol.searchSymbolinDoc(uri , chunkRetSymbolName , Tools.SearchMode.ExactlyEqual);
+				retrunSymbol = CodeSymbol.searchSymbolinDoc(retFuncSymbol.containerURI , chunkRetSymbolName , Tools.SearchMode.ExactlyEqual);
 				if (retrunSymbol == null || ( retrunSymbol && retrunSymbol.length <= 0) ){
-					retrunSymbol = CodeSymbol.searchSymbolforCompletion(uri ,chunkRetSymbolName ,Tools.SearchMode.ExactlyEqual);
+					retrunSymbol = CodeSymbol.searchSymbolforCompletion(retFuncSymbol.containerURI ,chunkRetSymbolName ,Tools.SearchMode.ExactlyEqual);
 				}
 				return retrunSymbol;
 			}
