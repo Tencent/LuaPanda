@@ -294,7 +294,7 @@ export class CodeSymbol {
 		}
 
 		// 全局, 含有预制文件
-		let preS0 = this.searchSymbolinWorkSpace(symbolStr, searchMethod, Tools.SearchRange.AllSymbols, true, true);
+		let preS0 = this.searchSymbolinWorkSpace(symbolStr, searchMethod, Tools.SearchRange.GlobalSymbols, true, true);
 		if(preS0){
 			retSymbols = retSymbols.concat(preS0);
 		}
