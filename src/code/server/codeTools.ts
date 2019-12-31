@@ -525,6 +525,9 @@ function getVerboseSymbolContainer(verboseSymbolInfo: SymbolInformation): chunkC
 
 function handleDocumentSymbolChildren(symbolContainer: chunkClass[], documentSymbol: DocumentSymbol, outlineSymbolArray: DocumentSymbol[], chunkMap: Map<string, number>) {
 	let index = chunkMap.get(symbolContainer[1].chunkName);
+	if (index === undefined) {
+		return;
+	}
 	let parent: DocumentSymbol = outlineSymbolArray[index];
 	for (let i = 2; i < symbolContainer.length; i++) {
 		for (let j = 0; j < parent.children.length; j++) {
