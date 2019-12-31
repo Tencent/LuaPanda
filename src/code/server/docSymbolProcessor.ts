@@ -459,7 +459,10 @@ export class DocSymbolProcessor {
 	private pushToChunkList(name, chunk){
 
 		if(name.match(':')){
-			name = name.replace(/:/g,".");
+			//chunkname 除了是函数名外，还有可能是一个文件的路径。当name是路径的时候。不要把：转换为 .
+			if(!name.match(new RegExp(/^\w:[\\\/]/))){
+				name = name.replace(/:/g,".");
+			}
 		}
 
 		if(this.docInfo.defineSymbols["chunks"][name]){
