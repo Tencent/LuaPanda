@@ -47,7 +47,7 @@ export class TypeInfer {
 			let uri = value.containerURI;
 			//[尝试]向上补全, 所以补全这边的 tailListCache 要拷贝
 			this.recursiveProcessSymbolTagForDefinition(uri, value.searchName, tailListCache, false);
-			if(this.retArray.length === 0){
+			if(value.tagType && this.retArray.length === 0){
 				this.recursiveSearchTagForDefinition(value, uri, searchPrefix, tailListCache, isStripping);
 			}
 		}
