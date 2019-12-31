@@ -38,11 +38,13 @@ export class NativeCodeExportBase {
         let csfileCount = SluaCSharpProcessor.processluaCSDir(anaPath);
         let tipString = '处理完成，解析了 ';
         if(cppfileCount > 0){
-            tipString += cppfileCount + ' 个cpp文件    ';
+            tipString += cppfileCount + ' 个cpp文件，';
         }
         if(csfileCount > 0){
-            tipString += csfileCount + ' 个c#文件';
+            tipString += csfileCount + ' 个c#文件。';
         }
+
+        tipString += '请重启 VSCode 以加载解析出的 lua 符号文件!'
         Tools.showTips(tipString);
     }
 }
