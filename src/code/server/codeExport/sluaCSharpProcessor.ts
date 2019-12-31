@@ -128,15 +128,17 @@ export class SluaCSharpProcessor {
             for (const mems of dver2) {
                 let paras = mems.match(/addMember\(l,("(.*?)"|(.*?))(,|\))/);
                 if(paras[2]){
-                    //函数         addMember(l,getItem);\n\
+                    //成员         addMember(l,"name",get_name,set_name,true);\n\
                     let functionObj = new Object();
                     functionObj['var'] = paras[2] ;
                     functionObj['type'] = "variable";
                     members.push(functionObj);
                 }else if(paras[3]){
-                    //成员         addMember(l,"name",get_name,set_name,true);\n\
+                    //函数         addMember(l,getItem);\n\
                     let varObj = new Object();
-                    varObj['var'] = paras[3] + '()';
+                    let functionNameStr = paras[3];
+                    functionNameStr = functionNameStr.replace(/_s$/, '');
+                    varObj['var'] = functionNameStr + '()';
                     varObj['type'] = "function";
                     members.push(varObj);
                 }
@@ -158,7 +160,6 @@ export class SluaCSharpProcessor {
 
         }
         // luaCode 写入文件
-        // console.log(luaCode);
         return luaCode;
     }
 }
