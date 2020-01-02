@@ -151,8 +151,12 @@ export class LuaDebugSession extends LoggingDebugSession {
         }
 
         // 普通模式下才需要检查升级，单文件调试不用
-        if( args.name != 'LuaPanda-DebugFile' ){      
-            UpdateManager.checkIfLuaPandaNeedUpdate();
+        if( args.name != 'LuaPanda-DebugFile' ){
+            try {
+                UpdateManager.checkIfLuaPandaNeedUpdate();
+            } catch (error) {
+                DebugLogger.AdapterInfo("[Error] 检查升级信息失败，可选择后续手动升级。 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md ");
+            }      
         }
 
         // 去除out, Debugger/debugger_lib/plugins/Darwin/   libpdebug_版本号.so
