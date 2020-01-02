@@ -67,8 +67,12 @@ export class VisualSetting {
     // 读取launch.json中的信息，并序列化
     public static getLaunchData(){
         let settings = this.readLaunchjson();
-        let snippetsPath = Tools.VSCodeExtensionPath + "/res/snippets";
-        let isOpenAnalyzer = fs.existsSync(snippetsPath);
+        let snippetsPath = Tools.VSCodeExtensionPath + "/res/snippets/snippets.json";
+        let isOpenAnalyzer = true;
+        let snipContent = fs.readFileSync(snippetsPath);
+        if(snipContent.toString().trim() == ''){
+            isOpenAnalyzer = false;
+        }
 
         let obj = new Object();
         obj["command"] = "init_setting";
@@ -144,25 +148,21 @@ export class VisualSetting {
     private static on_off_analyzer(messageObj) {
         let userControlBool = messageObj.switch;
         //读文件判断当前是on或者off，如果文件不存在，按on处理
-        let snippetsPath = Tools.VSCodeExtensionPath + "/res/snippets";
-        let snippetsPathClose = Tools.VSCodeExtensionPath + "/res/snippets_close";
+        let snippetsPath = Tools.VSCodeExtensionPath + "/res/snippets/snippets.json";
+        let snippetsPathBackup = Tools.VSCodeExtensionPath + "/res/snippets/snippets_backup.json";
 
         if(!userControlBool){
-            // 用户关闭
-            let codeSwitch = fs.existsSync(snippetsPath);
-            if(codeSwitch){
-                fs.renameSync(snippetsPath, snippetsPathClose);
-            }
+            // 用户关闭, 清空snippets
+            fs.writeFileSync(snippetsPath, '');
             DebugLogger.showTips("您已关闭了代码辅助功能，重启VScode后将不再有代码提示!");
-
             return;
         }
 
-        if( userControlBool){
+        if(userControlBool){
             // 用户打开
-            let codeSwitchClose = fs.existsSync(snippetsPathClose);
-            if(codeSwitchClose){
-                fs.renameSync(snippetsPathClose, snippetsPath);
+            if(fs.existsSync(snippetsPathBackup)){
+                // 读取snippetsPathBackup中的内容，写入snippets
+                fs.writeFileSync(snippetsPath, fs.readFileSync(snippetsPathBackup));
             }
             DebugLogger.showTips("您已打开了代码辅助功能，重启VScode后将会启动代码提示!");
             return;

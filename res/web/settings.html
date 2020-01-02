@@ -217,58 +217,58 @@
                     if (message["LuaPanda"]) {
                         //初始化luapanda
                         //初始化单文件调试
-                        if (message["LuaPanda"]["luaFileExtension"] != undefined) {
-                            setInputContent("luaFileExtension", message["LuaPanda"]["luaFileExtension"]);
-                        } else {
+                        if (message["LuaPanda"]["luaFileExtension"] == undefined) {
                             setInputContent("luaFileExtension", "lua");
+                        } else {
+                            setInputContent("luaFileExtension", message["LuaPanda"]["luaFileExtension"]);
                         }
 
-                        if (message["LuaPanda"]["connectionPort"]) {
-                            setInputContent("connectionPort", message["LuaPanda"]["connectionPort"]);
-                        } else {
+                        if (message["LuaPanda"]["connectionPort"] == undefined) {
                             setInputContent("connectionPort", "8818");
+                        } else {
+                            setInputContent("connectionPort", message["LuaPanda"]["connectionPort"]);
                         }
 
-                        if (message["LuaPanda"]["cwd"]) {
-                            setInputContent("cwd", message["LuaPanda"]["cwd"]);
-                        } else {
+                        if (message["LuaPanda"]["cwd"] == undefined) {
                             setInputContent("cwd", "${workspaceFolder}");
+                        } else {
+                            setInputContent("cwd", message["LuaPanda"]["cwd"]);
                         }
 
-                        if (message["LuaPanda"]["pathCaseSensitivity"]) {
+                        if (message["LuaPanda"]["pathCaseSensitivity"] == undefined) {
+                            setCheckboxStatue("pathCaseSensitivity", true);
+                        } else {
                             setCheckboxStatue("pathCaseSensitivity", message["LuaPanda"]["pathCaseSensitivity"]);
-                        } else {
-                            setInputContent("pathCaseSensitivity", true);
                         }
 
-                        if (message["LuaPanda"]["stopOnEntry"]) {
+                        if (message["LuaPanda"]["stopOnEntry"] == undefined ) {
+                            setCheckboxStatue("stopOnEntry", true);
+                        } else {
                             setCheckboxStatue("stopOnEntry", message["LuaPanda"]["stopOnEntry"]);
-                        } else {
-                            setInputContent("stopOnEntry", true);
                         }
 
-                        if (message["LuaPanda"]["useCHook"]) {
+                        if (message["LuaPanda"]["useCHook"] == undefined) {
+                            setCheckboxStatue("useCHook", true);
+                        } else {
                             setCheckboxStatue("useCHook", message["LuaPanda"]["useCHook"]);
-                        } else {
-                            setInputContent("useCHook", true);
                         }
 
-                        if (message["LuaPanda"]["autoPathMode"]) {
+                        if (message["LuaPanda"]["autoPathMode"] == undefined) {
+                            setCheckboxStatue("autoPathMode", false);
+                        } else {
                             setCheckboxStatue("autoPathMode", message["LuaPanda"]["autoPathMode"]);
-                        } else {
-                            setInputContent("autoPathMode", true);
                         }
 
-                        if (message["LuaPanda"]["updateTips"]) {
-                            setCheckboxStatue("updateTips", message["LuaPanda"]["updateTips"]);
+                        if (message["LuaPanda"]["updateTips"] == undefined) {
+                            setCheckboxStatue("updateTips", true);
                         } else {
-                            setInputContent("updateTips", true);
+                            setCheckboxStatue("updateTips", message["LuaPanda"]["updateTips"]);
                         }           
 
-                        if (message["isOpenAnalyzer"]) {
-                            setCheckboxStatue("luaAnalyzerSwitch", message["isOpenAnalyzer"]);
+                        if (message["isOpenAnalyzer"] == undefined) {
+                            setCheckboxStatue("luaAnalyzerSwitch", true);
                         } else {
-                            setInputContent("luaAnalyzerSwitch", true);
+                            setCheckboxStatue("luaAnalyzerSwitch", message["isOpenAnalyzer"]);
                         }
 
                     }

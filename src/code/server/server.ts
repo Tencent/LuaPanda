@@ -122,8 +122,9 @@ connection.onInitialize((initPara: InitializeParams) => {
 	Logger.DebugLog("init success");
 
 	//读取标记文件，如果关闭了标记，那么
-	let snippetsPath = Tools.getVScodeExtensionPath() + "/res/snippets";
-	if(!fs.existsSync(snippetsPath)){
+	let snippetsPath = Tools.getVScodeExtensionPath() + "/res/snippets/snippets.json";
+	let snipContent = fs.readFileSync(snippetsPath);
+	if(snipContent.toString().trim() == ''){
 		return {
 			capabilities: {}
 		}
