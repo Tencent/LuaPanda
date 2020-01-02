@@ -47,7 +47,7 @@ local consoleLogLevel = 2;           --打印在控制台(print)的日志等级 
 local connectTimeoutSec = 0.005;       --等待连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
 --用户设置项END
 
-local debuggerVer = "3.0.2";                 --debugger版本号
+local debuggerVer = "3.1.0";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = {};     --引用的开源工具，包括json解析和table展开工具等

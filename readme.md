@@ -44,7 +44,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 + 关于找不到`libpdebug`模块报错
 
-  `libpdebug.so(dll)` 是放置在VSCode插件中的调试器C扩展，会在调试器运行时自动加载，作用是加速调试。
+  `libpdebug.so(dll)` 是放置在VSCode插件中的调试器C扩展，会在调试器运行时自动加载，作用是加速调试。此模块未能加载时，调试器功能不会受到影响，仍可正常使用。
 
   xlua允许用户重写文件加载函数`CustomLoader`，sluaunreal也提供类似方法`setLoadFileDelegate`。
 
@@ -56,12 +56,22 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
 # 近期更新
 
++ V3.1.0
+  
+  + 新增了导出 slua 符号用于代码提示。  [使用说明](https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/lua-intellisense.md)
+  + 重构了定义跳转和代码提示框架，提升了分析效率。自测修复了 #49 大量lua工程下无法工作的问题。
+  + 修复了 #47 table 成员展示问题。
+  + 修复了 #46 配置 program 后 , attach 启动拉起新进程的问题。增加了一个attach启动项。
+  + 实现了 #44 提出的 terminal 复用的建议。
+  
+  
+  
 + V3.0.2
+
+  + 新增了导出 slua-unreal 符号用于代码提示。 [使用说明](https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/lua-intellisense.md)
+
   
-  + 新增了导出c++符号给 lua 做代码提示，目前支持slua-unreal。 [说明](https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/lua-intellisense.md)
-  
-  
-  
+
 + V3.0.1
 
   + 修复可视化配置的bug
@@ -85,25 +95,9 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
   + 合并了 `LuaPanda.lua` 和 `DebugTools.lua`  。 为了方便文件拷贝和升级对这两个文件做了合并，内容全部放入 `LuaPanda.lua`。DebugTools.lua 不再使用。
 
++ [更多更新记录](https://github.com/Tencent/LuaPanda/blob/master/CHANGELOG.md)
 
 
-
-+ v2.3.0
-
-  + 增加了自动路径识别功能
-
-    2.3.0版本插件在launch.json文件中新增了`autoPathMode`设置项。当设置为`true`时，调试器会根据文件名查询完整路径。用户在接入时不必再进行繁琐的路径配置。当此配置项为false或者未配置时，使用传统的路径拼接方式。
-
-    另外，用户需要确保**VSCode打开的工程目录**中不存在同名lua文件，才可以使用本功能。否则调试器可能会把断点指向错误的文件，造成执行异常。
-
-  + 测试了在cocos2dx下的运行情况
-
-    之前的版本在cocos2dx中运行时会报查找 c 库错误。2.3.0 修复了此问题，测试 cocos2dx 在 win/mac 下都可以使用c库。
-
-    另外调试器目前支持标准lua虚拟机，cocos2dx集成的是luajit，可能会在单步时出现跳步的情况，后续完整支持luajit会解决此问题。
-  
-    
-  
 
 
 # 特性
