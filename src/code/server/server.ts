@@ -221,7 +221,7 @@ connection.onCompletion(
 		try{
 			return CodeCompletion.completionEntry(uri, pos);
 		} catch (error) {
-			Logger.InfoLog(error.stack);
+			Logger.ErrorLog("[Error] onCompletion " + error.stack);
 		}
 	}
 );
@@ -240,7 +240,7 @@ connection.onDefinition(
 		try{
 			return CodeDefinition.getSymbalDefine(handler);
 		} catch (error) {
-			Logger.InfoLog(error.stack);
+			Logger.ErrorLog("[Error] onDefinition " + error.stack);
 		}
 	}
 );
@@ -271,7 +271,7 @@ connection.onWorkspaceSymbol(
 			let userInput = handler.query;
 			return  CodeSymbol.searchSymbolinWorkSpace(userInput);
 		} catch (error) {
-			Logger.InfoLog(error.stack);
+			Logger.ErrorLog("[Error] onWorkspaceSymbol " + error.stack);
 		}
 	}
 );
@@ -280,17 +280,21 @@ connection.onWorkspaceSymbol(
 documents.onDidOpen(file => {
 	// 异步分析工程中同后缀文件
 	if (file.document.languageId == "lua") {	//本文件是lua形式
-		let uri = Tools.urlDecode(file.document.uri);
-		let luaExtname = Tools.getPathNameAndExt(uri);
-		let ext = luaExtname['ext'];
-		let loadedExt =  Tools.getLoadedExt();
-		if (loadedExt && loadedExt[ext] === true) {
-			// VSCode 会自动调用 onDidChangeContent
-			return;
-		}else{
-			// 处理新的后缀类型
-			CodeSymbol.createSymbolswithExt(ext, Tools.getInitPara().rootPath);
-			setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
+		try {
+			let uri = Tools.urlDecode(file.document.uri);
+			let luaExtname = Tools.getPathNameAndExt(uri);
+			let ext = luaExtname['ext'];
+			let loadedExt =  Tools.getLoadedExt();
+			if (loadedExt && loadedExt[ext] === true) {
+				// VSCode 会自动调用 onDidChangeContent
+				return;
+			}else{
+				// 处理新的后缀类型
+				CodeSymbol.createSymbolswithExt(ext, Tools.getInitPara().rootPath);
+				setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
+			}
+		} catch (error) {
+			Logger.ErrorLog("[Error] onDidOpen " + error.stack);
 		}
 	}
 });
@@ -298,25 +302,29 @@ documents.onDidOpen(file => {
 // 文件内容发生改变（首次打开文件时这个方法也会被调用）
 documents.onDidChangeContent(change => {
 	if(change.document.languageId == 'lua'){
-		const uri = Tools.urlDecode(change.document.uri);
-		const text = change.document.getText();
-		CodeEditor.saveCode(uri, text); //保存代码
-
-		// 过滤掉预分析文件
-		if(!Tools.isinPreloadFolder(uri)){	
-			CodeSymbol.refreshOneDocSymbols(uri, text);
-		}else{
-			CodeSymbol.refreshOneUserPreloadDocSymbols( Tools.uriToPath(uri));
-		}
-
-		// 运行语法检查
-		getDocumentSettings(uri).then(
-			(settings) => {
-				if (settings.codeLinting.checkWhileTyping == true) {
-					validateTextDocument(change.document);
-				}
+		try {
+			const uri = Tools.urlDecode(change.document.uri);
+			const text = change.document.getText();
+			CodeEditor.saveCode(uri, text); //保存代码
+	
+			// 过滤掉预分析文件
+			if(!Tools.isinPreloadFolder(uri)){	
+				CodeSymbol.refreshOneDocSymbols(uri, text);
+			}else{
+				CodeSymbol.refreshOneUserPreloadDocSymbols( Tools.uriToPath(uri));
 			}
-		);
+	
+			// 运行语法检查
+			getDocumentSettings(uri).then(
+				(settings) => {
+					if (settings.codeLinting.checkWhileTyping == true) {
+						validateTextDocument(change.document);
+					}
+				}
+			);
+		} catch (error) {
+			Logger.ErrorLog("[Error] onDidChangeContent " + error.stack);
+		}
 	}
 });
 
@@ -332,7 +340,7 @@ documents.onDidSave(change => {
 			}
 		);
 	} catch (error) {
-		Logger.InfoLog(error.stack);
+		Logger.ErrorLog("[Error] onDidSave " + error.stack);
 	}
 });
 
