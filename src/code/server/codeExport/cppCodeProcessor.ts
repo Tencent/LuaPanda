@@ -18,7 +18,7 @@ export class CppCodeProcessor {
     // sluaUE的分析路径
 	public static get cppInterfaceIntelliSenseResPath() {
 		if(!this._cppInterfaceIntelliSenseResPath){
-            this._cppInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolder() + "/.vscode/LuaPanda/IntelliSenseRes/UECppInterface/";        
+            this._cppInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolder() + "/.vscode/LuaPanda/IntelliSenseRes/UECppInterface/";
         }
         return this._cppInterfaceIntelliSenseResPath;
 	}
@@ -471,9 +471,16 @@ export class CppCodeProcessor {
 
 	private static handleUFUNCTION(astNode: Node, className: string): string {
 		let luaText = 'function ';
+		let returnType = '';
 
 		astNode.children.forEach((child: Node) => {
 			switch (child.type) {
+				case 'type_identifier':
+				case 'primitive_type':
+					// 记录返回值类型（非引用和指针）
+					returnType = child.text;
+					break;
+
 				case 'function_declarator':
 					luaText += this.handleFunctionDeclarator(child, className);
 					break;
@@ -490,6 +497,10 @@ export class CppCodeProcessor {
 			}
 		});
 		luaText += ' end\n';
+
+		if (returnType !== '') {
+			luaText = '---@return ' + returnType + '\n' + luaText;
+		}
 		return luaText;
 	}
 
