@@ -481,6 +481,11 @@ export class CppCodeProcessor {
 					returnType = child.text;
 					break;
 
+				// 模板类型 TArray<UActorComponent>
+				case 'template_type':
+					returnType = this.getTemplateType(child);
+					break;
+
 				case 'function_declarator':
 					luaText += this.handleFunctionDeclarator(child, className);
 					break;
@@ -581,6 +586,17 @@ export class CppCodeProcessor {
 			}
 		});
 		return param;
+	}
+
+	private static getTemplateType(astNode: Node): string {
+		let templateType = '';
+		astNode.children.forEach((child: Node) => {
+			if (child.type === 'type_identifier') {
+				templateType = child.text;
+			}
+		});
+
+		return templateType;
 	}
 
 	private static handleUPROPERTY(astNode: Node, className: string): string {
