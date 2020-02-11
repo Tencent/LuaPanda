@@ -486,6 +486,17 @@ export class CppCodeProcessor {
 					returnType = this.getTemplateType(child);
 					break;
 
+				// 类类型
+				case 'class_specifier':
+					returnType = this.getClassInfo(child).className;
+					break;
+
+				// 结构体类型
+				case 'struct_specifier':
+					returnType = this.getStructType(child);
+					break;
+
+				// 函数定义
 				case 'function_declarator':
 					luaText += this.handleFunctionDeclarator(child, className);
 					break;
@@ -598,6 +609,18 @@ export class CppCodeProcessor {
 
 		return templateType;
 	}
+
+	private static getStructType(astNode: Node): string {
+		let structType = '';
+		astNode.children.forEach((child: Node) => {
+			if (child.type === 'type_identifier') {
+				structType = child.text;
+			}
+		});
+
+		return structType;
+	}
+
 
 	private static handleUPROPERTY(astNode: Node, className: string): string {
 		let luaText = '';
