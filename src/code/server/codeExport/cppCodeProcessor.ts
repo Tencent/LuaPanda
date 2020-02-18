@@ -514,9 +514,13 @@ export class CppCodeProcessor {
 		});
 		luaText += ' end\n';
 
+		if (this.returnTypeMap.has(returnType)) {
+			returnType = this.returnTypeMap.get(returnType);
+		}
 		if (returnType !== '') {
 			luaText = '---@return ' + returnType + '\n' + luaText;
 		}
+
 		return luaText;
 	}
 
@@ -846,6 +850,22 @@ export class CppCodeProcessor {
 		return luaText;
 	}
 
+	// UFUNCTION返回值类型映射
+	private static _returnTypeMap: Map<string, string>;
+	private static get returnTypeMap() {
+		if (!this._returnTypeMap) {
+			this._returnTypeMap = new Map<string, string>();
+			this._returnTypeMap.set('void', '');
+			this._returnTypeMap.set('int', 'number');
+			this._returnTypeMap.set('float', 'number');
+			this._returnTypeMap.set('double', 'number');
+			this._returnTypeMap.set('bool', 'boolean');
+			this._returnTypeMap.set('FName', 'string');
+			this._returnTypeMap.set('FString', 'string');
+		}
+
+		return this._returnTypeMap;
+	}
 
 	/**
 	 * 获取tree-sitter wasm文件目录
