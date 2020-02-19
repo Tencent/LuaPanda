@@ -106,8 +106,9 @@ export class TypeInfer {
 			let addPrefixSearchArray = this.searchMethodforComp(uri, newName, Tools.SearchMode.ExactlyEqual);// prefix search with no children
 			if(addPrefixSearchArray.length > this.maxSymbolCount) addPrefixSearchArray.length = this.maxSymbolCount;
 			for (const element of addPrefixSearchArray) {
-				if(element.tagType){
+				if(element.tagType) {
 					// TODO 如果有符号，有tag，切换成符号，递归
+					this.retArray.push(element);
 				}else{
 					// 如果有符号，不论有无tag，继续合并
 					if(temptailCache.length > 0){
@@ -155,8 +156,9 @@ export class TypeInfer {
 			let addPrefixSearchArray = this.searchMethodforComp(uri, newName, Tools.SearchMode.PrefixMatch);// prefix search with no children
 			// if(addPrefixSearchArray.length > this.maxSymbolCount) addPrefixSearchArray.length = this.maxSymbolCount; 补全这里不能做限制，否则会影响到输出的结果
 			for (const element of addPrefixSearchArray) {
-				if(element.tagType){
+				if(element.tagType) {
 					// TODO 如果有符号，有tag，切换成符号，递归
+					this.retArray.push(element);
 				}else{
 					// 如果有符号，不论有无tag，继续合并
 					if(temptailCache.length > 0){
@@ -264,6 +266,10 @@ export class TypeInfer {
 			if( chunks[retFuncSymbol.searchName] ){
 				// 找到函数符号的
 				let chunkRetSymbolName = chunks[retFuncSymbol.searchName].returnSymbol;
+				// 优先使用@return标记的类型
+				if (retFuncSymbol.tagType !== undefined && retFuncSymbol.tagReason === Tools.TagReason.UserTag) {
+					chunkRetSymbolName = retFuncSymbol.tagType;
+				}
 				// 然后再chunk 所在文件，查找chunkRetSymbolName
 				retrunSymbol = CodeSymbol.searchSymbolinDoc(retFuncSymbol.containerURI , chunkRetSymbolName , Tools.SearchMode.ExactlyEqual);
 				if (retrunSymbol == null || ( retrunSymbol && retrunSymbol.length <= 0) ){
