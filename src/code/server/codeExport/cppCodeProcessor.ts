@@ -128,6 +128,9 @@ export class CppCodeProcessor {
 	 * 去除宏 GENERATED_UCLASS_BODY
 	 * 去除宏 GENERATED_USTRUCT_BODY
 	 * 去除宏 DEPRECATED
+	 * 去除宏 UE_DEPRECATED
+	 * 去除宏 DECLARE_XXX
+	 * 去除宏 PRAGMA_XXX
 	 * @param filePath 文件路径。
 	 */
 	private static getCppCode(filePath: string, cppFileType: CppFileType): string {
@@ -194,8 +197,23 @@ export class CppCodeProcessor {
 		while ((result = regex.exec(content)) !== null) {
 			content = content.replace(result[1], '//');
 		}
+		// 去除宏 UE_DEPRECATED
+		regex = URegex.UE_DEPRECATED;
+		while ((result = regex.exec(content)) !== null) {
+			content = content.replace(result[1], '//');
+		}
 		// 去除宏 DEPRECATED
 		regex = URegex.DEPRECATED;
+		while ((result = regex.exec(content)) !== null) {
+			content = content.replace(result[1], '//');
+		}
+		// 去除宏 DECLARE_XXX
+		regex = URegex.DECLARE;
+		while ((result = regex.exec(content)) !== null) {
+			content = content.replace(result[1], '//');
+		}
+		// 去除宏 PRAGMA_XXX
+		regex = URegex.PRAGMA;
 		while ((result = regex.exec(content)) !== null) {
 			content = content.replace(result[1], '//');
 		}
@@ -967,6 +985,9 @@ class URegex {
 	public static GENERATED_UCLASS_BODY  = new RegExp(/\s*(GENERATED_UCLASS_BODY\s*\(.*\))/);
 	public static GENERATED_USTRUCT_BODY = new RegExp(/\s*(GENERATED_USTRUCT_BODY\s*\(.*\))/);
 	public static DEPRECATED             = new RegExp(/\s*(DEPRECATED\s*\(.*\))/);
+	public static UE_DEPRECATED          = new RegExp(/\s*(UE_DEPRECATED\s*\(.*\))/);
+	public static PRAGMA                 = new RegExp(/\s*(PRAGMA_\w+WARNINGS)/);
+	public static DECLARE                = new RegExp(/\s*(DECLARE_\w+\s*\(.*\))/);
 	public static UMETA                  = new RegExp(/\s*(UMETA\s*\(.*\))/);
 
 	public static DefLuaClass  = new RegExp(/\s*(DefLuaClass\s*\(.*\))/);
