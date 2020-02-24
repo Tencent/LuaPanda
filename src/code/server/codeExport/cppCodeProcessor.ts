@@ -123,6 +123,51 @@ export class CppCodeProcessor {
 
 	/**
 	 * 获取文件内容，并对内容进行预处理。
+	 * @param filePath 文件路径。
+	 * @param cppFileType 文件类型
+	 */
+	private static getCppCode(filePath: string, cppFileType: CppFileType): string {
+		let content = Tools.getFileContent(filePath);
+
+		if (this.isFileNeedParse(cppFileType, content) === false) {
+			return '';
+		}
+
+		content = this.pretreatCppCode(content);
+
+		return content;
+	}
+
+	private static isFileNeedParse(cppFileType: CppFileType, content: string): boolean {
+		let regex: RegExp;
+		let result: RegExpExecArray | null;
+		switch (cppFileType) {
+			case CppFileType.CppHeaderFile:
+				regex = URegex.UCLASS
+				if ((result = regex.exec(content)) !== null) {
+					return true;
+				}
+				regex = URegex.USTRUCT
+				if ((result = regex.exec(content)) !== null) {
+					return true;
+				}
+				regex = URegex.UENUM
+				if ((result = regex.exec(content)) !== null) {
+					return true;
+				}
+				break;
+
+			case CppFileType.CppSourceFile:
+				regex = URegex.DefLuaClass;
+				if ((result = regex.exec(content)) !== null) {
+					return true;
+				}
+				break;
+		}
+		return false;
+	}
+
+	/**
 	 * 将 class XXX ClassName 替换为 class className
 	 * 去除宏 GENERATED_BODY
 	 * 去除宏 GENERATED_UCLASS_BODY
@@ -131,44 +176,10 @@ export class CppCodeProcessor {
 	 * 去除宏 UE_DEPRECATED
 	 * 去除宏 DECLARE_XXX
 	 * 去除宏 PRAGMA_XXX
-	 * @param filePath 文件路径。
 	 */
-	private static getCppCode(filePath: string, cppFileType: CppFileType): string {
-		let content = Tools.getFileContent(filePath);
+	private static pretreatCppCode(content: string): string {
 		let regex: RegExp;
 		let result: RegExpExecArray | null;
-
-		let canIgnore: boolean = true;
-		switch (cppFileType) {
-			case CppFileType.CppHeaderFile:
-				regex = URegex.UCLASS
-				if ((result = regex.exec(content)) !== null) {
-					canIgnore = false;
-					break;
-				}
-				regex = URegex.USTRUCT
-				if ((result = regex.exec(content)) !== null) {
-					canIgnore = false;
-					break;
-				}
-				regex = URegex.UENUM
-				if ((result = regex.exec(content)) !== null) {
-					canIgnore = false;
-					break;
-				}
-				break;
-
-			case CppFileType.CppSourceFile:
-				regex = URegex.DefLuaClass;
-				if ((result = regex.exec(content)) !== null) {
-					canIgnore = false;
-				break;
-				}
-				break;
-		}
-		if (canIgnore === true) {
-			return '';
-		}
 
 		// 将 class XXX ClassName 替换为 class className
 		regex = /\s*(class\s+[A-Z0-9_]+)\s+\w+.+/;
