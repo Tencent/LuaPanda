@@ -193,46 +193,45 @@ export class CppCodeProcessor {
 			content = content.replace(result[1], 'struct');
 		}
 
+		let regex2CommentArray: RegExp[] = new Array<RegExp>();
 		// 去除宏 GENERATED_BODY
-		regex = URegex.GENERATED_BODY;
-		while ((result = regex.exec(content)) !== null) {
-			content = content.replace(result[1], '//');
-		}
+		regex2CommentArray.push(URegex.GENERATED_BODY);
 		// 去除宏 GENERATED_UCLASS_BODY
-		regex = URegex.GENERATED_UCLASS_BODY;
-		while ((result = regex.exec(content)) !== null) {
-			content = content.replace(result[1], '//');
-		}
+		regex2CommentArray.push(URegex.GENERATED_UCLASS_BODY);
 		// 去除宏 GENERATED_USTRUCT_BODY
-		regex = URegex.GENERATED_USTRUCT_BODY;
-		while ((result = regex.exec(content)) !== null) {
-			content = content.replace(result[1], '//');
-		}
+		regex2CommentArray.push(URegex.GENERATED_USTRUCT_BODY);
 		// 去除宏 UE_DEPRECATED
-		regex = URegex.UE_DEPRECATED;
-		while ((result = regex.exec(content)) !== null) {
-			content = content.replace(result[1], '//');
-		}
+		regex2CommentArray.push(URegex.UE_DEPRECATED);
 		// 去除宏 DEPRECATED
-		regex = URegex.DEPRECATED;
-		while ((result = regex.exec(content)) !== null) {
-			content = content.replace(result[1], '//');
-		}
+		regex2CommentArray.push(URegex.DEPRECATED);
 		// 去除宏 DECLARE_XXX
-		regex = URegex.DECLARE;
-		while ((result = regex.exec(content)) !== null) {
-			content = content.replace(result[1], '//');
-		}
+		regex2CommentArray.push(URegex.DECLARE);
 		// 去除宏 PRAGMA_XXX
-		regex = URegex.PRAGMA;
-		while ((result = regex.exec(content)) !== null) {
-			content = content.replace(result[1], '//');
-		}
-		// 去除UMETA(xxx）
-		regex = URegex.UMETA;
-		while ((result = regex.exec(content)) !== null) {
-			content = content.replace(result[1], '');
-		}
+		regex2CommentArray.push(URegex.PRAGMA);
+
+		let regex2BlankArray: RegExp[] = new Array<RegExp>();
+		// 去除 UMETA(xxx）
+		regex2BlankArray.push(URegex.UMETA);
+
+		content = this.removeByRegex(content, regex2CommentArray, regex2BlankArray);
+
+		return content;
+	}
+
+	private static removeByRegex(content: string, regex2CommentArray: RegExp[], regex2BlankArray: RegExp[]): string {
+		let result: RegExpExecArray | null;
+
+		regex2CommentArray.forEach((regex: RegExp) => {
+			while ((result = regex.exec(content)) !== null) {
+				content = content.replace(result[1], '//');
+			}
+		});
+
+		regex2BlankArray.forEach((regex: RegExp) => {
+			while ((result = regex.exec(content)) !== null) {
+				content = content.replace(result[1], '');
+			}
+		});
 
 		return content;
 	}
