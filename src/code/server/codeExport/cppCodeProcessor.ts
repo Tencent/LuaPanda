@@ -212,6 +212,8 @@ export class CppCodeProcessor {
 		let regex2BlankArray: RegExp[] = new Array<RegExp>();
 		// 去除 UMETA(xxx）
 		regex2BlankArray.push(URegex.UMETA);
+		// 去除 ENGINE_API
+		regex2BlankArray.push(URegex.ENGINE_API);
 
 		content = this.removeByRegex(content, regex2CommentArray, regex2BlankArray);
 
@@ -999,6 +1001,7 @@ class URegex {
 	public static PRAGMA                 = new RegExp(/\s*(PRAGMA_\w+WARNINGS)/);
 	public static DECLARE                = new RegExp(/\s*(DECLARE_\w+\s*\(.*\))/);
 	public static UMETA                  = new RegExp(/\s*(UMETA\s*\(.*\))/);
+	public static ENGINE_API             = new RegExp(/(ENGINE_API\s*)/);
 
 	public static DefLuaClass  = new RegExp(/\s*(DefLuaClass\s*\(.*\))/);
 	public static DefLuaMethod = new RegExp(/\s*(DefLuaMethod\s*\(.*\))/);
