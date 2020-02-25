@@ -112,7 +112,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         response.body = response.body || {};
         response.body.supportsConfigurationDoneRequest = true;
         //后面可以支持Hovers显示值
-        response.body.supportsEvaluateForHovers = true;//悬停请求变量的值
+        response.body.supportsEvaluateForHovers = false;//悬停请求变量的值
         response.body.supportsStepBack = false;//back按钮
         response.body.supportsSetVariable = true;//修改变量的值
         response.body.supportsFunctionBreakpoints = false;
@@ -499,7 +499,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         const scopes = new Array<Scope>();
         //local 10000,  global 20000, upvalue 30000
         scopes.push(new Scope("Local", this._variableHandles.create("10000_" + frameReference), false));
-        scopes.push(new Scope("Global", this._variableHandles.create("20000_" + frameReference), true));
+        // scopes.push(new Scope("Global", this._variableHandles.create("20000_" + frameReference), true));
         scopes.push(new Scope("UpValue", this._variableHandles.create("30000_" + frameReference), false));
         response.body = {
             scopes: scopes
