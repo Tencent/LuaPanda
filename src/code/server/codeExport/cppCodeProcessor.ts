@@ -33,7 +33,7 @@ export class CppCodeProcessor {
 	 * 将静态导出的C++代码处理成Lua table用于代码提示。
 	 * @param cppDir C++代码根目录。
 	 */
-	public static processCppDir(cppDir: string) {
+	public static async processCppDir(cppDir: string): Promise<number> {
 		if (this.cppInterfaceIntelliSenseResPath === null) {
 			Logger.ErrorLog('未打开文件夹，无法使用此功能！');
 			Tools.showTips('未打开文件夹，无法使用此功能！');
@@ -53,16 +53,16 @@ export class CppCodeProcessor {
 		let cppHeaderFiles = this.getCppHeaderFiles(cppDir);
 		let cppSourceFiles = this.getCppSourceFiles(cppDir);
 
-		this.processParse(cppHeaderFiles, cppSourceFiles, subDir);
-		let totalProcessNum = cppHeaderFiles.length + cppSourceFiles.length;
+		let totalProcessNum = await this.processParse(cppHeaderFiles, cppSourceFiles, subDir);
 		return totalProcessNum;
 	}
 
-	private static async processParse(cppHeaderFiles: string[], cppSourceFiles: string[], subDir: string) {
+	private static async processParse(cppHeaderFiles: string[], cppSourceFiles: string[], subDir: string): Promise<number> {
 		await this.parseCppFiles(cppHeaderFiles, CppFileType.CppHeaderFile, subDir);
 		await this.parseCppFiles(cppSourceFiles, CppFileType.CppSourceFile, subDir);
 
-		// let totalProcessNum = cppHeaderFiles.length + cppSourceFiles.length;
+		let totalProcessNum = cppHeaderFiles.length + cppSourceFiles.length;
+		return Promise.resolve(totalProcessNum);
 		// Tools.showTips('CPP 导出文件处理完成！共解析 ' + totalProcessNum + ' 个文件。');
 	}
 
