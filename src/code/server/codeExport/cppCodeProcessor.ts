@@ -887,8 +887,14 @@ export class CppCodeProcessor {
 			this._returnTypeMap = new Map<string, string>();
 			this._returnTypeMap.set('void', '');
 			this._returnTypeMap.set('int', 'number');
+			this._returnTypeMap.set('int8', 'number');
+			this._returnTypeMap.set('int16', 'number');
 			this._returnTypeMap.set('int32', 'number');
+			this._returnTypeMap.set('int64', 'number');
 			this._returnTypeMap.set('uint8', 'number');
+			this._returnTypeMap.set('uint16', 'number');
+			this._returnTypeMap.set('uint32', 'number');
+			this._returnTypeMap.set('uint64', 'number');
 			this._returnTypeMap.set('float', 'number');
 			this._returnTypeMap.set('double', 'number');
 			this._returnTypeMap.set('bool', 'boolean');
