@@ -126,30 +126,36 @@ export class DataProcessor {
                 }
                 DebugLogger.AdapterInfo("[Adapter Error]: 没有在列表中找到回调");
             } else {
-                if (cmdInfo["cmd"] == "refreshLuaMemory") {
-                    DataProcessor._runtime.refreshLuaMemoty(cmdInfo["info"]["memInfo"]);
-                    return;
-                }
-
-                if (cmdInfo["cmd"] == "tip") {
-                    DataProcessor._runtime.showTip(cmdInfo["info"]["logInfo"]);
-                    return;
-                }
-
-                if (cmdInfo["cmd"] == "tipError") {
-                    DataProcessor._runtime.showError(cmdInfo["info"]["logInfo"]);
-                    return;
-                }
-
-                if (cmdInfo["cmd"] == "stopOnBreakpoint" || cmdInfo["cmd"] == "stopOnEntry" || cmdInfo["cmd"] == "stopOnStep" || cmdInfo["cmd"] == "stopOnStepIn" || cmdInfo["cmd"] == "stopOnStepOut") {
-                    // 进入断点/step停止
-                    let stackInfo = cmdInfo["stack"];
-                    DataProcessor._runtime.stop(stackInfo, cmdInfo["cmd"]);
-                } else if (cmdInfo["cmd"] == "log") {
-                    let logStr = cmdInfo["info"]["logInfo"];
-                    if (logStr != null) {
-                        DataProcessor._runtime.printLog(logStr);
-                    }
+                switch (cmdInfo["cmd"]) {
+                    case "refreshLuaMemory":
+                        DataProcessor._runtime.refreshLuaMemoty(cmdInfo["info"]["memInfo"]);
+                        break;
+                    case "tip":
+                        DataProcessor._runtime.showTip(cmdInfo["info"]["logInfo"]);
+                        break;
+                    case "tipError":
+                        DataProcessor._runtime.showError(cmdInfo["info"]["logInfo"]);                        
+                        break;
+                    case "stopOnBreakpoint":
+                    case "stopOnEntry":
+                    case "stopOnStep":
+                    case "stopOnStepIn":
+                    case "stopOnStepOut":
+                        let stackInfo = cmdInfo["stack"];
+                        DataProcessor._runtime.stop(stackInfo, cmdInfo["cmd"]);
+                        break;
+                    case "output":
+                        let outputLog = cmdInfo["info"]["logInfo"];
+                        if (outputLog != null) {
+                            DataProcessor._runtime.printLog(outputLog);
+                        }         
+                        break;
+                    case "debug_console":
+                        let consoleLog = cmdInfo["info"]["logInfo"];
+                        if (consoleLog != null) {
+                            DataProcessor._runtime.logInDebugConsole(consoleLog);
+                        }     
+                        break;
                 }
             }
         }

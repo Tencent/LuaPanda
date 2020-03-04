@@ -264,10 +264,6 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             config.pathCaseSensitivity = true;
         }
 
-        if (config.trace == undefined) {
-            config.trace = false;
-        }
-
         if (config.connectionPort == undefined) {
             LuaDebugSession.TCPPort = 8818;
         } else {

@@ -215,6 +215,13 @@ export class LuaDebugRuntime extends EventEmitter {
     }
 
     /**
+     * 	在调试控制台中打印日志
+     */
+    public logInDebugConsole(message: string) {
+        this.sendEvent('logInDebugConsole', message);
+    }
+    
+    /**
      * 	命中断点
      */
     public stop(stack, reason: string) {

@@ -180,6 +180,9 @@
 				"program": "./out/debug/debugAdapter.js",
 				"runtime": "node",
 				"configurationAttributes": {
+					"attach": {
+						"properties": {}
+					},
 					"launch": {
 						"properties": {
 							"program": {
@@ -191,11 +194,6 @@
 								"type": "array",
 								"description": "program 执行时需要的参数, 结构是一个字符串数组",
 								"default": []
-							},
-							"trace": {
-								"type": "boolean",
-								"description": "Enable logging of the Debug Adapter Protocol.",
-								"default": false
 							},
 							"stopOnEntry": {
 								"type": "boolean",

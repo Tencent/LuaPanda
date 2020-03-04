@@ -6,7 +6,6 @@
 
 import * as vscode from 'vscode';
 import {
-    Logger, logger,
     LoggingDebugSession,
     InitializedEvent, TerminatedEvent, StoppedEvent, BreakpointEvent, OutputEvent,
     Thread, StackFrame, Scope, Source, Handles
@@ -93,13 +92,13 @@ export class LuaDebugSession extends LoggingDebugSession {
             this.sendEvent(new BreakpointEvent('changed', <DebugProtocol.Breakpoint>{ verified: bp.verified, id: bp.id }));
         });
 
-        this._runtime.on('output', (text, filePath, line, column) => {
-            const e: DebugProtocol.OutputEvent = new OutputEvent(`${text}\n`);
-            e.body.source = this.createSource(filePath);
-            e.body.line = this.convertDebuggerLineToClient(line);
-            e.body.column = this.convertDebuggerColumnToClient(column);
-            this.sendEvent(e);
+        this._runtime.on('logInDebugConsole', (message) => {
+            this.printLogInDebugConsole(message);
         });
+    }
+
+    public printLogInDebugConsole(message){
+        this.sendEvent(new OutputEvent(message + '\n', 'console'));
     }
 
     /**
@@ -134,9 +133,10 @@ export class LuaDebugSession extends LoggingDebugSession {
      * launchRequest的args会把在Launch.json中的配置读取出来, 在这里通过socket传给Debugger
      */
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args) {
-        logger.setup(args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
         // 等待configurationDoneRequest的通知
         await this._configurationDone.wait(1000);
+        this.printLogInDebugConsole("调试器已启动，正在等待连接.");
+
         //1. 配置初始化信息
         let os = require("os");
         let path = require("path");
@@ -195,7 +195,10 @@ export class LuaDebugSession extends LoggingDebugSession {
             DataProcessor._socket = socket;
             //向debugger发送含配置项的初始化协议
             this._runtime.start((arr, info) => {
-                DebugLogger.AdapterInfo("已建立连接，发送初始化协议和断点信息!");
+                let connectMessage = "已建立连接，发送初始化协议和断点信息!"
+                DebugLogger.AdapterInfo(connectMessage);
+                this.printLogInDebugConsole("调试器已建立连接, 可以在断点处使用调试控制台观察变量或执行表达式.");
+
                 //对luapanda.lua的版本控制，低于一定版本要提示升级
                 if (typeof info.debuggerVer == "string"){
                     //转数字
