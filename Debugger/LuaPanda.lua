@@ -9,7 +9,7 @@ API:
     LuaPanda.printToVSCode(logStr, printLevel, type)
         打印日志到VSCode Output下Debugger/log中
         @printLevel: debug(0)/info(1)/error(2) 这里的日志等级需高于launch.json中配置等级日志才能输出 (可选参数，默认0)
-        @type: 0:VSCode output console  1:VSCode tip (可选参数，默认0)
+        @type(可选参数，默认0): 0:VSCode output console  1:VSCode tip  2:VSCode debug console
 
     LuaPanda.BP()
         强制打断点，可以在协程中使用。建议使用以下写法:
@@ -632,9 +632,11 @@ function this.printToVSCode(str, printLevel, type)
     local sendTab = {};
     sendTab["callbackId"] = "0";
     if type == 0 then
-        sendTab["cmd"] = "log";
-    else
+        sendTab["cmd"] = "output";
+    elseif type == 1 then
         sendTab["cmd"] =  "tip";
+    else -- type == 2
+        sendTab["cmd"] =  "debug_console";
     end
     sendTab["info"] = {};
     sendTab["info"]["logInfo"] = tostring(str);
