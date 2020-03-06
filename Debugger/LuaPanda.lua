@@ -45,6 +45,7 @@ local attachInterval = 1;               --attach间隔时间(s)
 local customGetSocketInstance = nil;    --支持用户实现一个自定义调用luasocket的函数，函数返回值必须是一个socket实例。例: function() return require("socket.core").tcp() end;
 local consoleLogLevel = 2;           --打印在控制台(print)的日志等级 0 : all/ 1: info/ 2: error.
 local connectTimeoutSec = 0.005;       --等待连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
+local userDotInRequire = true;         --兼容require中使用 require(a.b) 和 require(a/b) 的形式引用文件夹中的文件
 --用户设置项END
 
 local debuggerVer = "3.1.0";                 --debugger版本号
@@ -120,6 +121,7 @@ local isAbsolutePath = false;
 local stopOnEntry;         --用户在VSCode端设置的是否打开stopOnEntry
 local userSetUseClib;    --用户在VSCode端设置的是否是用clib库
 local autoPathMode = false;
+local autoExt;           --调试器启动时自动获取到的后缀, 用于检测lua虚拟机返回的路径是否代友问价后缀。他可以是空值或者".lua"等
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
 local stepOutCounter = 0;       --STEPOVER out计数器
@@ -200,6 +202,8 @@ function this.connectSuccess()
             if k == "source" then
                 DebuggerFileName = v;
                 this.printToVSCode("DebuggerFileName:" .. tostring(DebuggerFileName));
+                -- 从代码中去后缀
+                autoExt = DebuggerFileName:gsub('.*LuaPanda', '');
 
                 if hookLib ~= nil then
                     hookLib.sync_debugger_path(DebuggerFileName);
@@ -1390,7 +1394,16 @@ function this.getStackTable( level )
     return stackTab, userFuncSteakLevel;
 end
 
---这个方法是根据工程中的cwd和luaFileExtension修改
+-- 把路径中去除后缀部分的.变为/, 
+-- @filePath 被替换的路径
+-- @ext      后缀(后缀前的 . 不会被替换)
+function this.changePotToLine(filePath, ext)
+    local tmp = filePath:sub(1, filePath:find(ext)-1):gsub("%.", "/");
+    filePath = tmp .. ext;
+    return filePath;
+end
+
+--这个方法是根据的cwd和luaFileExtension对getInfo获取到的路径进行标准化
 -- @info getInfo获取的包含调用信息table
 function this.getPath( info )
     local filePath = info;
@@ -1403,9 +1416,27 @@ function this.getPath( info )
         return cachePath;
     end
 
-    -- originalPath是getInfo的原始路径，后面用来填充缓存key
+    -- originalPath是getInfo的原始路径，后面用来填充路径缓存的key
     local originalPath = filePath;
     
+    -- getPath的参数路径可能来自于hook, 也可能是一个已标准的路径
+    if userDotInRequire then 
+        if autoExt == '' then
+            -- 在虚拟机返回路径没有后缀的情况下，用户必须自设后缀
+            -- 确定filePath中最后一个.xxx 不等于用户配置的后缀, 则把所有的. 转为 /
+            if filePath:find(luaFileExtension) ~= (filePath:len() - luaFileExtension:len() + 1) then
+                filePath = string.gsub(filePath, "%.", "/");
+            else
+                -- 如果等于，那么把除后缀外的部分中的. 转为 / 
+                filePath = this.changePotToLine(filePath, luaFileExtension);
+            end
+
+        else
+            -- 虚拟机路径有后缀
+            filePath = this.changePotToLine(filePath, autoExt);
+        end
+    end
+
     --后缀处理
     if luaFileExtension ~= "" then
         --判断后缀中是否包含%1等魔法字符.用于从lua虚拟机获取到的路径含.的情况
