@@ -192,7 +192,7 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
         }
 
         // 关于打开调试控制台的自动设置
-        if(config.name === "LuaPanda-DebugFile"){
+        if(config.tag === "single_file"  || config.name === "LuaPanda-DebugFile"){
             if(!config.internalConsoleOptions){
                 config.internalConsoleOptions = "neverOpen";
             }
@@ -201,7 +201,7 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
                 config.internalConsoleOptions = "openOnFirstSessionStart";
             }
             
-            if(config.name === "LuaPanda-Attach"){
+            if(config.tag === "attach" || config.name === "LuaPanda-Attach"){
                 if(!Tools.VSCodeOpenedFolder){
                     // 如果插件还未启动，在这里等待一下
                     vscode.window.showWarningMessage('LuaPanda 插件正在启动， 请再次点击 Run 按钮进行 attach 调试！', "好的");
@@ -210,7 +210,7 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
                     // 读取LuaPanda的配置项，判断attach中是否有，如果有的话不再覆盖，没有的话覆盖
                     let settings = VisualSetting.readLaunchjson();
                     for (const launchValue of settings.configurations) {
-                        if(launchValue["name"] === "LuaPanda"){
+                        if(launchValue["tag"] === "normal" || launchValue["name"] === "LuaPanda"){
                             for (const key in launchValue) {
                                 if(key === "name" || key === "program" || config[key]){
                                     continue;

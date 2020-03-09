@@ -7,11 +7,11 @@ import { DebugLogger } from '../common/logManager';
 export class VisualSetting {
 
     // 修改launch.json中的一项
-    public static setLaunchjson(key, value, config = "LuaPanda"){
+    public static setLaunchjson(key, value, tag = "normal"){
         let settings = this.readLaunchjson();
         for (const keyLaunch in settings.configurations) {
             let valueLaunch = settings.configurations[keyLaunch]
-            if(valueLaunch["name"] === config){
+            if(valueLaunch["tag"] === tag){
                 valueLaunch[key] = value;
             }
         }
@@ -22,11 +22,11 @@ export class VisualSetting {
     }
 
     // 获取launch.json中的一项
-    public static getLaunchjson(key, config = "LuaPanda"){
+    public static getLaunchjson(key, tag = "normal"){
         let settings = this.readLaunchjson();
         for (const keyLaunch in settings.configurations) {
             let valueLaunch = settings.configurations[keyLaunch]
-            if(valueLaunch["name"] === config){
+            if(valueLaunch["tag"] === tag){
                 return valueLaunch[key];
             }
         }
@@ -81,10 +81,10 @@ export class VisualSetting {
         for (const key in settings.configurations) {
             const v = settings.configurations[key];
 
-            if(v["name"] === "LuaPanda"){
+            if(v["tag"] === "normal" || v["name"] === "LuaPanda" ){
                 obj["LuaPanda"] = v;
             }
-            if(v["name"] === "LuaPanda-DebugFile"){
+            if(v["tag"] === "single_file" || v["name"] === "LuaPanda-DebugFile"){
                 obj["LuaPanda-DebugFile"] = v;
             }
         }
@@ -95,10 +95,10 @@ export class VisualSetting {
             let settings = JSON.parse(launchTemplate);
             for (const key in settings.configurations) {
                 const v = settings.configurations[key];
-                if(v["name"] === "LuaPanda"){
+                if(v["tag"] === "normal" || v["name"] === "LuaPanda"){
                     obj["LuaPanda"] = v;
                 }
-                if(v["name"] === "LuaPanda-DebugFile"){
+                if(v["tag"] === "single_file" || v["name"] === "LuaPanda-DebugFile"){
                     obj["LuaPanda-DebugFile"] = v;
                 }
             }
@@ -185,6 +185,7 @@ export class VisualSetting {
         this.ADBRevTerminal.show(); 
     }
 
+    // 可视化界面保存配置
     private static processSaveSettings(messageObj) {
         try {        
             // 再读取一次launch.json , 序列化，用传来的obj替换之前的
@@ -192,7 +193,8 @@ export class VisualSetting {
             let alreadyWriteIn = false;
             for (const keyLaunch in settings.configurations) {
                 let valueLaunch = settings.configurations[keyLaunch]
-                if(valueLaunch["name"] === "LuaPanda"){
+                if( valueLaunch["tag"] === "normal" || valueLaunch["name"] === "LuaPanda"){
+                    // 网页回传的消息仍然用名称"LuaPanda"作为key
                     for (const keyWeb of Object.keys(messageObj["LuaPanda"])) {
                         alreadyWriteIn = true;
                         valueLaunch[keyWeb] = messageObj["LuaPanda"][keyWeb];

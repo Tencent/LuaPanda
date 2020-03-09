@@ -4,6 +4,7 @@
         {
             "type": "lua",
             "request": "launch",
+            "tag": "normal",
             "name": "LuaPanda",
             "cwd": "${workspaceFolder}",
             "luaFileExtension": "lua",
@@ -17,6 +18,7 @@
         {
             "type": "lua",
             "request": "launch",
+            "tag": "single_file",
             "name": "LuaPanda-DebugFile",
             "luaPath": "",
             "packagePath": [],
