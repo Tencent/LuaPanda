@@ -130,13 +130,24 @@ export class LuaDebugSession extends LoggingDebugSession {
     }
 
     /**
-     * launchRequest的args会把在Launch.json中的配置读取出来, 在这里通过socket传给Debugger
+     * Attach 模式初始化代码
      */
-    protected async launchRequest(response: DebugProtocol.LaunchResponse, args) {
-        // 等待configurationDoneRequest的通知
+    protected async attachRequest(response: DebugProtocol.AttachResponse, args) {
         await this._configurationDone.wait(1000);
         this.printLogInDebugConsole("调试器已启动，正在等待连接.");
+        return this.initProcess(response, args);
+    }
 
+    /**
+     * Launch 模式初始化代码
+     */
+    protected async launchRequest(response: DebugProtocol.LaunchResponse, args) {
+        await this._configurationDone.wait(1000);
+        this.printLogInDebugConsole("调试器已启动，正在等待连接.");
+        return this.initProcess(response, args);
+    }
+
+    private initProcess(response, args){
         //1. 配置初始化信息
         let os = require("os");
         let path = require("path");
