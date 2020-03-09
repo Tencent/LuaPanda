@@ -24,7 +24,9 @@ export function activate(context: ExtensionContext) {
     context.subscriptions.push(reloadWindow);
     // force garbage collect
     let LuaGarbageCollect = vscode.commands.registerCommand('luapanda.LuaGarbageCollect', function () {
-        LuaDebugSession.getInstance().LuaGarbageCollect();
+        for (var [id, instance] of LuaDebugSession.debugSessionArray) {
+            instance.LuaGarbageCollect();
+        }
         vscode.window.showInformationMessage('Lua Garbage Collect!');
     });
     context.subscriptions.push(LuaGarbageCollect);
@@ -265,9 +267,7 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
         }
 
         if (config.connectionPort == undefined) {
-            LuaDebugSession.TCPPort = 8818;
-        } else {
-            LuaDebugSession.TCPPort = config.connectionPort;
+            config.connectionPort = 8818;
         }
 
         if (config.logLevel == undefined) {

@@ -259,6 +259,7 @@
 							},
 							"tag": {
 								"type": "string",
+								"enum": ["normal", "attach", "single_file"],
 								"description": "Mark run mode, don't modify it. There are three modes: normal, attach, single_file. \n标记运行方式，请勿修改。 有三种模式 normal , attach , single_file。",
 								"default": "normal"
 							}

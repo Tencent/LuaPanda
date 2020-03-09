@@ -15,7 +15,9 @@ export interface LuaBreakpoint {
 
 export class LuaDebugRuntime extends EventEmitter {
     //当前读取的文件
+    private threadId:number = 0;
     private _sourceFile: string;
+    public _dataProcessor: DataProcessor;
     public get sourceFile() {
         return this._sourceFile;
     }
@@ -37,8 +39,9 @@ export class LuaDebugRuntime extends EventEmitter {
     //保存断点处堆栈信息
     public breakStack = new Array();
 
-    constructor() {
+    constructor(_threadId) {
         super();
+        this.threadId = _threadId;
     }
 
     /**
@@ -52,7 +55,7 @@ export class LuaDebugRuntime extends EventEmitter {
         for (let key in sendArgs) {
             arrSend[key] = String(sendArgs[key]);
         }
-        DataProcessor.commandToDebugger('initSuccess', arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger('initSuccess', arrSend, callback, callbackArgs);
     }
 
     /**
@@ -64,7 +67,7 @@ export class LuaDebugRuntime extends EventEmitter {
     public continue(callback, callbackArgs, event = 'continue') {
         DebugLogger.AdapterInfo("continue");
         let arrSend = new Object();
-        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -80,7 +83,7 @@ export class LuaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["varName"] = String(varName);
         arrSend["stackId"] = String(frameId);
-        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -96,7 +99,7 @@ export class LuaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["Expression"] = String(expression);
         arrSend["stackId"] = String(frameId);
-        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -116,7 +119,7 @@ export class LuaDebugRuntime extends EventEmitter {
         arrSend["stackId"] = String(frameId);
         arrSend["newValue"] = String(newValue);
         arrSend["varName"] = String(name);
-        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -133,7 +136,7 @@ export class LuaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["varRef"] = String(variableRef);
         arrSend["stackId"] = String(frameId);
-        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs, 3);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs, 3);
     }
 
     /**
@@ -141,7 +144,7 @@ export class LuaDebugRuntime extends EventEmitter {
      */
     public stopRun(callback, callbackArgs, event = 'stopRun') {
         let arrSend = new Object();
-        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -150,7 +153,7 @@ export class LuaDebugRuntime extends EventEmitter {
     public step(callback, callbackArgs, event = 'stopOnStep') {
         DebugLogger.AdapterInfo("step:" + event);
         let arrSend = new Object();
-        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -158,7 +161,7 @@ export class LuaDebugRuntime extends EventEmitter {
      */
     public luaGarbageCollect(event = "LuaGarbageCollect") {
         let arrSend = new Object();
-        DataProcessor.commandToDebugger(event, arrSend);
+        this._dataProcessor.commandToDebugger(event, arrSend);
     }
 
     /**
@@ -173,7 +176,7 @@ export class LuaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["path"] = path;
         arrSend["bks"] = bks;
-        DataProcessor.commandToDebugger("setBreakPoint", arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger("setBreakPoint", arrSend, callback, callbackArgs);
     }
 
     /**
