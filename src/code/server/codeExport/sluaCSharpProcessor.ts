@@ -16,7 +16,8 @@ export class SluaCSharpProcessor {
     // sluaUE的分析路径
 	public static get sluaCSharpInterfaceIntelliSenseResPath() {
 		if(!this._sluaCSharpInterfaceIntelliSenseResPath){
-            this._sluaCSharpInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolder() + "/.vscode/LuaPanda/IntelliSenseRes/SluaCSharpInterface/";        
+            // TODO
+            this._sluaCSharpInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolders() + "/.vscode/LuaPanda/IntelliSenseRes/SluaCSharpInterface/";        
         }
         return this._sluaCSharpInterfaceIntelliSenseResPath;
 	}

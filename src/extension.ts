@@ -119,7 +119,7 @@ export function activate(context: ExtensionContext) {
 	client.start();
 	client.onReady().then(() => {
         Tools.client = client;
-        client.onNotification("setRootFolder", setRootFolder);
+        client.onNotification("setRootFolders", setRootFolders);
         client.onNotification("showProgress", showProgress); // 初始化进度
         client.onNotification("showErrorMessage", showErrorMessage);
         client.onNotification("showWarningMessage", showWarningMessage);
@@ -296,10 +296,8 @@ function showProgress(message: string) {
     StatusBarManager.showSetting(message);
 }
 
-function setRootFolder(...rootFolders) {
-    for (const root of rootFolders) {
-        PathManager.rootFolderArray[root.name] = Tools.uriToPath(root.uri);
-    }
+function setRootFolders(...rootFolders) {
+    PathManager.rootFolderArray = rootFolders;
 }
 
 function showErrorMessage(str: string) {

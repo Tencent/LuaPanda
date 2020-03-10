@@ -18,7 +18,8 @@ export class CppCodeProcessor {
     // sluaUE的分析路径
 	public static get cppInterfaceIntelliSenseResPath() {
 		if(!this._cppInterfaceIntelliSenseResPath){
-            this._cppInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolder() + "/.vscode/LuaPanda/IntelliSenseRes/UECppInterface/";        
+			// joezhuoli TODO
+            this._cppInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolders() + "/.vscode/LuaPanda/IntelliSenseRes/UECppInterface/";        
         }
         return this._cppInterfaceIntelliSenseResPath;
 	}
