@@ -19,16 +19,17 @@ import { DataProcessor } from './dataProcessor';
 import { DebugLogger } from '../common/logManager';
 import { StatusBarManager } from '../common/statusBarManager';
 import { LineBreakpoint, ConditionBreakpoint, LogPoint } from './breakpoint';
-import { Tools } from '../common/tools';
+import { Tools } from '../common/Tools';
 import { UpdateManager } from './updateManager';
 import { ThreadManager } from '../common/ThreadManager';
+import { PathManager } from '../common/PathManager';
+import { VisualSetting } from './visualSetting'
 
 export class LuaDebugSession extends LoggingDebugSession {
     public TCPPort = 0;			//和客户端连接的端口号，通过VScode的设置赋值
     public userConnectionFlag;      //这个标记位的作用是标记Adapter停止连接，因为Adapter是Server端，要等Client发来请求才能断开
     public isListening;
     public _server;
-    public ThreadInstance:ThreadManager;
 
     // private static THREAD_ID = 1; 	  //调试器不支持多线程，硬编码THREAD_ID为1
     // private LOCAL_THREAD_ID = 1;
@@ -41,6 +42,8 @@ export class LuaDebugSession extends LoggingDebugSession {
     //luaDebugRuntime实例
     private _runtime: LuaDebugRuntime;  
     private _dataProcessor: DataProcessor;
+    public ThreadInstance:ThreadManager;
+    private _pathManager: PathManager;
     private UseLoadstring: boolean = false;
 
     //terminal实例，便于销毁
@@ -57,9 +60,12 @@ export class LuaDebugSession extends LoggingDebugSession {
         this.ThreadInstance = new ThreadManager();
         // _runtime and _dataProcessor 相互持有实例
         this._runtime = new LuaDebugRuntime(this.ThreadInstance.CUR_THREAD_ID);
+        this._pathManager = new PathManager();
         this._dataProcessor = new DataProcessor();
         this._dataProcessor._runtime = this._runtime;
         this._runtime._dataProcessor = this._dataProcessor;
+        this._runtime._pathManager = this._pathManager;
+
         LuaDebugSession._debugSessionArray.set(this.ThreadInstance.CUR_THREAD_ID, this);
         this._runtime.TCPSplitChar = "|*|";
         //给状态绑定监听方法
@@ -133,7 +139,7 @@ export class LuaDebugSession extends LoggingDebugSession {
      */
     protected async attachRequest(response: DebugProtocol.AttachResponse, args) {
         await this._configurationDone.wait(1000);
-        this.printLogInDebugConsole("[launch listening]调试器已启动，正在等待连接.  " + args.name  + " " + args.connectionPort );
+        this.printLogInDebugConsole("[Attach listening]调试器已启动，正在等待连接.  " + args.name  + " " + args.connectionPort );
         return this.initProcess(response, args);
     }
 
@@ -142,8 +148,28 @@ export class LuaDebugSession extends LoggingDebugSession {
      */
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args) {
         await this._configurationDone.wait(1000);
-        this.printLogInDebugConsole("[attach listening...]调试器已启动，正在等待连接. " + args.name  + " " + args.connectionPort );
+        this.printLogInDebugConsole("[Launch listening...]调试器已启动，正在等待连接. " + args.name  + " " + args.connectionPort );
         return this.initProcess(response, args);
+    }
+
+    private copyAttachConfig(args){
+        if(args.tag === "attach" || args.name === "LuaPanda-Attach"){
+            if(args.rootFolder){
+                // 把launch中的配置拷贝到attach. 判断attach中是否有，如果有的话不再覆盖，没有的话覆盖。 
+                let settings = VisualSetting.readLaunchjson(this._pathManager.rootFolder);
+                for (const launchValue of settings.configurations) {
+                    if(launchValue["tag"] === "normal" || launchValue["name"] === "LuaPanda"){
+                        for (const key in launchValue) {
+                            if(key === "name" || key === "program" || args[key]){
+                                continue;
+                            }
+                            args[key] = launchValue[key];
+                        }
+                    }
+                }
+            }
+        }
+        return args;
     }
 
     private initProcess(response, args){
@@ -151,25 +177,26 @@ export class LuaDebugSession extends LoggingDebugSession {
         let os = require("os");
         let path = require("path");
 
-        Tools.useAutoPathMode = !!args.autoPathMode;
-        Tools.pathCaseSensitivity = !!args.pathCaseSensitivity;
+        this._pathManager.useAutoPathMode = !!args.autoPathMode;
+        this._pathManager.pathCaseSensitivity = !!args.pathCaseSensitivity;
 
-        if(Tools.useAutoPathMode === true){
+        if(this._pathManager.useAutoPathMode === true){
             Tools.rebuildAcceptExtMap(args.luaFileExtension);
-            Tools.rebuildWorkspaceNamePathMap(args.cwd);
-            Tools.checkSameNameFile();
+            this._pathManager.rebuildWorkspaceNamePathMap(args.cwd);
+            this._pathManager.checkSameNameFile();
         }
+
+        this.copyAttachConfig(args)
 
         // 普通模式下才需要检查升级，单文件调试不用
         if(!(args.tag === "single_file" || args.name === "LuaPanda-DebugFile")){
             try {
-                UpdateManager.checkIfLuaPandaNeedUpdate();
+                new UpdateManager().checkIfLuaPandaNeedUpdate(this._pathManager.LuaPandaPath, this._pathManager.rootFolder);
             } catch (error) {
                 DebugLogger.AdapterInfo("[Error] 检查升级信息失败，可选择后续手动升级。 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md ");
             }      
         }
 
-        // 去除out, Debugger/debugger_lib/plugins/Darwin/   libpdebug_版本号.so
         let sendArgs = new Array();
         sendArgs["stopOnEntry"] = !!args.stopOnEntry;
         sendArgs["luaFileExtension"] = args.luaFileExtension;
@@ -177,14 +204,15 @@ export class LuaDebugSession extends LoggingDebugSession {
         sendArgs["isNeedB64EncodeStr"] = !!args.isNeedB64EncodeStr;
         sendArgs["TempFilePath"] = args.TempFilePath;
         sendArgs["logLevel"] = args.logLevel;
-        sendArgs["debugMode"] = args.DebugMode;
         sendArgs["pathCaseSensitivity"] = args.pathCaseSensitivity;
         sendArgs["OSType"] = os.type();
         sendArgs["clibPath"] = Tools.getClibPathInExtension();
         sendArgs["useCHook"] = args.useCHook;
         sendArgs["adapterVersion"] = String(Tools.adapterVersion);
-        sendArgs["autoPathMode"] = Tools.useAutoPathMode;
+        sendArgs["autoPathMode"] = this._pathManager.useAutoPathMode;
         this.TCPPort = args.connectionPort;
+        this._pathManager.CWD = args.cwd;
+        this._pathManager.rootFolder = args.rootFolder;
         if(args.docPathReplace instanceof Array && args.docPathReplace.length === 2 ){
             this.replacePath = new Array( Tools.genUnifiedPath(String(args.docPathReplace[0])), Tools.genUnifiedPath(String(args.docPathReplace[1])));
         }else{

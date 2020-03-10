@@ -13,6 +13,10 @@
     <label style="margin:20px 0px 50px 30px">&nbsp;&nbsp;*本配置项读取的是 launch.json 文件中的数据, 并在配置结束后把结果保存回此文件。在本页面修改配置和直接修改 launch.json 效果是一致的</label>
 
     <br> <br>
+    <select id="path_select" onchange='target_change(this[selectedIndex].value)'>
+    </select>
+    <br> <br>
+
     <!--setting-->
     <form id="CreateProject">
         <label class="lab" style="margin:30px 0px 10px 0px" title="lua文件后缀(必须填写), 如lua, txt, lua.bytes"><font size="3" face="Arial">luaFileExtension: </font></label>&nbsp;&nbsp;&nbsp;<input style="margin:5px"
@@ -148,6 +152,10 @@
         }
 
         function saveConfig() {
+            // 当前选中的是哪一项
+            let selected_item = document.getElementById('path_select').selectedIndex;
+            let saveObj = global_configs[selected_item]["launch.json"]["LuaPanda"];
+
             let luaFileExtension = document.getElementById('luaFileExtension');
             let connectionPort = document.getElementById('connectionPort');
             let cwd = document.getElementById('cwd');
@@ -158,120 +166,160 @@
             let useCHook = document.getElementById('useCHook');
             let autoPathMode = document.getElementById('autoPathMode');
 
-            let luapanda = new Object();
-            luapanda["type"] = "lua";
-            luapanda["request"] = "launch";
-            luapanda["name"] = "LuaPanda";
-            luapanda["luaFileExtension"] = luaFileExtension.value;
-            luapanda["connectionPort"] = parseInt(connectionPort.value);
-            luapanda["cwd"] = cwd.value;
+            // let luapanda = new Object();
+            // luapanda["type"] = "lua";
+            // luapanda["request"] = "launch";
+            // luapanda["name"] = "LuaPanda";
+            // luapanda["luaFileExtension"] = luaFileExtension.value;
+            saveObj["luaFileExtension"] = luaFileExtension.value;
+
+            // luapanda["connectionPort"] = parseInt(connectionPort.value);
+            saveObj["connectionPort"] = parseInt(connectionPort.value);;
+
+            // luapanda["cwd"] = cwd.value;
+            saveObj["cwd"] = cwd.value;
 
             if(updateTips.checked){
-                luapanda["updateTips"] = true;
+                saveObj["updateTips"] = true;
+                // global_configs[selected_item]["launch.json"]["updateTips"] = true;
+
             }else{
-                luapanda["updateTips"] = false;
+                saveObj["updateTips"] = false;
+                // global_configs[selected_item]["launch.json"]["updateTips"] = false;
+
             }
 
             if (pathCaseSensitivity.checked) {
-                luapanda["pathCaseSensitivity"] = true;
+                saveObj["pathCaseSensitivity"] = true;
+                // global_configs[selected_item]["launch.json"]["pathCaseSensitivity"] = true;
+
             } else {
-                luapanda["pathCaseSensitivity"] = false;
+                saveObj["pathCaseSensitivity"] = false;
+                // global_configs[selected_item]["launch.json"]["pathCaseSensitivity"] = false;
+
             }
 
             if (stopOnEntry.checked) {
-                luapanda["stopOnEntry"] = true;
+                saveObj["stopOnEntry"] = true;
+                // global_configs[selected_item]["launch.json"]["stopOnEntry"] = true;
+
             } else {
-                luapanda["stopOnEntry"] = false;
+                saveObj["stopOnEntry"] = false;
+                // global_configs[selected_item]["launch.json"]["stopOnEntry"] = false;
+
             }
 
             if (useCHook.checked) {
-                luapanda["useCHook"] = true;
+                saveObj["useCHook"] = true;
+                // global_configs[selected_item]["launch.json"]["useCHook"] = true;
+
             } else {
-                luapanda["useCHook"] = false;
+                saveObj["useCHook"] = false;
+                // global_configs[selected_item]["launch.json"]["useCHook"] = false;
+
             }
 
             if (autoPathMode.checked) {
-                luapanda["autoPathMode"] = true;
+                saveObj["autoPathMode"] = true;
+                // global_configs[selected_item]["launch.json"]["autoPathMode"] = true;
+
             } else {
-                luapanda["autoPathMode"] = false;
+                saveObj["autoPathMode"] = false;
+                // global_configs[selected_item]["launch.json"]["autoPathMode"] = false;
+
             }
-            luapanda["logLevel"] = 1;
+            // luapanda["logLevel"] = 1;
 
             // let luapanda_debugfile = new Object();
 
-            let saveObj = new Object();
-            saveObj["command"] = "save_settings";
-            saveObj["LuaPanda"] = luapanda;
-            // saveObj["LuaPanda-DebugFile"] = luapanda_debugfile;
+            let returnObj = new Object();
+            returnObj["command"] = "save_settings";
+            returnObj["configs"] = global_configs;
 
-            let webInfo = JSON.stringify(saveObj);
+            let webInfo = JSON.stringify(returnObj);
             vscode.postMessage({
                 webInfo
             });
+        }
+
+        function select_setting(selected_item = 0){
+            let congif = global_configs[selected_item]["launch.json"];
+            if (congif["LuaPanda"]) {
+                //初始化luapanda
+                //初始化单文件调试
+                if (congif["LuaPanda"]["luaFileExtension"] == undefined) {
+                    setInputContent("luaFileExtension", "lua");
+                } else {
+                    setInputContent("luaFileExtension", congif["LuaPanda"]["luaFileExtension"]);
+                }
+
+                if (congif["LuaPanda"]["connectionPort"] == undefined) {
+                    setInputContent("connectionPort", "8818");
+                } else {
+                    setInputContent("connectionPort", congif["LuaPanda"]["connectionPort"]);
+                }
+
+                if (congif["LuaPanda"]["cwd"] == undefined) {
+                    setInputContent("cwd", "${workspaceFolder}");
+                } else {
+                    setInputContent("cwd", congif["LuaPanda"]["cwd"]);
+                }
+
+                if (congif["LuaPanda"]["pathCaseSensitivity"] == undefined) {
+                    setCheckboxStatue("pathCaseSensitivity", true);
+                } else {
+                    setCheckboxStatue("pathCaseSensitivity", congif["LuaPanda"]["pathCaseSensitivity"]);
+                }
+
+                if (congif["LuaPanda"]["stopOnEntry"] == undefined ) {
+                    setCheckboxStatue("stopOnEntry", true);
+                } else {
+                    setCheckboxStatue("stopOnEntry", congif["LuaPanda"]["stopOnEntry"]);
+                }
+
+                if (congif["LuaPanda"]["useCHook"] == undefined) {
+                    setCheckboxStatue("useCHook", true);
+                } else {
+                    setCheckboxStatue("useCHook", congif["LuaPanda"]["useCHook"]);
+                }
+
+                if (congif["LuaPanda"]["autoPathMode"] == undefined) {
+                    setCheckboxStatue("autoPathMode", false);
+                } else {
+                    setCheckboxStatue("autoPathMode", congif["LuaPanda"]["autoPathMode"]);
+                }
+
+                if (congif["LuaPanda"]["updateTips"] == undefined) {
+                    setCheckboxStatue("updateTips", true);
+                } else {
+                    setCheckboxStatue("updateTips", congif["LuaPanda"]["updateTips"]);
+                }           
+
+                if (congif["isOpenAnalyzer"] == undefined) {
+                    setCheckboxStatue("luaAnalyzerSwitch", true);
+                } else {
+                    setCheckboxStatue("luaAnalyzerSwitch", congif["isOpenAnalyzer"]);
+                }
+
+            }
+        }
+
+        function target_change(index){
+            // 切换时是否自动保存
+            select_setting(index)
         }
 
         window.addEventListener('message', event => {
             const message = JSON.parse(event.data); // The JSON data our extension sent
             switch (message.command) {
                 case 'init_setting':
-                    if (message["LuaPanda"]) {
-                        //初始化luapanda
-                        //初始化单文件调试
-                        if (message["LuaPanda"]["luaFileExtension"] == undefined) {
-                            setInputContent("luaFileExtension", "lua");
-                        } else {
-                            setInputContent("luaFileExtension", message["LuaPanda"]["luaFileExtension"]);
-                        }
-
-                        if (message["LuaPanda"]["connectionPort"] == undefined) {
-                            setInputContent("connectionPort", "8818");
-                        } else {
-                            setInputContent("connectionPort", message["LuaPanda"]["connectionPort"]);
-                        }
-
-                        if (message["LuaPanda"]["cwd"] == undefined) {
-                            setInputContent("cwd", "${workspaceFolder}");
-                        } else {
-                            setInputContent("cwd", message["LuaPanda"]["cwd"]);
-                        }
-
-                        if (message["LuaPanda"]["pathCaseSensitivity"] == undefined) {
-                            setCheckboxStatue("pathCaseSensitivity", true);
-                        } else {
-                            setCheckboxStatue("pathCaseSensitivity", message["LuaPanda"]["pathCaseSensitivity"]);
-                        }
-
-                        if (message["LuaPanda"]["stopOnEntry"] == undefined ) {
-                            setCheckboxStatue("stopOnEntry", true);
-                        } else {
-                            setCheckboxStatue("stopOnEntry", message["LuaPanda"]["stopOnEntry"]);
-                        }
-
-                        if (message["LuaPanda"]["useCHook"] == undefined) {
-                            setCheckboxStatue("useCHook", true);
-                        } else {
-                            setCheckboxStatue("useCHook", message["LuaPanda"]["useCHook"]);
-                        }
-
-                        if (message["LuaPanda"]["autoPathMode"] == undefined) {
-                            setCheckboxStatue("autoPathMode", false);
-                        } else {
-                            setCheckboxStatue("autoPathMode", message["LuaPanda"]["autoPathMode"]);
-                        }
-
-                        if (message["LuaPanda"]["updateTips"] == undefined) {
-                            setCheckboxStatue("updateTips", true);
-                        } else {
-                            setCheckboxStatue("updateTips", message["LuaPanda"]["updateTips"]);
-                        }           
-
-                        if (message["isOpenAnalyzer"] == undefined) {
-                            setCheckboxStatue("luaAnalyzerSwitch", true);
-                        } else {
-                            setCheckboxStatue("luaAnalyzerSwitch", message["isOpenAnalyzer"]);
-                        }
-
+                    global_configs = message.configs;
+                    let select = document.getElementById("path_select");
+                    for(let index = 0 ; index < global_configs.length ; index++){
+                        let opt = global_configs[index]["path"];
+                        select.options[index] = new Option(opt, index);
                     }
+                    select_setting()
                     break;
             }
         });

@@ -259,7 +259,6 @@ export function refresh_FileName_Uri_Cache(){
 	rootFiles = new Array<string>();
 	fileName_Uri_Cache = new Array();
 	let processFilNum = 0;
-	let LuaPandaPath = '';
 	if(initParameter && initParameter.rootPath){
 		//rootFiles为空，构建rootFilesMap，这个步骤应该放在init时，或者打开首个文件时
 		//构建操作，只执行一次
@@ -281,17 +280,11 @@ export function refresh_FileName_Uri_Cache(){
 					// 显示进度
 					let rate = Math.floor(currentFileIdx / totalFileNum * 100);
 					showProgressMessage(rate, trUri);
-					if(trname === "LuaPanda"){
-						LuaPandaPath = rootFiles[idx];
-					}
 				}
 			}
 		}
 	}
 	Logger.InfoLog("文件Cache刷新完毕，共计"+ rootFiles.length +"个文件， 其中" + processFilNum + "个lua类型文件");
-	if(LuaPandaPath){
-		connection.sendNotification("setLuaPandaPath", LuaPandaPath);
-	}
 	showProgressMessage(100, "done!");
 }
 

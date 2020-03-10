@@ -4,7 +4,8 @@ import { DataProcessor } from './dataProcessor';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugLogger } from '../common/logManager';
 import { StatusBarManager } from '../common/statusBarManager';
-import { Tools } from '../common/tools';
+import { Tools } from '../common/Tools';
+import { PathManager } from '../common/PathManager';
 
 
 export interface LuaBreakpoint {
@@ -18,6 +19,7 @@ export class LuaDebugRuntime extends EventEmitter {
     private threadId:number = 0;
     private _sourceFile: string;
     public _dataProcessor: DataProcessor;
+    public _pathManager: PathManager;
     public get sourceFile() {
         return this._sourceFile;
     }
@@ -232,7 +234,7 @@ export class LuaDebugRuntime extends EventEmitter {
             let linenum: string = element.line;
             element.line = parseInt(linenum); //转为VSCode行号(int)
             let getinfoPath : string = element.file;
-            element.file = Tools.checkFullPath(getinfoPath); 
+            element.file = this._pathManager.checkFullPath(getinfoPath); 
         });
         //先保存堆栈信息，再发暂停请求
         this.breakStack = stack;
