@@ -5,7 +5,7 @@ import * as path from 'path';
 import { LuaDebugSession } from './debug/luaDebug';
 import { DebugLogger } from './common/logManager';
 import { StatusBarManager } from './common/statusBarManager';
-import { Tools } from './common/tools';
+import { Tools } from './common/Tools';
 import {
 	LanguageClient,
 	LanguageClientOptions,
@@ -14,6 +14,8 @@ import {
 } from 'vscode-languageclient';
 import { workspace, ExtensionContext } from 'vscode';
 import { VisualSetting } from './debug/visualSetting'
+import { PathManager } from './common/PathManager';
+
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
@@ -34,7 +36,7 @@ export function activate(context: ExtensionContext) {
     let openSettingsPage = vscode.commands.registerCommand('luapanda.openSettingsPage', function () {
         //先尝试获取数据，如果数据获取失败，给错误提示。
         try{
-            let launchData = VisualSetting.getLaunchData();
+            let launchData = VisualSetting.getLaunchData(PathManager.rootFolderArray);
             // 和VSCode的交互
             let panel: vscode.WebviewPanel = vscode.window.createWebviewPanel(
                 'LuaPanda Setting',
@@ -67,7 +69,7 @@ export function activate(context: ExtensionContext) {
     context.subscriptions.push(vscode.debug.registerDebugConfigurationProvider('lua', provider));
     context.subscriptions.push(provider);
 
-    // 公共变量赋值
+    // 静态公共变量赋值
     let pkg = require( context.extensionPath + "/package.json");
     Tools.adapterVersion = pkg.version;
     Tools.VSCodeExtensionPath = context.extensionPath;
@@ -117,9 +119,8 @@ export function activate(context: ExtensionContext) {
 	client.start();
 	client.onReady().then(() => {
         Tools.client = client;
-        client.onNotification("showProgress", showProgress);
         client.onNotification("setRootFolder", setRootFolder);
-        client.onNotification("setLuaPandaPath", setLuaPandaPath);
+        client.onNotification("showProgress", showProgress); // 初始化进度
         client.onNotification("showErrorMessage", showErrorMessage);
         client.onNotification("showWarningMessage", showWarningMessage);
         client.onNotification("showInformationMessage", showInformationMessage);
@@ -202,97 +203,73 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             if(!config.internalConsoleOptions){
                 config.internalConsoleOptions = "openOnFirstSessionStart";
             }
-            
-            if(config.tag === "attach" || config.name === "LuaPanda-Attach"){
-                if(!Tools.VSCodeOpenedFolder){
-                    // 如果插件还未启动，在这里等待一下
-                    vscode.window.showWarningMessage('LuaPanda 插件正在启动， 请再次点击 Run 按钮进行 attach 调试！', "好的");
-                    return;
-                }else{
-                    // 读取LuaPanda的配置项，判断attach中是否有，如果有的话不再覆盖，没有的话覆盖
-                    let settings = VisualSetting.readLaunchjson();
-                    for (const launchValue of settings.configurations) {
-                        if(launchValue["tag"] === "normal" || launchValue["name"] === "LuaPanda"){
-                            for (const key in launchValue) {
-                                if(key === "name" || key === "program" || config[key]){
-                                    continue;
-                                }
-                                config[key] = launchValue[key];
-                            }
-                        }
-                    }
-                }
-            }
         }
 
-        if(!config.program){
-            config.program = '';
-        }
-
-        if(!config.autoPathMode){
-            config.autoPathMode = false;
-        }
-
-        if(!config.args){
-            config.args = new Array<string>();
-        }
-
-        if (!config.request) {
-            config.request = 'launch';
-        }
-
-        if (!config.cwd) {
-            config.cwd = '${workspaceFolder}';
+        if (!config.rootFolder) {
+            config.rootFolder = '${workspaceFolder}';
         }
 
         if (!config.TempFilePath) {
             config.TempFilePath = '${workspaceFolder}';
         }
 
-        if (!config.luaFileExtension) {
-            config.luaFileExtension = '';
-        }else{
-            let firseLetter = config.luaFileExtension.substr(0, 1);
-            if(firseLetter === '.'){
-                config.luaFileExtension =  config.luaFileExtension.substr(1);
+        if(config.tag !== "attach" && config.name !== "LuaPanda-Attach"){
+            if(!config.program){
+                config.program = '';
             }
-        }
 
-        if (config.stopOnEntry == undefined) {
-            config.stopOnEntry = true;
-        }
+            if(!config.args){
+                config.args = new Array<string>();
+            }
 
-        if (config.pathCaseSensitivity == undefined) {
-            config.pathCaseSensitivity = true;
-        }
+            if(!config.autoPathMode){
+                config.autoPathMode = false;
+            }
+            
+            if (!config.cwd) {
+                config.cwd = '${workspaceFolder}';
+            }
 
-        if (config.connectionPort == undefined) {
-            config.connectionPort = 8818;
-        }
+            if (!config.luaFileExtension) {
+                config.luaFileExtension = '';
+            }else{
+                let firseLetter = config.luaFileExtension.substr(0, 1);
+                if(firseLetter === '.'){
+                    config.luaFileExtension =  config.luaFileExtension.substr(1);
+                }
+            }
 
-        if (config.logLevel == undefined) {
-            config.logLevel = 1;
-        }
-
-        if (config.autoReconnect != true) {
-            config.autoReconnect = false;
-        }
-
-        if (config.updateTips == undefined) {
-            config.updateTips = true;
-        }
-
-        //隐藏属性
-        if (config.DebugMode == undefined) {
-            config.DebugMode = false;
-        }
-
-        if (config.useCHook == undefined) {
-            config.useCHook = true;
-        }
-
-        if (config.isNeedB64EncodeStr == undefined) {
-            config.isNeedB64EncodeStr = true;
+            if (config.stopOnEntry == undefined) {
+                config.stopOnEntry = true;
+            }
+    
+            if (config.pathCaseSensitivity == undefined) {
+                config.pathCaseSensitivity = true;
+            }
+    
+            if (config.connectionPort == undefined) {
+                config.connectionPort = 8818;
+            }
+    
+            if (config.logLevel == undefined) {
+                config.logLevel = 1;
+            }
+    
+            if (config.autoReconnect != true) {
+                config.autoReconnect = false;
+            }
+    
+            if (config.updateTips == undefined) {
+                config.updateTips = true;
+            }
+    
+            if (config.useCHook == undefined) {
+                config.useCHook = true;
+            }
+    
+            if (config.isNeedB64EncodeStr == undefined) {
+                config.isNeedB64EncodeStr = true;
+            }     
         }
         
         if (!this._server) {
@@ -319,12 +296,10 @@ function showProgress(message: string) {
     StatusBarManager.showSetting(message);
 }
 
-function setRootFolder(message: string) {
-    Tools.VSCodeOpenedFolder = message;
-}
-
-function setLuaPandaPath(message: string) {
-    Tools.luapandaPathInUserProj = message;
+function setRootFolder(...rootFolders) {
+    for (const root of rootFolders) {
+        PathManager.rootFolderArray[root.name] = Tools.uriToPath(root.uri);
+    }
 }
 
 function showErrorMessage(str: string) {

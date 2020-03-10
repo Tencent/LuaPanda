@@ -120,7 +120,7 @@ connection.onInitialize((initPara: InitializeParams) => {
 	CodeSymbol.createLuaPreloadSymbols(resLuaPath);//更新lua预设符号文件
 	NativeCodeExportBase.loadIntelliSenseRes();//更新用户导出符号文件
 	Logger.DebugLog("init success");
-
+	
 	//读取标记文件，如果关闭了标记，那么
 	let snippetsPath = Tools.getVScodeExtensionPath() + "/res/snippets/snippets.json";
 	let snipContent = fs.readFileSync(snippetsPath);
@@ -182,8 +182,8 @@ connection.onInitialized(() => {
 			Logger.DebugLog('Workspace folder change event received.');
 		});
 	}
-	connection.sendNotification("setRootFolder", Tools.getInitPara().rootPath);
-
+	
+	connection.sendNotification("setRootFolder", Tools.getInitPara().workspaceFolders);
 });
 
 
@@ -238,6 +238,9 @@ connection.onDefinition(
 	(handler: TextDocumentPositionParams): Definition => {
 		handler.textDocument.uri = Tools.urlDecode(handler.textDocument.uri);
 		try{
+			let xxx=  Tools.getInitPara();
+			Logger.DebugLog(xxx);
+
 			return CodeDefinition.getSymbalDefine(handler);
 		} catch (error) {
 			Logger.ErrorLog("[Error] onDefinition " + error.stack);

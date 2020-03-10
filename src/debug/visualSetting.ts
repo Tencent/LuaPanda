@@ -1,14 +1,15 @@
 // 可视化配置部分
-import { Tools } from '../common/tools';
+import { Tools } from '../common/Tools';
 import * as fs from "fs";
 import * as vscode from 'vscode';
 import { DebugLogger } from '../common/logManager';
 
 export class VisualSetting {
+    private static ADBRevTerminal;
 
     // 修改launch.json中的一项
-    public static setLaunchjson(key, value, tag = "normal"){
-        let settings = this.readLaunchjson();
+    public static setLaunchjson(rootFolder, key, value, tag = "normal"){
+        let settings = this.readLaunchjson(rootFolder);
         for (const keyLaunch in settings.configurations) {
             let valueLaunch = settings.configurations[keyLaunch]
             if(valueLaunch["tag"] === tag){
@@ -18,12 +19,12 @@ export class VisualSetting {
 
         //序列化并写入
         let launchJson = JSON.stringify(settings, null,  4);
-        Tools.writeFileContent(Tools.VSCodeOpenedFolder + "/.vscode/launch.json" ,launchJson);
+        Tools.writeFileContent(rootFolder + "/.vscode/launch.json" ,launchJson);
     }
 
     // 获取launch.json中的一项
-    public static getLaunchjson(key, tag = "normal"){
-        let settings = this.readLaunchjson();
+    public static getLaunchjson(rootFolder, key, tag = "normal"){
+        let settings = this.readLaunchjson(rootFolder);
         for (const keyLaunch in settings.configurations) {
             let valueLaunch = settings.configurations[keyLaunch]
             if(valueLaunch["tag"] === tag){
@@ -32,20 +33,20 @@ export class VisualSetting {
         }
     }
 
-    public static readLaunchjson(){
-        let launchPath = Tools.VSCodeOpenedFolder + "/.vscode/launch.json";
+    public static readLaunchjson(rootFolder){
+        let launchPath = rootFolder + "/.vscode/launch.json";
         //如果文件不存在，就创建一个
         let launchExist = fs.existsSync(launchPath);
         let jsonStr;
         if(!launchExist){
-            let dotVScodeDirExist = fs.existsSync(Tools.VSCodeOpenedFolder + "/.vscode");
+            let dotVScodeDirExist = fs.existsSync(rootFolder + "/.vscode");
             if(!dotVScodeDirExist){
                 //创建.vscode目录
-                fs.mkdirSync(Tools.VSCodeOpenedFolder + "/.vscode");
+                fs.mkdirSync(rootFolder + "/.vscode");
             }
             // 文件不存在，读取预制文件，创建launch
             let launchTemplate = Tools.readFileContent(Tools.VSCodeExtensionPath + "/res/others/launch.json");
-            Tools.writeFileContent(Tools.VSCodeOpenedFolder + "/.vscode/launch.json" ,launchTemplate);
+            Tools.writeFileContent(rootFolder + "/.vscode/launch.json" ,launchTemplate);
             jsonStr = launchTemplate;
         }else{
             // 文件存在，读取launch.json的信息
@@ -65,47 +66,55 @@ export class VisualSetting {
     }
 
     // 读取launch.json中的信息，并序列化
-    public static getLaunchData(){
-        let settings = this.readLaunchjson();
+    public static getLaunchData(rootFolderArray){
+        let jsonObj = new Object();
+
         let snippetsPath = Tools.VSCodeExtensionPath + "/res/snippets/snippets.json";
         let isOpenAnalyzer = true;
         let snipContent = fs.readFileSync(snippetsPath);
         if(snipContent.toString().trim() == ''){
             isOpenAnalyzer = false;
         }
-
-        let obj = new Object();
-        obj["command"] = "init_setting";
-        obj["isOpenAnalyzer"] = isOpenAnalyzer;
-
-        for (const key in settings.configurations) {
-            const v = settings.configurations[key];
-
-            if(v["tag"] === "normal" || v["name"] === "LuaPanda" ){
-                obj["LuaPanda"] = v;
-            }
-            if(v["tag"] === "single_file" || v["name"] === "LuaPanda-DebugFile"){
-                obj["LuaPanda-DebugFile"] = v;
-            }
-        }
-
-        if(obj["LuaPanda"] == undefined){
-            //读取预制内容，传给页面
-            let launchTemplate = Tools.readFileContent(Tools.VSCodeExtensionPath + "/res/others/launch.json");
-            let settings = JSON.parse(launchTemplate);
+        jsonObj["command"] = "init_setting";
+        jsonObj["isOpenAnalyzer"] = isOpenAnalyzer;
+        jsonObj["configs"] = [];
+        let index = 0;
+        for (const forderName in rootFolderArray) {
+            let rootFolder = rootFolderArray[forderName];
+            jsonObj["configs"][index] = {"path": rootFolder, "launch.json": {}};
+            // jsonObj["configs"][index]["path"] = rootFolder;
+            // jsonObj["configs"][index]["launch.json"] = new Object(); 
+            let settings = this.readLaunchjson(rootFolder);
             for (const key in settings.configurations) {
                 const v = settings.configurations[key];
-                if(v["tag"] === "normal" || v["name"] === "LuaPanda"){
-                    obj["LuaPanda"] = v;
+    
+                if(v["tag"] === "normal" || v["name"] === "LuaPanda" ){
+                    jsonObj["configs"][index]["launch.json"]["LuaPanda"] = v;
                 }
                 if(v["tag"] === "single_file" || v["name"] === "LuaPanda-DebugFile"){
-                    obj["LuaPanda-DebugFile"] = v;
+                    jsonObj["configs"][index]["launch.json"]["LuaPanda-DebugFile"] = v;
                 }
             }
+    
+            if(jsonObj["configs"][index]["launch.json"]["LuaPanda"] == undefined){
+                //读取预制内容，传给页面
+                let launchTemplate = Tools.readFileContent(Tools.VSCodeExtensionPath + "/res/others/launch.json");
+                let settings = JSON.parse(launchTemplate);
+                for (const key in settings.configurations) {
+                    const v = settings.configurations[key];
+                    if(v["tag"] === "normal" || v["name"] === "LuaPanda"){
+                        jsonObj["configs"][index]["launch.json"]["LuaPanda"] = v;
+                    }
+                    if(v["tag"] === "single_file" || v["name"] === "LuaPanda-DebugFile"){
+                        jsonObj["configs"][index]["launch.json"]["LuaPanda-DebugFile"] = v;
+                    }
+                }
+            }
+            index ++;
         }
 
         //setting反馈到html中
-        return JSON.stringify(obj);
+        return JSON.stringify(jsonObj);
     }
 
     public static getWebMessage(message) {
@@ -134,7 +143,7 @@ export class VisualSetting {
                 break;
             case 'clearPreProcessFile':
                 //清除文件夹
-                let removePath = Tools.VSCodeOpenedFolder + "/.vscode/LuaPanda/";
+                let removePath = messageObj.rootFolder + "/.vscode/LuaPanda/";
                 let res =Tools.removeDir(removePath);
                 if(res){
                     DebugLogger.showTips("文件夹已经清除");
@@ -169,7 +178,6 @@ export class VisualSetting {
         }
     }
 
-    private static ADBRevTerminal;
     private static processADBReverse(messageObj) {
         let connectionPort = messageObj["connectionPort"];
         if(this.ADBRevTerminal){
@@ -188,34 +196,31 @@ export class VisualSetting {
     // 可视化界面保存配置
     private static processSaveSettings(messageObj) {
         try {        
-            // 再读取一次launch.json , 序列化，用传来的obj替换之前的
-            let settings = this.readLaunchjson();
-            let alreadyWriteIn = false;
-            for (const keyLaunch in settings.configurations) {
-                let valueLaunch = settings.configurations[keyLaunch]
-                if( valueLaunch["tag"] === "normal" || valueLaunch["name"] === "LuaPanda"){
-                    // 网页回传的消息仍然用名称"LuaPanda"作为key
-                    for (const keyWeb of Object.keys(messageObj["LuaPanda"])) {
+
+            for (let index = 0; index < messageObj.configs.length; index++) {
+                const element = messageObj.configs[index];
+                let rootFolder = element.path;
+                let settings = this.readLaunchjson(rootFolder);
+                let newConfig = element["launch.json"]["LuaPanda"];
+                let alreadyWriteIn = false;
+                for (const keyLaunch in settings.configurations) {
+                    let valueLaunch = settings.configurations[keyLaunch];
+                    if( valueLaunch["tag"] === "normal" || valueLaunch["name"] === "LuaPanda"){
+                        settings.configurations[keyLaunch] = newConfig;
                         alreadyWriteIn = true;
-                        valueLaunch[keyWeb] = messageObj["LuaPanda"][keyWeb];
                     }
+        
+                }
+                if(!alreadyWriteIn){
+                    //launch.json中不存在luapanda项目
+                    settings.configurations.push(newConfig);
                 }
     
-                // if(valueLaunch["name"] === "LuaPanda-DebugFile"){
-                //     for (const keyWeb of Object.keys(messageObj["LuaPanda-DebugFile"])) {
-                //         valueLaunch[keyWeb] = messageObj["LuaPanda-DebugFile"][keyWeb];
-                //     }
-                // }
+                //序列化并写入
+                let launchJson = JSON.stringify(settings, null,  4);
+                Tools.writeFileContent(rootFolder + "/.vscode/launch.json" ,launchJson);
             }
-
-            if(!alreadyWriteIn){
-                //launch.json中不存在luapanda项目
-                settings.configurations.push(messageObj["LuaPanda"]);
-            }
-
-            //序列化并写入
-            let launchJson = JSON.stringify(settings, null,  4);
-            Tools.writeFileContent(Tools.VSCodeOpenedFolder + "/.vscode/launch.json" ,launchJson);
+      
             DebugLogger.showTips("配置保存成功!");
         } catch (error) {
             DebugLogger.showTips("配置保存失败, 可能是由于 launch.json 文件无法写入. 请手动修改 launch.json 中的配置项来完成配置!", 2);
