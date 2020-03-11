@@ -31,8 +31,6 @@ export class LuaDebugSession extends LoggingDebugSession {
     public isListening;
     public _server;
 
-    // private static THREAD_ID = 1; 	  //调试器不支持多线程，硬编码THREAD_ID为1
-    // private LOCAL_THREAD_ID = 1;
     private breakpointsArray;  //在socket连接前临时保存断点的数组
     private autoReconnect;
     private _configurationDone = new Subject();
@@ -42,7 +40,7 @@ export class LuaDebugSession extends LoggingDebugSession {
     //luaDebugRuntime实例
     private _runtime: LuaDebugRuntime;  
     private _dataProcessor: DataProcessor;
-    public ThreadInstance:ThreadManager;
+    private _threadManager:ThreadManager;
     private _pathManager: PathManager;
     private UseLoadstring: boolean = false;
 
@@ -57,41 +55,40 @@ export class LuaDebugSession extends LoggingDebugSession {
         super("lua-debug.txt");
         this.setDebuggerLinesStartAt1(true);
         this.setDebuggerColumnsStartAt1(true);
-        this.ThreadInstance = new ThreadManager();
-        // _runtime and _dataProcessor 相互持有实例
-        this._runtime = new LuaDebugRuntime(this.ThreadInstance.CUR_THREAD_ID);
+        this._threadManager = new ThreadManager();  // 线程实例 调用this._threadManager.CUR_THREAD_ID可以获得当前线程号
         this._pathManager = new PathManager();
+
+        this._runtime = new LuaDebugRuntime();  // _runtime and _dataProcessor 相互持有实例
         this._dataProcessor = new DataProcessor();
         this._dataProcessor._runtime = this._runtime;
         this._runtime._dataProcessor = this._dataProcessor;
         this._runtime._pathManager = this._pathManager;
 
-        LuaDebugSession._debugSessionArray.set(this.ThreadInstance.CUR_THREAD_ID, this);
+        LuaDebugSession._debugSessionArray.set(this._threadManager.CUR_THREAD_ID, this);
         this._runtime.TCPSplitChar = "|*|";
-        //给状态绑定监听方法
         this._runtime.on('stopOnEntry', () => {
-            this.sendEvent(new StoppedEvent('entry', this.ThreadInstance.CUR_THREAD_ID));
+            this.sendEvent(new StoppedEvent('entry', this._threadManager.CUR_THREAD_ID));
         });
         this._runtime.on('stopOnStep', () => {
-            this.sendEvent(new StoppedEvent('step', this.ThreadInstance.CUR_THREAD_ID));
+            this.sendEvent(new StoppedEvent('step', this._threadManager.CUR_THREAD_ID));
         });
 
         this._runtime.on('stopOnStepIn', () => {
-            this.sendEvent(new StoppedEvent('step', this.ThreadInstance.CUR_THREAD_ID));
+            this.sendEvent(new StoppedEvent('step', this._threadManager.CUR_THREAD_ID));
         });
 
         this._runtime.on('stopOnStepOut', () => {
-            this.sendEvent(new StoppedEvent('step', this.ThreadInstance.CUR_THREAD_ID));
+            this.sendEvent(new StoppedEvent('step', this._threadManager.CUR_THREAD_ID));
         });
 
         this._runtime.on('stopOnBreakpoint', () => {
-            this.sendEvent(new StoppedEvent('breakpoint', this.ThreadInstance.CUR_THREAD_ID));
+            this.sendEvent(new StoppedEvent('breakpoint', this._threadManager.CUR_THREAD_ID));
         });
         this._runtime.on('stopOnException', () => {
-            this.sendEvent(new StoppedEvent('exception', this.ThreadInstance.CUR_THREAD_ID));
+            this.sendEvent(new StoppedEvent('exception', this._threadManager.CUR_THREAD_ID));
         });
         this._runtime.on('stopOnPause', () => {
-            this.sendEvent(new StoppedEvent('exception', this.ThreadInstance.CUR_THREAD_ID));
+            this.sendEvent(new StoppedEvent('exception', this._threadManager.CUR_THREAD_ID));
         });
         this._runtime.on('breakpointValidated', (bp: LuaBreakpoint) => {
             this.sendEvent(new BreakpointEvent('changed', <DebugProtocol.Breakpoint>{ verified: bp.verified, id: bp.id }));
@@ -102,6 +99,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         });
     }
 
+    // 在调试控制台打印日志
     public printLogInDebugConsole(message){
         this.sendEvent(new OutputEvent(message + '\n', 'console'));
     }
@@ -139,8 +137,9 @@ export class LuaDebugSession extends LoggingDebugSession {
      */
     protected async attachRequest(response: DebugProtocol.AttachResponse, args) {
         await this._configurationDone.wait(1000);
+        this.initProcess(response, args);
         this.printLogInDebugConsole("[Attach listening]调试器已启动，正在等待连接.  " + args.name  + " " + args.connectionPort );
-        return this.initProcess(response, args);
+        this.sendResponse(response);
     }
 
     /**
@@ -148,8 +147,9 @@ export class LuaDebugSession extends LoggingDebugSession {
      */
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args) {
         await this._configurationDone.wait(1000);
+        this.initProcess(response, args);
         this.printLogInDebugConsole("[Launch listening...]调试器已启动，正在等待连接. " + args.name  + " " + args.connectionPort );
-        return this.initProcess(response, args);
+        this.sendResponse(response);
     }
 
     private copyAttachConfig(args){
@@ -163,6 +163,12 @@ export class LuaDebugSession extends LoggingDebugSession {
                             if(key === "name" || key === "program" || args[key]){
                                 continue;
                             }
+
+                            if(key === "cwd"){
+                                args[key] = launchValue[key].replace(/\${workspaceFolder}/, args.rootFolder );
+                                continue;
+                            }
+
                             args[key] = launchValue[key];
                         }
                     }
@@ -176,6 +182,8 @@ export class LuaDebugSession extends LoggingDebugSession {
         //1. 配置初始化信息
         let os = require("os");
         let path = require("path");
+
+        this.copyAttachConfig(args)
         this.TCPPort = args.connectionPort;
         this._pathManager.CWD = args.cwd;
         this._pathManager.rootFolder = args.rootFolder;
@@ -187,8 +195,6 @@ export class LuaDebugSession extends LoggingDebugSession {
             this._pathManager.rebuildWorkspaceNamePathMap(args.cwd);
             this._pathManager.checkSameNameFile();
         }
-
-        this.copyAttachConfig(args)
 
         // 普通模式下才需要检查升级，单文件调试不用
         if(args.tag != "single_file"){
@@ -222,17 +228,13 @@ export class LuaDebugSession extends LoggingDebugSession {
         this.autoReconnect = args.autoReconnect;
         //2. 初始化内存分析状态栏
         StatusBarManager.reset();
-        //3. 把response装入回调
-        let callbackArgs = new Array();
-        callbackArgs.push(this);
-        callbackArgs.push(response);
-        //4. 启动Adapter的socket   |   VSCode = Server ; Debugger = Client
+        //3. 启动Adapter的socket   |   VSCode = Server ; Debugger = Client
         this._server = Net.createServer(socket => {
             //--connect--
             DebugLogger.AdapterInfo("Debugger  " + socket.remoteAddress + ":" + socket.remotePort + "  connect!");
             this._dataProcessor._socket = socket;
             //向debugger发送含配置项的初始化协议
-            this._runtime.start((arr, info) => {
+            this._runtime.start(( _ , info) => {
                 let connectMessage = "已建立连接，发送初始化协议和断点信息!"
                 DebugLogger.AdapterInfo(connectMessage);
                 this.printLogInDebugConsole("[connected]调试器已建立连接, 可以在断点处使用调试控制台观察变量或执行表达式." );
@@ -264,15 +266,13 @@ export class LuaDebugSession extends LoggingDebugSession {
                 }
                 if (info.UseHookLib === "1") { }
                 //已建立连接，并完成初始化
-                let ins = arr[0];
-                ins.sendResponse(arr[1]);
                 this.userConnectionFlag = true;
                 this.isListening = false;
                 //发送断点信息
                 for (let bkMap of this.breakpointsArray) {
                     this._runtime.setBreakPoint(bkMap.bkPath, bkMap.bksArray, null, null);
                 }
-            }, callbackArgs, sendArgs);
+            }, sendArgs);
             //--connect end--
             socket.on('end', () => {
                 DebugLogger.AdapterInfo('socket end');
@@ -285,12 +285,14 @@ export class LuaDebugSession extends LoggingDebugSession {
                 }
                 DebugLogger.AdapterInfo('Socket close!');
                 vscode.window.showInformationMessage('Stop connecting!');
-                //停止连接
+                // 停止连接
                 this._server.close();
                 this.userConnectionFlag = false;
                 delete this._dataProcessor._socket;
-                //停止VSCode的调试模式
-                LuaDebugSession._debugSessionArray.delete(this.ThreadInstance.CUR_THREAD_ID);//从进程列表中删除自身
+                // // 析构线程
+                // this._threadManager.destructor();
+                // 停止VSCode的调试模式
+                LuaDebugSession._debugSessionArray.delete(this._threadManager.CUR_THREAD_ID);//从进程列表中删除自身
                 this.sendEvent(new TerminatedEvent(this.autoReconnect));
             });
 
@@ -726,7 +728,7 @@ export class LuaDebugSession extends LoggingDebugSession {
     protected threadsRequest(response: DebugProtocol.ThreadsResponse): void {
         response.body = {
             threads: [
-                new Thread(this.ThreadInstance.CUR_THREAD_ID, "thread " + this.ThreadInstance.CUR_THREAD_ID)
+                new Thread(this._threadManager.CUR_THREAD_ID, "thread " + this._threadManager.CUR_THREAD_ID)
             ]
         };
         this.sendResponse(response);

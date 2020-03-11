@@ -224,7 +224,7 @@
 							},
 							"rootFolder":{
 								"type": "string",
-								"description": "记录vscode打开的目录，可以利用它找到 launch.json",
+								"description": "记录vscode打开的目录，不要修改它的值，需用它找到 launch.json",
 								"default": "${workspaceFolder}"	
 							},
 							"logLevel": {

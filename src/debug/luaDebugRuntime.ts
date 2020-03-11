@@ -16,7 +16,6 @@ export interface LuaBreakpoint {
 
 export class LuaDebugRuntime extends EventEmitter {
     //当前读取的文件
-    private threadId:number = 0;
     private _sourceFile: string;
     public _dataProcessor: DataProcessor;
     public _pathManager: PathManager;
@@ -41,9 +40,8 @@ export class LuaDebugRuntime extends EventEmitter {
     //保存断点处堆栈信息
     public breakStack = new Array();
 
-    constructor(_threadId) {
+    constructor() {
         super();
-        this.threadId = _threadId;
     }
 
     /**
@@ -52,12 +50,12 @@ export class LuaDebugRuntime extends EventEmitter {
      * @param callbackArgs：回调参数
      * @param sendArgs：发给debugger的参数
      */
-    public start(callback, callbackArgs, sendArgs) {
+    public start(callback, sendArgs) {
         let arrSend = new Object();
         for (let key in sendArgs) {
             arrSend[key] = String(sendArgs[key]);
         }
-        this._dataProcessor.commandToDebugger('initSuccess', arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger('initSuccess', arrSend, callback);
     }
 
     /**
