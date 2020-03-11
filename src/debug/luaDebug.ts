@@ -153,7 +153,7 @@ export class LuaDebugSession extends LoggingDebugSession {
     }
 
     private copyAttachConfig(args){
-        if(args.tag === "attach" || args.name === "LuaPanda-Attach"){
+        if(args.tag === "attach"){
             if(args.rootFolder){
                 // 把launch中的配置拷贝到attach. 判断attach中是否有，如果有的话不再覆盖，没有的话覆盖。 
                 let settings = VisualSetting.readLaunchjson(args.rootFolder);
@@ -191,7 +191,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         this.copyAttachConfig(args)
 
         // 普通模式下才需要检查升级，单文件调试不用
-        if(!(args.tag === "single_file" || args.name === "LuaPanda-DebugFile")){
+        if(args.tag != "single_file"){
             try {
                 new UpdateManager().checkIfLuaPandaNeedUpdate(this._pathManager.LuaPandaPath, args.cwd);
             } catch (error) {
@@ -308,7 +308,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         this.sendEvent(new InitializedEvent()); //收到返回后，执行setbreakpoint
         
         //单文件调试模式
-        if(args.tag === "single_file" || args.name === "LuaPanda-DebugFile"){       
+        if( args.tag === "single_file" ){       
             // 获取活跃窗口
             let retObject = Tools.getVSCodeAvtiveFilePath();
             if( retObject["retCode"] !== 0 ){

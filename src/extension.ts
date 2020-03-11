@@ -194,26 +194,40 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             return ;
         }
 
+        // 旧版本的launch.json中没有tag, 利用name给tag赋值
+        if(config.tag == undefined){
+            if(config.name === "LuaPanda"){
+                config.tag = "normal"
+            }
+            else if(config.name === "LuaPanda-Attach"){
+                config.tag = "attach"
+            }
+            else if(config.name === "LuaPanda-DebugFile"){
+                config.tag = "single_file"
+            }
+
+        }
+
         // 关于打开调试控制台的自动设置
-        if(config.tag === "single_file"  || config.name === "LuaPanda-DebugFile"){
+        if(config.tag === "single_file"){
             if(!config.internalConsoleOptions){
                 config.internalConsoleOptions = "neverOpen";
             }
         }else{
             if(!config.internalConsoleOptions){
-                config.internalConsoleOptions = "openOnFirstSessionStart";
+                config.internalConsoleOptions = "openOnSessionStart";
             }
         }
 
-        if (!config.rootFolder) {
-            config.rootFolder = '${workspaceFolder}';
-        }
+        // rootFolder 固定为 ${workspaceFolder}, 用来查找本项目的launch.json.
+        config.rootFolder = '${workspaceFolder}';
 
         if (!config.TempFilePath) {
             config.TempFilePath = '${workspaceFolder}';
         }
 
-        if(config.tag !== "attach" && config.name !== "LuaPanda-Attach"){
+        // attach 模式这里不用赋初值，后面会拷贝luapanda模式的配置信息
+        if(config.tag !== "attach"){
             if(!config.program){
                 config.program = '';
             }
@@ -223,7 +237,8 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             }
 
             if(!config.autoPathMode){
-                config.autoPathMode = false;
+                // 默认使用自动路径模式
+                config.autoPathMode = true;
             }
             
             if (!config.cwd) {
@@ -233,6 +248,7 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             if (!config.luaFileExtension) {
                 config.luaFileExtension = '';
             }else{
+                // luaFileExtension 兼容 ".lua" or "lua"
                 let firseLetter = config.luaFileExtension.substr(0, 1);
                 if(firseLetter === '.'){
                     config.luaFileExtension =  config.luaFileExtension.substr(1);
@@ -291,7 +307,7 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
     }
 }
 
-// code server端消息回调函数
+// code server 消息回调函数
 function showProgress(message: string) {
     StatusBarManager.showSetting(message);
 }
