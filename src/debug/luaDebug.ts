@@ -156,7 +156,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         if(args.tag === "attach" || args.name === "LuaPanda-Attach"){
             if(args.rootFolder){
                 // 把launch中的配置拷贝到attach. 判断attach中是否有，如果有的话不再覆盖，没有的话覆盖。 
-                let settings = VisualSetting.readLaunchjson(this._pathManager.rootFolder);
+                let settings = VisualSetting.readLaunchjson(args.rootFolder);
                 for (const launchValue of settings.configurations) {
                     if(launchValue["tag"] === "normal" || launchValue["name"] === "LuaPanda"){
                         for (const key in launchValue) {
@@ -176,7 +176,9 @@ export class LuaDebugSession extends LoggingDebugSession {
         //1. 配置初始化信息
         let os = require("os");
         let path = require("path");
-
+        this.TCPPort = args.connectionPort;
+        this._pathManager.CWD = args.cwd;
+        this._pathManager.rootFolder = args.rootFolder;
         this._pathManager.useAutoPathMode = !!args.autoPathMode;
         this._pathManager.pathCaseSensitivity = !!args.pathCaseSensitivity;
 
@@ -191,7 +193,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         // 普通模式下才需要检查升级，单文件调试不用
         if(!(args.tag === "single_file" || args.name === "LuaPanda-DebugFile")){
             try {
-                new UpdateManager().checkIfLuaPandaNeedUpdate(this._pathManager.LuaPandaPath, this._pathManager.rootFolder);
+                new UpdateManager().checkIfLuaPandaNeedUpdate(this._pathManager.LuaPandaPath, args.cwd);
             } catch (error) {
                 DebugLogger.AdapterInfo("[Error] 检查升级信息失败，可选择后续手动升级。 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md ");
             }      
@@ -210,9 +212,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         sendArgs["useCHook"] = args.useCHook;
         sendArgs["adapterVersion"] = String(Tools.adapterVersion);
         sendArgs["autoPathMode"] = this._pathManager.useAutoPathMode;
-        this.TCPPort = args.connectionPort;
-        this._pathManager.CWD = args.cwd;
-        this._pathManager.rootFolder = args.rootFolder;
+
         if(args.docPathReplace instanceof Array && args.docPathReplace.length === 2 ){
             this.replacePath = new Array( Tools.genUnifiedPath(String(args.docPathReplace[0])), Tools.genUnifiedPath(String(args.docPathReplace[1])));
         }else{
