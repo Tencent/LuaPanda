@@ -25,24 +25,45 @@ import * as fs from "fs";
 //-- 暂存的数据
 //-----------------------------------------------------------------------------
 let initParameter; //初始化参数
-export function getInitPara(){
-	return initParameter;
-}
 export function setInitPara(para){
 	initParameter = para;
 }
 
+// 插件安装位置
 let VScodeExtensionPath;
 export function getVScodeExtensionPath(){
 	return VScodeExtensionPath;
 }
 
-let VSCodeOpenedFolder;
-export function getVSCodeOpenedFolder(){
-	if(!VSCodeOpenedFolder){
-		VSCodeOpenedFolder = initParameter.rootPath;
+// VSCode 打开的所有文件夹
+let VSCodeOpenedFolders = []
+export function getVSCodeOpenedFolders(){
+	if(VSCodeOpenedFolders.length === 0){
+		for (const rootFold of initParameter.workspaceFolders ) {
+			VSCodeOpenedFolders.push(uriToPath(rootFold.uri));
+		}
 	}
-	return VSCodeOpenedFolder;
+	return VSCodeOpenedFolders;
+}
+
+export function addOpenedFolder(newFolders){
+	let rootFolders = getVSCodeOpenedFolders();
+	for (const folder of newFolders) {
+		// 测试不会出现重复添加的情况
+		rootFolders.push(uriToPath(folder.uri));
+	}
+}
+
+export function removeOpenedFolder(beDelFolders){
+	let rootFolders = getVSCodeOpenedFolders();
+	for (const folder of beDelFolders) {
+		for(let idx =0; idx < rootFolders.length; idx++ ){
+			if( uriToPath(folder.uri) ===  rootFolders[idx] ){
+				rootFolders.splice(idx , 1);
+				break;
+			}
+		}
+	}
 }
 
 export function setVScodeExtensionPath(_VScodeExtensionPath:string){
@@ -256,35 +277,34 @@ export function isinPreloadFolder(uri):boolean{
 export function refresh_FileName_Uri_Cache(){
 	//Cache 中没有找到，遍历RootPath
 	// Logger.InfoLog("start refresh_FileName_Uri_Cache: ");
-	rootFiles = new Array<string>();
+	let totalFileNum = 0; // 已处理的文件总数
 	fileName_Uri_Cache = new Array();
 	let processFilNum = 0;
-	if(initParameter && initParameter.rootPath){
+	// if(initParameter && initParameter.rootPath){
+	for (const rootFolder of getVSCodeOpenedFolders()) {
 		//rootFiles为空，构建rootFilesMap，这个步骤应该放在init时，或者打开首个文件时
 		//构建操作，只执行一次
-		if(rootFiles.length < 1){
-			rootFiles = dir.files(initParameter.rootPath, {sync:true});
-			let totalFileNum = rootFiles.length;
-			for(let idx = 0, len = rootFiles.length; idx < len ; idx++){
-				let currentFileIdx = idx + 1;
-				let name_and_ext = getPathNameAndExt(rootFiles[idx]);
-				let trname = name_and_ext['name'];
-				let ext = name_and_ext['ext'];
-				let validExt = getLoadedExt();										 //可用的文件后缀
-				if(validExt[ext]){
-					let trUri = pathToUri(rootFiles[idx]);							 //uri
-					fileName_Uri_Cache[trname] = urlDecode(trUri);
-					// 文件信息
-					Logger.DebugLog(trUri);
-					processFilNum = processFilNum + 1;
-					// 显示进度
-					let rate = Math.floor(currentFileIdx / totalFileNum * 100);
-					showProgressMessage(rate, trUri);
-				}
+		let rootFiles = dir.files(rootFolder, {sync:true});
+		totalFileNum += rootFiles.length
+		for(let idx = 0, len = rootFiles.length; idx < len ; idx++){
+			let currentFileIdx = idx + 1;
+			let name_and_ext = getPathNameAndExt(rootFiles[idx]);
+			let trname = name_and_ext['name'];
+			let ext = name_and_ext['ext'];
+			let validExt = getLoadedExt();										 //可用的文件后缀
+			if(validExt[ext]){
+				let trUri = pathToUri(rootFiles[idx]);							 //uri
+				fileName_Uri_Cache[trname] = urlDecode(trUri);
+				// 文件信息
+				Logger.DebugLog(trUri);
+				processFilNum = processFilNum + 1;
+				// 显示进度
+				// let rate = Math.floor(currentFileIdx / totalFileNum * 100);
+				// showProgressMessage(rate, trUri);
 			}
 		}
 	}
-	Logger.InfoLog("文件Cache刷新完毕，共计"+ rootFiles.length +"个文件， 其中" + processFilNum + "个lua类型文件");
+	Logger.InfoLog("文件Cache刷新完毕，共计" + totalFileNum + "个文件， 其中" + processFilNum + "个lua类型文件");
 	showProgressMessage(100, "done!");
 }
 

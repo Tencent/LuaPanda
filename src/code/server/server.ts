@@ -111,8 +111,10 @@ connection.onInitialize((initPara: InitializeParams) => {
 	Tools.setVScodeExtensionPath(path.dirname(path.dirname(path.dirname(__dirname))) );
 	Tools.initLoadedExt();
 	// 创建对应后缀的文件符号
-	CodeSymbol.createSymbolswithExt('lua', Tools.getInitPara().rootPath);
-	CodeSymbol.createSymbolswithExt('lua.bytes', Tools.getInitPara().rootPath);
+	for (const folder of Tools.getVSCodeOpenedFolders()) {
+		CodeSymbol.createSymbolswithExt('lua', folder);
+		CodeSymbol.createSymbolswithExt('lua.bytes', folder);
+	}
 	// 异步执行，建立uri -> 完整路径对应表
 	setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
 	// 分析默认位置(扩展中)的lua文件
@@ -179,11 +181,27 @@ connection.onInitialized(() => {
 	}
 	if (hasWorkspaceFolderCapability) {
 		connection.workspace.onDidChangeWorkspaceFolders(_event => {
+			// 在工程中增删文件夹的回调
 			Logger.DebugLog('Workspace folder change event received.');
+			if(_event.added.length > 0){
+				Tools.addOpenedFolder(_event.added);
+				for (const folder of Tools.getVSCodeOpenedFolders()) {
+					CodeSymbol.refreshFolderSymbols(folder);
+				}
+			}
+
+			if(_event.removed.length > 0){
+				Tools.removeOpenedFolder(_event.removed);
+			}
+			// 刷新文件名-路径索引
+			setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
+
+
+			// 给 client 发消息
+			connection.sendNotification("setRootFolders", Tools.getVSCodeOpenedFolders());
 		});
 	}
-	
-	connection.sendNotification("setRootFolder", Tools.getInitPara().workspaceFolders);
+	connection.sendNotification("setRootFolders", Tools.getVSCodeOpenedFolders());
 });
 
 
@@ -238,9 +256,6 @@ connection.onDefinition(
 	(handler: TextDocumentPositionParams): Definition => {
 		handler.textDocument.uri = Tools.urlDecode(handler.textDocument.uri);
 		try{
-			let xxx=  Tools.getInitPara();
-			Logger.DebugLog(xxx);
-
 			return CodeDefinition.getSymbalDefine(handler);
 		} catch (error) {
 			Logger.ErrorLog("[Error] onDefinition " + error.stack);
@@ -293,7 +308,9 @@ documents.onDidOpen(file => {
 				return;
 			}else{
 				// 处理新的后缀类型
-				CodeSymbol.createSymbolswithExt(ext, Tools.getInitPara().rootPath);
+				for (const folder of Tools.getVSCodeOpenedFolders()) {
+					CodeSymbol.createSymbolswithExt(ext, folder);
+				}
 				setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
 			}
 		} catch (error) {

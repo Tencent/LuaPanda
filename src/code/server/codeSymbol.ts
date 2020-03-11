@@ -50,7 +50,7 @@ export class CodeSymbol {
 		this.createDocSymbol(uri, luaText);
 	}
 
-		//创建指定后缀的lua文件的符号
+	// 创建指定后缀的lua文件的符号
 	public static createSymbolswithExt(luaExtname: string, rootpath: string) {
 		//记录此后缀代表lua
 		Tools.setLoadedExt(luaExtname);
