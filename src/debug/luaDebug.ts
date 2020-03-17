@@ -27,9 +27,8 @@ import { VisualSetting } from './visualSetting'
 
 export class LuaDebugSession extends LoggingDebugSession {
     public TCPPort = 0;			//和客户端连接的端口号，通过VScode的设置赋值
-    public userConnectionFlag;      //这个标记位的作用是标记Adapter停止连接，因为Adapter是Server端，要等Client发来请求才能断开
-    public isListening;
-    public _server;
+    public _server;    // adapter 作为server
+    public _client;    // adapter 作为client
 
     private breakpointsArray;  //在socket连接前临时保存断点的数组
     private autoReconnect;
@@ -119,8 +118,12 @@ export class LuaDebugSession extends LoggingDebugSession {
         response.body.supportsSetVariable = true;//修改变量的值
         response.body.supportsFunctionBreakpoints = false;
         response.body.supportsConditionalBreakpoints = true;
-        response.body.supportsHitConditionalBreakpoints = false;
+        response.body.supportsHitConditionalBreakpoints = true;
         response.body.supportsLogPoints = true;
+        // response.body.supportsRestartRequest = false;
+        // response.body.supportsRestartFrame = false;
+
+        
         this.sendResponse(response);
     }
 
@@ -138,7 +141,7 @@ export class LuaDebugSession extends LoggingDebugSession {
     protected async attachRequest(response: DebugProtocol.AttachResponse, args) {
         await this._configurationDone.wait(1000);
         this.initProcess(response, args);
-        this.printLogInDebugConsole("[Attach listening]调试器已启动，正在等待连接.  " + args.name  + " " + args.connectionPort );
+        this.printLogInDebugConsole("[Listening] 调试器插件已启动，正在等待连接。   Target:" + args.name  + " Port:" + args.connectionPort );
         this.sendResponse(response);
     }
 
@@ -148,7 +151,7 @@ export class LuaDebugSession extends LoggingDebugSession {
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args) {
         await this._configurationDone.wait(1000);
         this.initProcess(response, args);
-        this.printLogInDebugConsole("[Launch listening...]调试器已启动，正在等待连接. " + args.name  + " " + args.connectionPort );
+        this.printLogInDebugConsole("[Listening] 调试器插件已启动，正在等待连接。  Target:" + args.name  + " Port:" + args.connectionPort );
         this.sendResponse(response);
     }
 
@@ -237,7 +240,7 @@ export class LuaDebugSession extends LoggingDebugSession {
             this._runtime.start(( _ , info) => {
                 let connectMessage = "已建立连接，发送初始化协议和断点信息!"
                 DebugLogger.AdapterInfo(connectMessage);
-                this.printLogInDebugConsole("[connected]调试器已建立连接, 可以在断点处使用调试控制台观察变量或执行表达式." );
+                this.printLogInDebugConsole("[Connected] 已建立连接。  当停止在断点处时，可使用调试控制台观察变量或执行表达式. 调试控制台使用帮助: http://" );
 
                 //对luapanda.lua的版本控制，低于一定版本要提示升级
                 if (typeof info.debuggerVer == "string"){
@@ -266,8 +269,6 @@ export class LuaDebugSession extends LoggingDebugSession {
                 }
                 if (info.UseHookLib === "1") { }
                 //已建立连接，并完成初始化
-                this.userConnectionFlag = true;
-                this.isListening = false;
                 //发送断点信息
                 for (let bkMap of this.breakpointsArray) {
                     this._runtime.setBreakPoint(bkMap.bkPath, bkMap.bksArray, null, null);
@@ -279,15 +280,10 @@ export class LuaDebugSession extends LoggingDebugSession {
             });
 
             socket.on('close', () => {
-                if (this.isListening == true) {
-                    DebugLogger.AdapterInfo('close socket when listening!');
-                    return;
-                }
                 DebugLogger.AdapterInfo('Socket close!');
                 vscode.window.showInformationMessage('Stop connecting!');
                 // 停止连接
                 this._server.close();
-                this.userConnectionFlag = false;
                 delete this._dataProcessor._socket;
                 // // 析构线程
                 // this._threadManager.destructor();
@@ -305,7 +301,6 @@ export class LuaDebugSession extends LoggingDebugSession {
             DebugLogger.DebuggerInfo("listening...");
 
         });
-        this.isListening = true;
         this.breakpointsArray = new Array();
         this.sendEvent(new InitializedEvent()); //收到返回后，执行setbreakpoint
         
@@ -708,7 +703,6 @@ export class LuaDebugSession extends LoggingDebugSession {
             //客户端主动断开连接，这里仅做确认
             DebugLogger.AdapterInfo("确认stop");
         }, callbackArgs, 'stopRun');
-        this.userConnectionFlag = false;
         this.sendResponse(response);
         this._server.close();
     }

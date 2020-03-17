@@ -84,8 +84,8 @@ export class PathManager {
         }
 
         if(sameNameFileStr){
-            DebugLogger.showTips("\nVSCode打开工程中存在同名lua文件, 可能会影响调试器执行, 详细信息请查看VSCode控制台 OUTPUT - Debugger/log 日志",1)
-            sameNameFileStr = sameNameFileStr + "调试器在自动路径模式下，可能无法识别同名lua文件中的断点，导致打开错误的文件。请修改VSCode打开的文件夹，确保其中没有同名文件。或者关闭launch.json中的autoPathMode, 改为手动配置路径。\n详细参考: https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/access-guidelines.md#第二步-路径规范 \n"
+            DebugLogger.showTips("\nVSCode打开工程中存在同名lua文件, 请避免在这些文件中打断点, 详细信息请查看VSCode控制台 OUTPUT - Debugger/log 日志",1)
+            sameNameFileStr = sameNameFileStr + "调试器在自动路径模式下，可能无法识别同名lua文件中的断点，导致打开错误的文件。请修改VSCode打开的文件夹，确保其中没有同名文件，或者避免在这些文件中打断点。也可以关闭launch.json中的autoPathMode, 改为手动配置路径。\n详细参考: https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/access-guidelines.md#第二步-路径规范 \n"
             DebugLogger.DebuggerInfo(sameNameFileStr);
             DebugLogger.AdapterInfo(sameNameFileStr);
         }
