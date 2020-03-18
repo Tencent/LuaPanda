@@ -366,6 +366,16 @@
 								"type": "string",
 								"description": "Mark run mode, don't modify it. There are three modes: normal, attach, single_file. \n标记运行方式，请勿修改。 有三种模式 normal , attach , single_file。",
 								"default": "normal"
+							},
+							"invertClientServer":{
+								"type": "boolean",
+								"description": "Usually adapter as Server, lua process as Client. this mode is invert these.",
+								"default": false	
+							},
+							"connectionIP":{
+								"type": "string",
+								"description": "If adapter is client , the IP to connect.",
+								"default": "127.0.0.1"
 							}
 						}
 					}

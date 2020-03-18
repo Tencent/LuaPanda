@@ -1,50 +1,49 @@
---[[
-Tencent is pleased to support the open source community by making LuaPanda available.
-Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
-Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
-https://opensource.org/licenses/BSD-3-Clause
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+-- Tencent is pleased to support the open source community by making LuaPanda available.
+-- Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+-- Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+-- https://opensource.org/licenses/BSD-3-Clause
+-- Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-API:
-    LuaPanda.printToVSCode(logStr, printLevel, type)
-        打印日志到VSCode Output下Debugger/log中
-        @printLevel: debug(0)/info(1)/error(2) 这里的日志等级需高于launch.json中配置等级日志才能输出 (可选参数，默认0)
-        @type(可选参数，默认0): 0:VSCode output console  1:VSCode tip  2:VSCode debug console
+-- API:
+--     LuaPanda.printToVSCode(logStr, printLevel, type)
+--         打印日志到VSCode Output下Debugger/log中
+--         @printLevel: debug(0)/info(1)/error(2) 这里的日志等级需高于launch.json中配置等级日志才能输出 (可选参数，默认0)
+--         @type(可选参数，默认0): 0:VSCode output console  1:VSCode tip  2:VSCode debug console
 
-    LuaPanda.BP()
-        强制打断点，可以在协程中使用。建议使用以下写法:
-        local ret = LuaPanda and LuaPanda.BP and LuaPanda.BP();
-        如果成功加入断点ret返回true，否则是nil
+--     LuaPanda.BP()
+--         强制打断点，可以在协程中使用。建议使用以下写法:
+--         local ret = LuaPanda and LuaPanda.BP and LuaPanda.BP();
+--         如果成功加入断点ret返回true，否则是nil
 
-    LuaPanda.getInfo()
-        返回获取调试器信息。包括版本号，是否使用lib库，系统是否支持loadstring(load方法)。返回值类型string, 推荐在调试控制台中使用。
+--     LuaPanda.getInfo()
+--         返回获取调试器信息。包括版本号，是否使用lib库，系统是否支持loadstring(load方法)。返回值类型string, 推荐在调试控制台中使用。
 
-    LuaPanda.doctor()
-        返回对当前环境的诊断信息，提示可能存在的问题。返回值类型string, 推荐在调试控制台中使用。
+--     LuaPanda.doctor()
+--         返回对当前环境的诊断信息，提示可能存在的问题。返回值类型string, 推荐在调试控制台中使用。
 
-    LuaPanda.getCWD()
-        用户可以调用或在调试控制台中输出这个函数，返回帮助设置CWD的路径。比如
-        cwd:      F:/1/2/3/4/5
-        getinfo:  @../../../../../unreal_10/slua-unreal_1018/Content//Lua/TestArray.lua
-        format:   f:/unreal_10/slua-unreal_1018/Content/Lua/TestArray.lua
-        cwd是vscode传来的配置路径。getinfo是通过getinfo获取到的正在运行的文件路径。format是经过 cwd + getinfo 整合后的格式化路径。
-        format是传给VSCode的最终路径。
-        如果format路径和文件真实路径不符，导致VSCode找不到文件，通过调整工程中launch.json的cwd，使format路径和真实路径一致。
-        返回值类型string, 推荐在调试控制台中使用。
+--     LuaPanda.getCWD()
+--         用户可以调用或在调试控制台中输出这个函数，返回帮助设置CWD的路径。比如
+--         cwd:      F:/1/2/3/4/5
+--         getinfo:  @../../../../../unreal_10/slua-unreal_1018/Content//Lua/TestArray.lua
+--         format:   f:/unreal_10/slua-unreal_1018/Content/Lua/TestArray.lua
+--         cwd是vscode传来的配置路径。getinfo是通过getinfo获取到的正在运行的文件路径。format是经过 cwd + getinfo 整合后的格式化路径。
+--         format是传给VSCode的最终路径。
+--         如果format路径和文件真实路径不符，导致VSCode找不到文件，通过调整工程中launch.json的cwd，使format路径和真实路径一致。
+--         返回值类型string, 推荐在调试控制台中使用。
 
-    LuaPanda.getBreaks()
-        获取断点信息，返回值类型string, 推荐在调试控制台中使用。
+--     LuaPanda.getBreaks()
+--         获取断点信息，返回值类型string, 推荐在调试控制台中使用。
 
-    LuaPanda.serializeTable(table)
-        把table序列化为字符串，返回值类型是string。
-]]
+--     LuaPanda.serializeTable(table)
+--         把table序列化为字符串，返回值类型是string。
 
 --用户设置项
 local openAttachMode = true;            --是否开启attach模式。attach模式开启后可以在任意时刻启动vscode连接调试。缺点是没有连接调试时也会略降低lua执行效率(会不断进行attach请求)
-local attachInterval = 1;               --attach间隔时间(s)
+local attachInterval = 3;               --attach间隔时间(s)
 local customGetSocketInstance = nil;    --支持用户实现一个自定义调用luasocket的函数，函数返回值必须是一个socket实例。例: function() return require("socket.core").tcp() end;
 local consoleLogLevel = 2;           --打印在控制台(print)的日志等级 0 : all/ 1: info/ 2: error.
 local connectTimeoutSec = 0.005;       --等待连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
+local listeningTimeoutSec = 0.5;
 local userDotInRequire = true;         --兼容require中使用 require(a.b) 和 require(a/b) 的形式引用文件夹中的文件
 --用户设置项END
 
@@ -98,7 +97,8 @@ local hitBP = false;            --BP()中的强制断点命中标记
 local TempFilePath_luaString = ""; --VSCode端配置的临时文件存放路径
 local connectHost;              --记录连接端IP
 local connectPort;              --记录连接端口号
-local sock;                     --tcp socket
+local sock;                   --lua socket 文件描述符
+local server;                 --server 描述符
 local OSType;                --VSCode识别出的系统类型，也可以自行设置。Windows_NT | Linux | Darwin
 local clibPath;                 --chook库在VScode端的路径，也可自行设置。
 local hookLib;                  --chook库的引用实例
@@ -122,6 +122,7 @@ local stopOnEntry;         --用户在VSCode端设置的是否打开stopOnEntry
 local userSetUseClib;    --用户在VSCode端设置的是否是用clib库
 local autoPathMode = false;
 local autoExt;           --调试器启动时自动获取到的后缀, 用于检测lua虚拟机返回的路径是否代友问价后缀。他可以是空值或者".lua"等
+local luaProcessAsServer;
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
 local stepOutCounter = 0;       --STEPOVER out计数器
@@ -161,9 +162,10 @@ local env = setmetatable({ }, {
 -- 启动调试器
 -- @host adapter端ip, 默认127.0.0.1
 -- @port adapter端port ,默认8818
-function this.start(host, port)
+function this.start(host, port, invertClientServer)
     host = tostring(host or "127.0.0.1") ;
     port = tonumber(port) or 8818;
+    luaProcessAsServer = invertClientServer and true or false;
     this.printToConsole("Debugger start. connect host:" .. host .. " port:".. tostring(port), 1);
     if sock ~= nil then
         this.printToConsole("[Warning] 调试器已经启动，请不要再次调用start()" , 1);
@@ -178,12 +180,26 @@ function this.start(host, port)
     end
     connectHost = host;
     connectPort = port;
-    local sockSuccess = sock and sock:connect(connectHost, connectPort);
-    if sockSuccess ~= nil then
+
+    local connectSuccess, errMessage;
+    if luaProcessAsServer == true then
+        server = sock
+        server:settimeout(listeningTimeoutSec);
+        server:setoption("reuseaddr", true)
+        assert(server:bind('*', connectPort));
+        assert(server:listen(1));
+        sock, errMessage = server:accept();
+        connectSuccess = sock;
+    else
+        sock:settimeout(connectTimeoutSec);
+        connectSuccess, errMessage = sock and sock:connect(connectHost, connectPort);
+    end
+
+    if connectSuccess then
         this.printToConsole("first connect success!");
         this.connectSuccess();
     else
-        this.printToConsole("first connect failed!");
+        this.printToConsole("first connect failed!  message:" .. errMessage);
         this.changeHookState(hookState.DISCONNECT_HOOK);
     end
 end
@@ -269,6 +285,7 @@ function this.disconnect()
 
     if sock ~= nil then
         sock:close();
+        -- if luaProcessAsServer then server:close(); end;
     end
 
     if connectPort == nil or connectHost == nil then
@@ -732,22 +749,23 @@ end
 -----------------------------------------------------------------------------
 -- 刷新socket
 -- @return true/false 刷新成功/失败
-function this.reGetSock()
+function this.reGetSock()  
+    if server then return true end
+
     if sock ~= nil then
         pcall(function() sock:close() end);
     end
-    --call ue4 luasocket
+
+    --call slua-unreal luasocket
     sock = lua_extension and lua_extension.luasocket and lua_extension.luasocket().tcp();
     if sock == nil then
-        --call u3d luasocket
+        --call normal luasocket
        if pcall(function() sock =  require("socket.core").tcp(); end) then
             this.printToConsole("reGetSock success");
-            sock:settimeout(connectTimeoutSec);
        else
             --call custom function to get socket
             if customGetSocketInstance and pcall( function() sock =  customGetSocketInstance(); end ) then
                 this.printToConsole("reGetSock custom success");
-                sock:settimeout(connectTimeoutSec);      
             else
                 this.printToConsole("[Error] reGetSock fail", 2);
                 return false;
@@ -756,7 +774,6 @@ function this.reGetSock()
     else
         --set ue4 luasocket
         this.printToConsole("reGetSock ue4 success");
-        sock:settimeout(connectTimeoutSec);
     end
     return true;
 end
@@ -765,23 +782,32 @@ end
 function this.reConnect()
     if currentHookState == hookState.DISCONNECT_HOOK then
         if os.time() - stopConnectTime < attachInterval then
-            this.printToConsole("Reconnect time less than 1s");
-            this.printToConsole("os.time:".. os.time() .. " | stopConnectTime:" ..stopConnectTime);
+            -- this.printToConsole("Reconnect time less than 1s");
+            -- this.printToConsole("os.time:".. os.time() .. " | stopConnectTime:" ..stopConnectTime);
             return 1;
         end
-
+        this.printToConsole("Reconnect !");
         if sock == nil then
             this.reGetSock();
         end
 
-        local sockSuccess, status = sock:connect(connectHost, connectPort);
-        if sockSuccess == 1 or status == "already connected" then
+        local connectSuccess, errMessage;
+        if luaProcessAsServer == true then
+            sock, errMessage = server:accept();
+            connectSuccess = sock;
+        else
+            sock:settimeout(connectTimeoutSec);
+            connectSuccess, errMessage = sock and sock:connect(connectHost, connectPort);
+        end
+
+        if connectSuccess then
             this.printToConsole("reconnect success");
             this.connectSuccess();
         else
-            this.printToConsole("reconnect failed . retCode:" .. tostring(sockSuccess) .. "  status:" .. status);
+            this.printToConsole("reconnect failed . message:" .. errMessage );
             stopConnectTime = os.time();
         end
+
         return 1;
     end
     return 0;
