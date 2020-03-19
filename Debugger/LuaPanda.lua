@@ -160,10 +160,10 @@ local env = setmetatable({ }, {
 -----------------------------------------------------------------------------
 -- 以lua作为服务端的形式启动调试器
 -- @host 绑定ip , 默认 0.0.0.0
--- @port 绑定port, 默认 8820
+-- @port 绑定port, 默认 8818
 function this.startServer(host, port)
     host = tostring(host or "0.0.0.0") ;
-    port = tonumber(port) or 8820;
+    port = tonumber(port) or 8818;
     luaProcessAsServer = true;
     this.printToConsole("Debugger start as SERVER. bind host:" .. host .. " port:".. tostring(port), 1);
     if sock ~= nil then
