@@ -158,15 +158,50 @@ local env = setmetatable({ }, {
 -----------------------------------------------------------------------------
 -- 流程
 -----------------------------------------------------------------------------
+-- 以lua作为服务端的形式启动调试器
+-- @host 绑定ip , 默认 0.0.0.0
+-- @port 绑定port, 默认 8820
+function this.startServer(host, port)
+    host = tostring(host or "0.0.0.0") ;
+    port = tonumber(port) or 8820;
+    luaProcessAsServer = true;
+    this.printToConsole("Debugger start as SERVER. bind host:" .. host .. " port:".. tostring(port), 1);
+    if sock ~= nil then
+        this.printToConsole("[Warning] 调试器已经启动，请不要再次调用start()" , 1);
+        return;
+    end
+
+    --尝试初次连接
+    this.changeRunState(runState.DISCONNECT);
+    if not this.reGetSock() then
+        this.printToConsole("[Error] Start debugger but get Socket fail , please install luasocket!", 2);
+        return;
+    end
+
+    server = sock
+    server:settimeout(listeningTimeoutSec);
+    server:setoption("reuseaddr", true)
+    assert(server:bind(host, port));
+    assert(server:listen());
+    local connectSuccess, errMessage = server:accept();
+    sock = connectSuccess;
+
+    if connectSuccess then
+        this.printToConsole("First connect success!");
+        this.connectSuccess();
+    else
+        this.printToConsole("First connect failed!  message:" .. errMessage);
+        this.changeHookState(hookState.DISCONNECT_HOOK);
+    end   
+end
 
 -- 启动调试器
 -- @host adapter端ip, 默认127.0.0.1
 -- @port adapter端port ,默认8818
-function this.start(host, port, invertClientServer)
+function this.start(host, port)
     host = tostring(host or "127.0.0.1") ;
     port = tonumber(port) or 8818;
-    luaProcessAsServer = invertClientServer and true or false;
-    this.printToConsole("Debugger start. connect host:" .. host .. " port:".. tostring(port), 1);
+    this.printToConsole("Debugger start as CLIENT. connect host:" .. host .. " port:".. tostring(port), 1);
     if sock ~= nil then
         this.printToConsole("[Warning] 调试器已经启动，请不要再次调用start()" , 1);
         return;
@@ -181,25 +216,14 @@ function this.start(host, port, invertClientServer)
     connectHost = host;
     connectPort = port;
 
-    local connectSuccess, errMessage;
-    if luaProcessAsServer == true then
-        server = sock
-        server:settimeout(listeningTimeoutSec);
-        server:setoption("reuseaddr", true)
-        assert(server:bind('0.0.0.0', connectPort));
-        assert(server:listen(1));
-        sock, errMessage = server:accept();
-        connectSuccess = sock;
-    else
-        sock:settimeout(connectTimeoutSec);
-        connectSuccess, errMessage = sock and sock:connect(connectHost, connectPort);
-    end
+    sock:settimeout(connectTimeoutSec);
+    local connectSuccess, errMessage = sock and sock:connect(connectHost, connectPort);
 
     if connectSuccess then
-        this.printToConsole("first connect success!");
+        this.printToConsole("First connect success!");
         this.connectSuccess();
     else
-        this.printToConsole("first connect failed!  message:" .. errMessage);
+        this.printToConsole("First connect failed!  message:" .. errMessage);
         this.changeHookState(hookState.DISCONNECT_HOOK);
     end
 end
@@ -806,7 +830,8 @@ function this.reConnect()
         end
 
         local connectSuccess, errMessage;
-        if luaProcessAsServer == true then
+        if luaProcessAsServer == true and currentRunState == runState.DISCONNECT then
+            -- 在 Server 模式下，以及当前处于未连接状态下，才尝试accept新链接。如果不判断可能会出现多次连接，导致sock被覆盖
             sock, errMessage = server:accept();
             connectSuccess = sock;
         else
@@ -1200,7 +1225,7 @@ function this.dataProcess( dataStr )
         --停止hook，已不在处理任何断点信息，也就不会产生日志等。发送消息后等待前端主动断开连接
         local msgTab = this.getMsgTable("stopRun", this.getCallbackId());
         this.sendMsg(msgTab);
-        if ~invertClientServer then
+        if ~luaProcessAsServer then
             this.disconnect();
         end
     elseif "LuaGarbageCollect" == dataTable.cmd then

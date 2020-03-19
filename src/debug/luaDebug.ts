@@ -37,7 +37,7 @@ export class LuaDebugSession extends LoggingDebugSession {
     private _configurationDone = new Subject();
     private _variableHandles = new Handles<string>(50000);//Handle编号从50000开始
     private replacePath; //替换路径数组
-
+    private connectInterval; // client 循环连接的句柄
     //luaDebugRuntime实例
     private _runtime: LuaDebugRuntime;  
     private _dataProcessor: DataProcessor;
@@ -375,8 +375,9 @@ export class LuaDebugSession extends LoggingDebugSession {
     }
 
     private startClient(sendArgs){
-		//循环发送connect请求，每次请求持续1s
-		let connectInterval = setInterval(begingConnect, 1000, this);
+        // 循环发送connect请求，每次请求持续1s。 
+        // 停止循环的时机 :  1建立连接后 2未建立连接，但是用户点击VScode stop按钮
+		this.connectInterval = setInterval(begingConnect, 1000, this);
 
 		function begingConnect(instance){
 			instance._client = Net.createConnection(instance.TCPPort, instance.connectionIP);
@@ -386,7 +387,7 @@ export class LuaDebugSession extends LoggingDebugSession {
 			instance._client.on('connect', () => {
                 instance.printLogInDebugConsole("[reverseCS] 已建立连接，发送初始化协议和断点信息!");
                 instance.alradyConnected = true;
-				clearTimeout(connectInterval);		 //清除循环
+				clearInterval(instance.connectInterval);		 //清除循环
                 instance._dataProcessor._socket = instance._client;
 
 				instance._runtime.start(( _ , info) => {
@@ -764,15 +765,21 @@ export class LuaDebugSession extends LoggingDebugSession {
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args): void {
         DebugLogger.AdapterInfo("disconnectRequest");
         let restart = args.restart;
-        //给lua发消息，让lua停止运行
-        let callbackArgs = new Array();
-        callbackArgs.push(restart);
-        this._runtime.stopRun(arr => {
-            //客户端主动断开连接，这里仅做确认
-            DebugLogger.AdapterInfo("确认stop");
-        }, callbackArgs, 'stopRun');
+        if(this.isInvertCS){
+            clearInterval(this.connectInterval);// 在未建立连接的情况下清除循环
+            this._client.end();                 // 结束连接
+        }else{
+            // 给lua发消息，让lua client停止运行
+            let callbackArgs = new Array();
+            callbackArgs.push(restart);
+            this._runtime.stopRun(arr => {
+                //客户端主动断开连接，这里仅做确认
+                DebugLogger.AdapterInfo("确认stop");
+            }, callbackArgs, 'stopRun');
+            this._server.close();               // 在未建立连接的情况下，关闭 server
+        }
+
         this.sendResponse(response);
-        this._server.close();
     }
 
     protected restartRequest(response: DebugProtocol.RestartResponse, args: DebugProtocol.RestartArguments): void {
