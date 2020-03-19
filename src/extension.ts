@@ -285,7 +285,15 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
     
             if (config.isNeedB64EncodeStr == undefined) {
                 config.isNeedB64EncodeStr = true;
-            }     
+            }
+
+            if (config.VSCodeAsClient == undefined) {
+                config.VSCodeAsClient = false;
+            }
+
+            if (config.connectionIP == undefined) {
+                config.connectionIP = "127.0.0.1";
+            }
         }
         
         if (!this._server) {

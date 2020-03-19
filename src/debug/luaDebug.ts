@@ -31,7 +31,7 @@ export class LuaDebugSession extends LoggingDebugSession {
     public _server;    // adapter 作为server
     public _client;    // adapter 作为client
     public alradyConnected;
-    private isInvertCS;
+    private VSCodeAsClient;
     private breakpointsArray;  //在socket连接前临时保存断点的数组
     private autoReconnect;
     private _configurationDone = new Subject();
@@ -189,7 +189,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         let path = require("path");
 
         this.copyAttachConfig(args)
-        this.isInvertCS = args.invertClientServer;
+        this.VSCodeAsClient = args.VSCodeAsClient;
         this.connectionIP = args.connectionIP;
         this.TCPPort = args.connectionPort;
         this._pathManager.CWD = args.cwd;
@@ -235,7 +235,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         this.autoReconnect = args.autoReconnect;
         //2. 初始化内存分析状态栏
         StatusBarManager.reset();
-        if(this.isInvertCS){
+        if(this.VSCodeAsClient){
             // VSCode = Client ; Debugger = Server
             this.startClient(sendArgs);
         }else{
@@ -765,7 +765,7 @@ export class LuaDebugSession extends LoggingDebugSession {
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args): void {
         DebugLogger.AdapterInfo("disconnectRequest");
         let restart = args.restart;
-        if(this.isInvertCS){
+        if(this.VSCodeAsClient){
             clearInterval(this.connectInterval);// 在未建立连接的情况下清除循环
             this._client.end();                 // 结束连接
         }else{

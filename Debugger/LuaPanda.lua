@@ -183,14 +183,14 @@ function this.startServer(host, port)
     server:setoption("reuseaddr", true)
     assert(server:bind(host, port));
     assert(server:listen());
-    local connectSuccess, errMessage = server:accept();
+    local connectSuccess = server:accept();
     sock = connectSuccess;
 
     if connectSuccess then
         this.printToConsole("First connect success!");
         this.connectSuccess();
     else
-        this.printToConsole("First connect failed!  message:" .. errMessage);
+        this.printToConsole("First connect failed!");
         this.changeHookState(hookState.DISCONNECT_HOOK);
     end   
 end
@@ -217,13 +217,13 @@ function this.start(host, port)
     connectPort = port;
 
     sock:settimeout(connectTimeoutSec);
-    local connectSuccess, errMessage = sock and sock:connect(connectHost, connectPort);
+    local connectSuccess = sock and sock:connect(connectHost, connectPort);
 
     if connectSuccess then
         this.printToConsole("First connect success!");
         this.connectSuccess();
     else
-        this.printToConsole("First connect failed!  message:" .. errMessage);
+        this.printToConsole("First connect failed!");
         this.changeHookState(hookState.DISCONNECT_HOOK);
     end
 end
@@ -829,21 +829,21 @@ function this.reConnect()
             this.reGetSock();
         end
 
-        local connectSuccess, errMessage;
+        local connectSuccess;
         if luaProcessAsServer == true and currentRunState == runState.DISCONNECT then
             -- 在 Server 模式下，以及当前处于未连接状态下，才尝试accept新链接。如果不判断可能会出现多次连接，导致sock被覆盖
-            sock, errMessage = server:accept();
+            sock = server:accept();
             connectSuccess = sock;
         else
             sock:settimeout(connectTimeoutSec);
-            connectSuccess, errMessage = sock and sock:connect(connectHost, connectPort);
+            connectSuccess = sock and sock:connect(connectHost, connectPort);
         end
 
         if connectSuccess then
             this.printToConsole("reconnect success");
             this.connectSuccess();
         else
-            this.printToConsole("reconnect failed . message:" .. errMessage );
+            this.printToConsole("reconnect failed" );
             stopConnectTime = os.time();
         end
 
@@ -1225,7 +1225,7 @@ function this.dataProcess( dataStr )
         --停止hook，已不在处理任何断点信息，也就不会产生日志等。发送消息后等待前端主动断开连接
         local msgTab = this.getMsgTable("stopRun", this.getCallbackId());
         this.sendMsg(msgTab);
-        if ~luaProcessAsServer then
+        if not luaProcessAsServer then
             this.disconnect();
         end
     elseif "LuaGarbageCollect" == dataTable.cmd then

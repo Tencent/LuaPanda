@@ -367,14 +367,14 @@
 								"description": "Mark run mode, don't modify it. There are three modes: normal, attach, single_file. \n标记运行方式，请勿修改。 有三种模式 normal , attach , single_file。",
 								"default": "normal"
 							},
-							"invertClientServer":{
+							"VSCodeAsClient":{
 								"type": "boolean",
-								"description": "Usually adapter as Server, lua process as Client. this mode is invert these.",
+								"description": "Usually adapter as Server, lua process as Client. this mode is invert these. Please also set connectionIP。",
 								"default": false	
 							},
 							"connectionIP":{
 								"type": "string",
-								"description": "If adapter is client , the IP to connect.",
+								"description": "If adapter is client , the IP to connect. Default is '127.0.0.1'。",
 								"default": "127.0.0.1"
 							}
 						}
@@ -398,14 +398,14 @@
 					},
 					{
 						"type": "lua",
-						"tag": "attach",
 						"request": "attach",
+						"tag": "attach",
 						"name": "LuaPanda-Attach"
 					},
 					{
 						"type": "lua",
-						"tag": "single_file",
 						"request": "launch",
+						"tag": "single_file",
 						"name": "LuaPanda-DebugFile",
 						"luaPath": "",
 						"packagePath": [],
