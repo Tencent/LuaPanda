@@ -57,7 +57,7 @@ this.curStackId = 0;
 local json;
 --hook状态列表
 local hookState = {
-    DISCONNECT_HOOK = 0,                --断开连接
+    DISCONNECT_HOOK = 0,        --断开连接
     LITE_HOOK = 1,              --全局无断点
     MID_HOOK = 2,               --全局有断点，本文件无断点
     ALL_HOOK = 3,               --本文件有断点
@@ -186,7 +186,7 @@ function this.start(host, port, invertClientServer)
         server = sock
         server:settimeout(listeningTimeoutSec);
         server:setoption("reuseaddr", true)
-        assert(server:bind('*', connectPort));
+        assert(server:bind('0.0.0.0', connectPort));
         assert(server:listen(1));
         sock, errMessage = server:accept();
         connectSuccess = sock;
@@ -273,6 +273,20 @@ function this.clearData()
         hookLib.sync_breakpoints(); --清空断点信息
         hookLib.clear_pathcache(); --清空路径缓存
     end
+end
+
+-- 本次连接过程中停止attach ,以提高运行效率
+function this.stopAttach()
+    openAttachMode = false;
+    this.printToConsole("Debugger stopAttach", 1);
+    this.clearData()
+    this.changeHookState( hookState.DISCONNECT_HOOK );
+    stopConnectTime = os.time();
+    this.changeRunState(runState.DISCONNECT);
+    if sock ~= nil then
+        sock:close();
+        if luaProcessAsServer and server then server:close(); end;
+    end   
 end
 
 --断开连接
@@ -1186,7 +1200,9 @@ function this.dataProcess( dataStr )
         --停止hook，已不在处理任何断点信息，也就不会产生日志等。发送消息后等待前端主动断开连接
         local msgTab = this.getMsgTable("stopRun", this.getCallbackId());
         this.sendMsg(msgTab);
-        this.disconnect();
+        if ~invertClientServer then
+            this.disconnect();
+        end
     elseif "LuaGarbageCollect" == dataTable.cmd then
         this.printToVSCode("collect garbage!");
         collectgarbage("collect");
