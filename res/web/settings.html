@@ -154,7 +154,11 @@
         function saveConfig() {
             // 当前选中的是哪一项
             let selected_item = document.getElementById('path_select').selectedIndex;
-            let saveObj = global_configs[selected_item]["launch.json"]["LuaPanda"];
+            let config_index = setting_targets_array[selected_item]["config_index"];
+            let target_name = setting_targets_array[selected_item]["tgt_name"];
+     
+            let write_back_config = global_configs[config_index];
+            let saveObj = write_back_config["launch.json"][target_name];
 
             let luaFileExtension = document.getElementById('luaFileExtension');
             let connectionPort = document.getElementById('connectionPort');
@@ -234,7 +238,7 @@
 
             let returnObj = new Object();
             returnObj["command"] = "save_settings";
-            returnObj["configs"] = global_configs;
+            returnObj["configs"] = write_back_config;
 
             let webInfo = JSON.stringify(returnObj);
             vscode.postMessage({
@@ -243,65 +247,72 @@
         }
 
         function select_setting(selected_item = 0){
-            let congif = global_configs[selected_item]["launch.json"];
-            if (congif["LuaPanda"]) {
+            let config_index = setting_targets_array[selected_item]["config_index"];
+            let config = global_configs[config_index];
+            for (const key in config["launch.json"]) {
+                if(key == setting_targets_array[selected_item]["tgt_name"]){
+                    fillData(config["launch.json"][key]);
+                }
+            }
+        }
+
+
+        function fillData(target){
                 //初始化luapanda
-                //初始化单文件调试
-                if (congif["LuaPanda"]["luaFileExtension"] == undefined) {
+                if (target["luaFileExtension"] == undefined) {
                     setInputContent("luaFileExtension", "lua");
                 } else {
-                    setInputContent("luaFileExtension", congif["LuaPanda"]["luaFileExtension"]);
+                    setInputContent("luaFileExtension", target["luaFileExtension"]);
                 }
 
-                if (congif["LuaPanda"]["connectionPort"] == undefined) {
+                if (target["connectionPort"] == undefined) {
                     setInputContent("connectionPort", "8818");
                 } else {
-                    setInputContent("connectionPort", congif["LuaPanda"]["connectionPort"]);
+                    setInputContent("connectionPort", target["connectionPort"]);
                 }
 
-                if (congif["LuaPanda"]["cwd"] == undefined) {
+                if (target["cwd"] == undefined) {
                     setInputContent("cwd", "${workspaceFolder}");
                 } else {
-                    setInputContent("cwd", congif["LuaPanda"]["cwd"]);
+                    setInputContent("cwd", target["cwd"]);
                 }
 
-                if (congif["LuaPanda"]["pathCaseSensitivity"] == undefined) {
+                if (target["pathCaseSensitivity"] == undefined) {
                     setCheckboxStatue("pathCaseSensitivity", true);
                 } else {
-                    setCheckboxStatue("pathCaseSensitivity", congif["LuaPanda"]["pathCaseSensitivity"]);
+                    setCheckboxStatue("pathCaseSensitivity", target["pathCaseSensitivity"]);
                 }
 
-                if (congif["LuaPanda"]["stopOnEntry"] == undefined ) {
+                if (target["stopOnEntry"] == undefined ) {
                     setCheckboxStatue("stopOnEntry", true);
                 } else {
-                    setCheckboxStatue("stopOnEntry", congif["LuaPanda"]["stopOnEntry"]);
+                    setCheckboxStatue("stopOnEntry", target["stopOnEntry"]);
                 }
 
-                if (congif["LuaPanda"]["useCHook"] == undefined) {
+                if (target["useCHook"] == undefined) {
                     setCheckboxStatue("useCHook", true);
                 } else {
-                    setCheckboxStatue("useCHook", congif["LuaPanda"]["useCHook"]);
+                    setCheckboxStatue("useCHook", target["useCHook"]);
                 }
 
-                if (congif["LuaPanda"]["autoPathMode"] == undefined) {
+                if (target["autoPathMode"] == undefined) {
                     setCheckboxStatue("autoPathMode", false);
                 } else {
-                    setCheckboxStatue("autoPathMode", congif["LuaPanda"]["autoPathMode"]);
+                    setCheckboxStatue("autoPathMode", target["autoPathMode"]);
                 }
 
-                if (congif["LuaPanda"]["updateTips"] == undefined) {
+                if (target["updateTips"] == undefined) {
                     setCheckboxStatue("updateTips", true);
                 } else {
-                    setCheckboxStatue("updateTips", congif["LuaPanda"]["updateTips"]);
+                    setCheckboxStatue("updateTips", target["updateTips"]);
                 }           
 
+                // TODO
                 if (congif["isOpenAnalyzer"] == undefined) {
                     setCheckboxStatue("luaAnalyzerSwitch", true);
                 } else {
                     setCheckboxStatue("luaAnalyzerSwitch", congif["isOpenAnalyzer"]);
                 }
-
-            }
         }
 
         function target_change(index){
@@ -309,17 +320,38 @@
             select_setting(index)
         }
 
+        let setting_targets_array = [];
+        function init_select_opt(){
+            let select = document.getElementById("path_select");
+            let vs_tgt_counter = 0;
+            for(let index = 0 ; index < global_configs.length ; index++){
+                let launch_path = global_configs[index]["path"];
+
+                for (const key in global_configs[index]["launch.json"]) {
+                    let target = global_configs[index]["launch.json"][key];
+                    if(target["tag"] == "normal" || target["name"] == "LuaPanda" || target["tag"] == "attach" || target["name"] == "LuaPanda-Attach"){
+                        let opt = launch_path +"/.vscode/launch.json : " + target["name"];
+                        select.options[vs_tgt_counter] = new Option(opt, vs_tgt_counter);
+                        // set setting array
+                        let setting_obj = { path: launch_path, tgt_name: target["name"], config_index: index};
+                        setting_targets_array.push(setting_obj);
+                        vs_tgt_counter ++ ;
+                    }
+                }
+            }
+        }
+
+        // pathArray = [];
         window.addEventListener('message', event => {
             const message = JSON.parse(event.data); // The JSON data our extension sent
             switch (message.command) {
                 case 'init_setting':
                     global_configs = message.configs;
-                    let select = document.getElementById("path_select");
-                    for(let index = 0 ; index < global_configs.length ; index++){
-                        let opt = global_configs[index]["path"];
-                        select.options[index] = new Option(opt, index);
-                    }
-                    select_setting()
+                    console.log("aaaa")
+                    init_select_opt();
+                    console.log("bbbb")
+
+                    select_setting();
                     break;
             }
         });
