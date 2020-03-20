@@ -260,7 +260,7 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             }
     
             if (config.pathCaseSensitivity == undefined) {
-                config.pathCaseSensitivity = true;
+                config.pathCaseSensitivity = false;
             }
     
             if (config.connectionPort == undefined) {

@@ -390,7 +390,7 @@
 						"cwd": "${workspaceFolder}",
 						"luaFileExtension": "",
 						"connectionPort": 8818,
-						"pathCaseSensitivity": true,
+						"pathCaseSensitivity": false,
 						"stopOnEntry": true,
 						"useCHook": true,
 						"autoPathMode": true,

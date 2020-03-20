@@ -37,6 +37,9 @@
 --     LuaPanda.serializeTable(table)
 --         把table序列化为字符串，返回值类型是string。
 
+--     LuaPanda.stopAttach()
+--         断开连接，关闭attach接口，本次被调试程序运行过程无法再次进行attach连接。
+
 --用户设置项
 local openAttachMode = true;            --是否开启attach模式。attach模式开启后可以在任意时刻启动vscode连接调试。缺点是没有连接调试时也会略降低lua执行效率(会不断进行attach请求)
 local attachInterval = 3;               --attach间隔时间(s)
