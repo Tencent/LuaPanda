@@ -573,18 +573,25 @@ export class DocSymbolProcessor {
 				const element = strArr[j];
 				if(element.match('-@type')){
 					let commentTypeIdx = j+1;
-					for (let k = j+1; k < strArr.length; k++) {
+					for (let k = commentTypeIdx; k < strArr.length; k++) {
 						if(strArr[k] != ''){
 							commentTypeIdx = k;
 							break;
 						}
 					}
-					let info = {
-						reason: Tools.TagReason.UserTag,
-						newType: strArr[commentTypeIdx],
-						location : commentArray[idx].loc
+
+					let multiTypeArray = strArr[commentTypeIdx].split(',');
+						//存在 ---@type a,b 多注释的情况
+					for (const multiElement of multiTypeArray) {
+
+						let info = {
+							reason: Tools.TagReason.UserTag,
+							newType: multiElement,
+							location : commentArray[idx].loc
+						}
+
+						this.pushToCommentList(info);
 					}
-					this.pushToCommentList(info);
 					break;
 				}
 			}
@@ -641,11 +648,12 @@ export class DocSymbolProcessor {
 	private setTagTypeToSymbolInfo(symbol: Tools.SymbolInformation, tagType, tagReason){
 		if(symbol.tagReason != undefined && symbol.tagReason == Tools.TagReason.UserTag){
 			// 用户标记的类型权重 > 赋值类型权重
-			return;
+			return false
 		}
 
 		symbol.tagType = tagType;
 		symbol.tagReason = tagReason;
+		return true;
 	}
 
 	//---文件尾处理（生成符号表后，对一些有注释类型的符号，进行添加tag信息）
@@ -662,7 +670,17 @@ export class DocSymbolProcessor {
 				//用户标记
 				if(reason == Tools.TagReason.UserTag && elm.location.range.start.line + 1 === loc['end'].line)
 				{
-					this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
+					let mulitTypeIdx = 0;
+					// 支持同一行多个类型类型注释，如  local a,b,c ---@type d,e,f 但注意 d,e,f之间不要有空格
+					while (this.getAllSymbolsArray()[mulitTypeIdx + index].location.range.start.line + 1 === loc['end'].line){
+						const elm = this.getAllSymbolsArray()[mulitTypeIdx + index];
+						let res = this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
+						if(res){
+							break;
+						}else{
+							mulitTypeIdx++;
+						}
+					}
 					break;
 				}
 				//相等符号
