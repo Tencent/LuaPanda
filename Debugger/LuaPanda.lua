@@ -185,7 +185,7 @@ function this.startServer(host, port)
     server:settimeout(listeningTimeoutSec);
     server:setoption("reuseaddr", true)
     assert(server:bind(host, port));
-    assert(server:listen());
+    assert(server:listen(1));
     local connectSuccess = server:accept();
     sock = connectSuccess;
 
