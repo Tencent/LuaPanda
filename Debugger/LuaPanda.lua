@@ -1468,8 +1468,11 @@ end
 -- @filePath 被替换的路径
 -- @ext      后缀(后缀前的 . 不会被替换)
 function this.changePotToLine(filePath, ext)
-    local tmp = filePath:sub(1, filePath:find(ext)-1):gsub("%.", "/");
-    filePath = tmp .. ext;
+    local idx = filePath:find(ext)
+    if idx then 
+        local tmp = filePath:sub(1, idx - 1):gsub("%.", "/");
+        filePath = tmp .. ext;
+    end
     return filePath;
 end
 
