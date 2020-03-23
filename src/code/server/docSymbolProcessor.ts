@@ -190,9 +190,11 @@ export class DocSymbolProcessor {
 		// 由AST建立符号表
 		this.traversalAST(this.docInfo["docAST"], travelMode.BUILD, deepLayer);
 		// 符号表后处理，记录comment和文件/函数返回值
+		this.processRequireArrayPath()
 		this.buildSymbolTag();
 		this.buildSymbolReturns(); // 构建 B = require("A") , 记录B的类型
 		this.buildSymbolTrie();	//构建字典树
+
 		// Debug info 查看序列化的AST
 		// let tempStr = JSON.stringify(this.docInfo["docAST"]);
 		// DebugInfo
@@ -679,6 +681,14 @@ export class DocSymbolProcessor {
 					break;
 				}
 			}
+		}
+	}
+
+	//把 require 路径中的.转换为/
+	public processRequireArrayPath(){
+		let reqArray = this.getRequiresArray();
+		for (const reqPath of reqArray) {
+			reqPath.reqName = reqPath.reqName.replace(/\./g, '/');
 		}
 	}
 
