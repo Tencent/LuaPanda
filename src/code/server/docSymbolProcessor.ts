@@ -714,7 +714,8 @@ export class DocSymbolProcessor {
 	private buildSymbolReturns(){
 		//设置符号的 requireFile
 		let reqArray = this.getRequiresArray();
-		reqArray.forEach(element => {
+
+		for (const element of reqArray) {
 			let loc = element.loc;
 			let reqName = element.reqName;
 			for (let index = 0; index < this.getAllSymbolsArray().length; index++) {
@@ -726,12 +727,11 @@ export class DocSymbolProcessor {
 					elm.requireFile = reqName;
 				}
 			}
-		});
+		}
 		
 		//设置符号的 function Return
 		// let retArray = this.callFunctionRecoder;
-		for (const key in this.callFunctionRecoder ) {
-			const element = this.callFunctionRecoder[key];
+		for (const element of this.callFunctionRecoder ) {
 			let loc = element.loc;
 			let funcName = element.functionName;
 			for (let index = 0; index < this.getAllSymbolsArray().length; index++) {
