@@ -30,7 +30,6 @@ export class LuaDebugSession extends LoggingDebugSession {
     public connectionIP;
     public _server;    // adapter 作为server
     public _client;    // adapter 作为client
-    public alradyConnected;
     private VSCodeAsClient;
     private breakpointsArray;  //在socket连接前临时保存断点的数组
     private autoReconnect;
@@ -58,7 +57,6 @@ export class LuaDebugSession extends LoggingDebugSession {
         this.setDebuggerColumnsStartAt1(true);
         this._threadManager = new ThreadManager();  // 线程实例 调用this._threadManager.CUR_THREAD_ID可以获得当前线程号
         this._pathManager = new PathManager();
-        this.alradyConnected = false;
         this._runtime = new LuaDebugRuntime();  // _runtime and _dataProcessor 相互持有实例
         this._dataProcessor = new DataProcessor();
         this._dataProcessor._runtime = this._runtime;
@@ -322,9 +320,8 @@ export class LuaDebugSession extends LoggingDebugSession {
             //向debugger发送含配置项的初始化协议
             this._runtime.start(( _ , info) => {
                 let connectMessage = "已建立连接，发送初始化协议和断点信息!";
-                this.alradyConnected = true;
                 DebugLogger.AdapterInfo(connectMessage);
-                // this.printLogInDebugConsole("[Connected] 已建立连接。  当停止在断点处时，可使用调试控制台观察变量或执行表达式. 调试控制台使用帮助: http://" );
+                this.printLogInDebugConsole("[VSCODE SERVER][Connected] 已建立连接。  当停止在断点处时，可使用调试控制台观察变量或执行表达式. 调试控制台使用帮助: http://" );
 
                 if (info.UseLoadstring === "1") {
                     this.UseLoadstring = true;
@@ -349,16 +346,10 @@ export class LuaDebugSession extends LoggingDebugSession {
             });
 
             socket.on('close', () => {
-                this.alradyConnected = false;
                 DebugLogger.AdapterInfo('Socket close!');
                 vscode.window.showInformationMessage('Stop connecting!');
-                // 停止连接
-                // this._server.close();
+                // this._dataProcessor._socket 是在建立连接后赋值，所以在断开连接时删除
                 delete this._dataProcessor._socket;
-                // // 析构线程
-                // this._threadManager.destructor();
-                // 停止VSCode的调试模式
-                LuaDebugSession._debugSessionArray.delete(this._threadManager.CUR_THREAD_ID);//从进程列表中删除自身
                 this.sendEvent(new TerminatedEvent(this.autoReconnect));
             });
 
@@ -385,13 +376,11 @@ export class LuaDebugSession extends LoggingDebugSession {
 			instance._client.setTimeout(800);
 
 			instance._client.on('connect', () => {
-                instance.printLogInDebugConsole("[reverseCS] 已建立连接，发送初始化协议和断点信息!");
-                instance.alradyConnected = true;
-				clearInterval(instance.connectInterval);		 //清除循环
+				clearInterval(instance.connectInterval);		 //连接后清除循环请求
                 instance._dataProcessor._socket = instance._client;
 
 				instance._runtime.start(( _ , info) => {
-                    instance.printLogInDebugConsole("[reverseCS] 已建立连接。  当停止在断点处时，可使用调试控制台观察变量或执行表达式. 调试控制台使用帮助: http://" );
+                    instance.printLogInDebugConsole("[VSCODE CLIENT] 已建立连接。  当停止在断点处时，可使用调试控制台观察变量或执行表达式. 调试控制台使用帮助: http://" );
                     //已建立连接，并完成初始化
 					if (info.UseLoadstring === "1") {
                         instance.UseLoadstring = true;
@@ -410,28 +399,20 @@ export class LuaDebugSession extends LoggingDebugSession {
                         instance._runtime.setBreakPoint(bkMap.bkPath, bkMap.bksArray, null, null);
                     }
                     }, sendArgs);
-			});
+            });
+            
 			instance._client.on('end', () => {
+                // VScode client 主动发起断开连接
                 DebugLogger.AdapterInfo("client end");
+                vscode.window.showInformationMessage('Stop connecting!');
+                // this._dataProcessor._socket 是在建立连接后赋值，所以在断开连接时删除
+                delete instance._dataProcessor._socket;
+                instance.sendEvent(new TerminatedEvent(instance.autoReconnect));
 			});
-			instance._client.on('timeout', () => {
-                DebugLogger.AdapterInfo("timeout");
-                instance._client.close();
-			});
+
 			instance._client.on('close', () => {
-                if( instance.alradyConnected ){
-                    instance.alradyConnected = false;
-                    DebugLogger.AdapterInfo('Socket close!');
-                    vscode.window.showInformationMessage('Stop connecting!');
-                    // 停止连接
-                    // instance._client.close();
-                    delete instance._dataProcessor._socket;
-                    // // 析构线程
-                    // this._threadManager.destructor();
-                    // 停止VSCode的调试模式
-                    LuaDebugSession._debugSessionArray.delete(instance._threadManager.CUR_THREAD_ID);//从进程列表中删除自身
-                    instance.sendEvent(new TerminatedEvent(instance.autoReconnect));
-                }
+                // 可能是连接后断开，也可能是超时关闭socket
+                // DebugLogger.AdapterInfo('client close!');
             });
             //接收消息
 			instance._client.on('data',  (data) => {
@@ -496,7 +477,7 @@ export class LuaDebugSession extends LoggingDebugSession {
             this.breakpointsArray.push(bk);
         }
 
-        if (this._dataProcessor._socket && this.alradyConnected) {
+        if (this._dataProcessor._socket) {
             //已建立连接
             let callbackArgs = new Array();
             callbackArgs.push(this);
@@ -760,10 +741,16 @@ export class LuaDebugSession extends LoggingDebugSession {
     }
 
     /**
-     * disconnect
+     * 断开和lua的连接
+     * 关闭连接的调用顺序 停止连接时的公共方法要放入 disconnectRequest.
+     * 未建立连接 : disconnectRequest
+     * 当VScode主动停止连接 : disconnectRequest - > socket end -> socket close
+     * 当lua进程主动停止连接 : socket end -> socket close -> disconnectRequest
      */
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args): void {
         DebugLogger.AdapterInfo("disconnectRequest");
+        this.printLogInDebugConsole("[VSCODE SERVER][disconnectRequest] 已断开连接。" );
+
         let restart = args.restart;
         if(this.VSCodeAsClient){
             clearInterval(this.connectInterval);// 在未建立连接的情况下清除循环
@@ -776,9 +763,12 @@ export class LuaDebugSession extends LoggingDebugSession {
                 //客户端主动断开连接，这里仅做确认
                 DebugLogger.AdapterInfo("确认stop");
             }, callbackArgs, 'stopRun');
-            this._server.close();               // 在未建立连接的情况下，关闭 server
+            this._server.close();               // 关闭 server, 停止 listen. 放在这里的原因是即使未建立连接，也可以停止listen.
         }
 
+        // 删除自身的线程id, 并从LuaDebugSession实例列表中删除自身
+        this._threadManager.destructor();
+        LuaDebugSession._debugSessionArray.delete(this._threadManager.CUR_THREAD_ID);
         this.sendResponse(response);
     }
 
