@@ -305,7 +305,7 @@ export class LuaDebugSession extends LoggingDebugSession {
                     this._programTermianl.sendText(progaamCmdwithArgs , true);
                     this._programTermianl.show(); 
                 }else{
-                    vscode.window.showErrorMessage("launch.json 文件中 program 设置的路径错误： 文件 " + args.program + " 不存在，请修改后再试。" , "好的");
+                    vscode.window.showErrorMessage("[Error] launch.json 文件中 program 路径错误：program可以该指向一个二进制文件, 调试器启动时会拉起这个文件。如不需要此设置，可以设置为\"\"。 当前目标" + args.program + " 不存在，请修改后再试。" , "好的");
                 }
             }
         }
@@ -315,13 +315,13 @@ export class LuaDebugSession extends LoggingDebugSession {
         //3. 启动Adapter的socket   |   VSCode = Server ; Debugger = Client
         this._server = Net.createServer(socket => {
             //--connect--
-            DebugLogger.AdapterInfo("Debugger  " + socket.remoteAddress + ":" + socket.remotePort + "  connect!");
             this._dataProcessor._socket = socket;
             //向debugger发送含配置项的初始化协议
             this._runtime.start(( _ , info) => {
-                let connectMessage = "已建立连接，发送初始化协议和断点信息!";
+                let connectMessage = "[Connected] VSCode Server Connected! Remote device info  " + socket.remoteAddress + ":" + socket.remotePort ;
                 DebugLogger.AdapterInfo(connectMessage);
-                this.printLogInDebugConsole("[VSCODE SERVER][Connected] 已建立连接。  当停止在断点处时，可使用调试控制台观察变量或执行表达式. 调试控制台使用帮助: http://" );
+                this.printLogInDebugConsole(connectMessage);
+                this.printLogInDebugConsole("[Tips] 当停止在断点处时，可使用调试控制台观察变量或执行表达式. 调试控制台使用帮助: http://" );
 
                 if (info.UseLoadstring === "1") {
                     this.UseLoadstring = true;
@@ -378,9 +378,11 @@ export class LuaDebugSession extends LoggingDebugSession {
 			instance._client.on('connect', () => {
 				clearInterval(instance.connectInterval);		 //连接后清除循环请求
                 instance._dataProcessor._socket = instance._client;
-
 				instance._runtime.start(( _ , info) => {
-                    instance.printLogInDebugConsole("[VSCODE CLIENT] 已建立连接。  当停止在断点处时，可使用调试控制台观察变量或执行表达式. 调试控制台使用帮助: http://" );
+                    let connectMessage = "[Connected] VSCode Client Connected!";
+                    DebugLogger.AdapterInfo(connectMessage);
+                    instance.printLogInDebugConsole(connectMessage);
+                    instance.printLogInDebugConsole("[Tips] 当停止在断点处时，可使用调试控制台观察变量或执行表达式. 调试控制台使用帮助: http://" );
                     //已建立连接，并完成初始化
 					if (info.UseLoadstring === "1") {
                         instance.UseLoadstring = true;
@@ -748,8 +750,9 @@ export class LuaDebugSession extends LoggingDebugSession {
      * 当lua进程主动停止连接 : socket end -> socket close -> disconnectRequest
      */
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args): void {
-        DebugLogger.AdapterInfo("disconnectRequest");
-        this.printLogInDebugConsole("[VSCODE SERVER][disconnectRequest] 已断开连接。" );
+        let disconnectMessage = "[Disconnect Request] disconnectRequest";
+        DebugLogger.AdapterInfo(disconnectMessage);
+        this.printLogInDebugConsole(disconnectMessage);
 
         let restart = args.restart;
         if(this.VSCodeAsClient){
