@@ -571,7 +571,7 @@ export class DocSymbolProcessor {
 			let strArr = comValue.split(' ')
 			for (let j = 0; j < strArr.length; j++) {
 				const element = strArr[j];
-				if(element.match('-@type')){
+				if(element.match('-@type') || element.match('-@return')) {
 					let commentTypeIdx = j+1;
 					for (let k = commentTypeIdx; k < strArr.length; k++) {
 						if(strArr[k] != ''){
@@ -681,6 +681,12 @@ export class DocSymbolProcessor {
 							mulitTypeIdx++;
 						}
 					}
+					break;
+				}
+				// 在函数定义上一行的标记
+				if(reason == Tools.TagReason.UserTag && elm.location.range.start.line === loc['end'].line)
+				{
+					this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
 					break;
 				}
 				//相等符号
