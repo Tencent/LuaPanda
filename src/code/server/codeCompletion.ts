@@ -58,20 +58,32 @@ export class CodeCompletion {
 	}
 
 	private static getDocCommentInsertText(functionName: string, paramArray: string[]): string {
-		let docCommentSnippet = " " + functionName + " ${1:Description of the function}";
-
+		// 判断param ,自动生成param类型注释
+		let docCommentSnippet = functionName + " ${1:Description of the function}";
 		let maxParamLength = 0;
 		paramArray.forEach((param) => {
 			maxParamLength = Math.max(maxParamLength, param.length);
 		});
-
+		// add param
 		let i = 2;
 		paramArray.forEach((param) => {
 			param += Tools.getNSpace(maxParamLength - param.length);
-			docCommentSnippet += `\n-- @param ${param} \${${i++}:Describe the parameter}`;
+			docCommentSnippet += `\n---@param ${param} \${${i++}:Type and Description}`;
 		});
-
+		// add return
+		docCommentSnippet += `\n\${${i++}:---@return }`;
 		return docCommentSnippet;
+	}
+
+	private static getReturnComment():CompletionItem{
+		let completeItem = {
+			label: "mark return",
+			kind: CompletionItemKind.Snippet,
+			insertText: "@return ",
+			detail: "Mark return type for this function",
+			insertTextFormat: InsertTextFormat.Snippet
+		};
+		return completeItem;	
 	}
 
 	private static getDocCommentCompletingItem(uri: string, line: number): CompletionItem {
@@ -81,10 +93,10 @@ export class CodeCompletion {
 		}
 
 		let completeItem = {
-			label: functionInfo.functionName + " doc comment",
+			label: functionInfo.functionName + " comment",
 			kind: CompletionItemKind.Snippet,
 			insertText: this.getDocCommentInsertText(functionInfo.functionName, functionInfo.functionParam),
-			detail: "Write some document comments for the function.",
+			detail: "Write comments or mark return type for this function.",
 			insertTextFormat: InsertTextFormat.Snippet
 		};
 		return completeItem;
@@ -166,8 +178,10 @@ export class CodeCompletion {
 		let completingArray  = new Array<CompletionItem>();
 		if (Tools.isNextLineHasFunction(luaText, pos) == true) {
 			completingArray.push(this.getDocCommentCompletingItem(uri, pos.line + 1));
+			completingArray.push(this.getReturnComment());
+		}else{
+			completingArray.push(this.commentVarTypeTips(uri, pos.line));
 		}
-		completingArray.push(this.commentVarTypeTips(uri, pos.line));
 		return completingArray;
 	}
 
