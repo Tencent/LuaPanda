@@ -571,7 +571,7 @@ export class DocSymbolProcessor {
 			let strArr = comValue.split(' ')
 			for (let j = 0; j < strArr.length; j++) {
 				const element = strArr[j];
-				if(element.match('-@type') || element.match('-@return')) {
+				if(element.match('-@type') || element.match('-@return') || element.match('-@param')) {
 					let commentTypeIdx = j+1;
 					for (let k = commentTypeIdx; k < strArr.length; k++) {
 						if(strArr[k] != ''){
@@ -580,17 +580,29 @@ export class DocSymbolProcessor {
 						}
 					}
 
-					let multiTypeArray = strArr[commentTypeIdx].split(',');
-						//存在 ---@type a,b 多注释的情况
-					for (const multiElement of multiTypeArray) {
-
+					if(element.match('-@param')){
+						// param 类型的注释, 要标记当前变量和其对应的类型，不能仅凭行号区分
+						let functionParameter = strArr[commentTypeIdx];
+						let newType = strArr[commentTypeIdx + 1];
 						let info = {
 							reason: Tools.TagReason.UserTag,
-							newType: multiElement,
+							functionParameter: functionParameter,
+							newType: newType,
 							location : commentArray[idx].loc
 						}
-
 						this.pushToCommentList(info);
+					}else{
+						let multiTypeArray = strArr[commentTypeIdx].split(',');
+						//返回值和赋值存在 ---@type a,b 多注释的情况
+						for (const multiElement of multiTypeArray) {
+							let info = {
+								reason: Tools.TagReason.UserTag,
+								newType: multiElement,
+								location : commentArray[idx].loc
+							}
+	
+							this.pushToCommentList(info);
+						}
 					}
 					break;
 				}
@@ -650,7 +662,6 @@ export class DocSymbolProcessor {
 			// 用户标记的类型权重 > 赋值类型权重
 			return false
 		}
-
 		symbol.tagType = tagType;
 		symbol.tagReason = tagReason;
 		return true;
@@ -664,45 +675,72 @@ export class DocSymbolProcessor {
 			let tagInfo = tagArray[key];
 			let loc = tagInfo.location;
 			let reason = tagInfo.reason;
+			let functionParam = tagInfo.functionParameter;
+			let paramRealLine = 0;	
 			//从allSymbols中遍历location和tag相符合的符号
 			for (let index = 0; index < this.getAllSymbolsArray().length; index++) {
 				const elm = this.getAllSymbolsArray()[index];
-				//用户标记
-				if(reason == Tools.TagReason.UserTag && elm.location.range.start.line + 1 === loc['end'].line)
-				{
-					let mulitTypeIdx = 0;
-					// 支持同一行多个类型类型注释，如  local a,b,c ---@type d,e,f 但注意 d,e,f之间不要有空格
-					while (this.getAllSymbolsArray()[mulitTypeIdx + index].location.range.start.line + 1 === loc['end'].line){
-						const elm = this.getAllSymbolsArray()[mulitTypeIdx + index];
-						let res = this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
-						if(res){
+				if (functionParam){
+					// 用户注释的 function 参数类型
+					if(tagInfo.newType === "Type"){
+						// Type是预设值
+						break;
+					}
+					
+					if(reason == Tools.TagReason.UserTag && elm.location.range.start.line + 1 > loc['end'].line ){
+						// functionParam 表示对应的文件，在location之后向下找，找到对应的符号名
+						if(paramRealLine === 0){
+							// 记录 param 类型注释后，收个符号的行号
+							paramRealLine = elm.location.range.start.line;
+						}
+						else if(elm.location.range.start.line > paramRealLine){
+							// 在 param 所在的真实行号没有找到被注释类型的参数 
 							break;
-						}else{
-							mulitTypeIdx++;
+						}
+
+						if(functionParam === elm.searchName){
+							this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
+							break;
 						}
 					}
-					break;
-				}
-				// 在函数定义上一行的标记
-				if(reason == Tools.TagReason.UserTag && elm.location.range.start.line === loc['end'].line)
-				{
-					this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
-					break;
-				}
-				//相等符号
-				if(reason == Tools.TagReason.Equal && elm.location.range.start.line + 1 === loc['end'].line)
-				{
-					// name : 被赋值符号名					
-					if(tagInfo.name && tagInfo.name == elm.searchName){
+				}else{
+					// 用户本行标记
+					if(reason == Tools.TagReason.UserTag && elm.location.range.start.line + 1 === loc['end'].line)
+					{
+						let mulitTypeIdx = 0;
+						// 支持同一行多个类型类型注释，如  local a,b,c ---@type d,e,f 但注意 d,e,f之间不要有空格
+						while (this.getAllSymbolsArray()[mulitTypeIdx + index].location.range.start.line + 1 === loc['end'].line){
+							const elm = this.getAllSymbolsArray()[mulitTypeIdx + index];
+							let res = this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
+							if(res){
+								break;
+							}else{
+								mulitTypeIdx++;
+							}
+						}
+						break;
+					}
+					// 在函数定义上一行的标记, 查找 return 注释, 以及支持在上一行注释 @type 的情况
+					if(reason == Tools.TagReason.UserTag && elm.location.range.start.line === loc['end'].line)
+					{
 						this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
 						break;
 					}
-				}
+					// 相等符号
+					if(reason == Tools.TagReason.Equal && elm.location.range.start.line + 1 === loc['end'].line)
+					{
+						// name : 被赋值符号名					
+						if(tagInfo.name && tagInfo.name == elm.searchName){
+							this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
+							break;
+						}
+					}
 
-				//元表标记
-				if(reason == Tools.TagReason.MetaTable && elm.searchName == tagInfo.oldType){
-					this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
-					break;
+					// 元表标记
+					if(reason == Tools.TagReason.MetaTable && elm.searchName == tagInfo.oldType){
+						this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
+						break;
+					}
 				}
 			}
 		}
