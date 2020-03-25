@@ -604,6 +604,7 @@ export class DocSymbolProcessor {
 							this.pushToCommentList(info);
 						}
 					}
+					// 结束本行
 					break;
 				}
 			}
