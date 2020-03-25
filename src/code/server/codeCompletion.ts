@@ -68,10 +68,10 @@ export class CodeCompletion {
 		let i = 2;
 		paramArray.forEach((param) => {
 			param += Tools.getNSpace(maxParamLength - param.length);
-			docCommentSnippet += `\n---@param ${param} \${${i++}:Type and Description}`;
+			docCommentSnippet += `\n---@param ${param} \${${i++}:Type} \${${i++}:Description}`;
 		});
 		// add return
-		docCommentSnippet += `\n\${${i++}:---@return }`;
+		docCommentSnippet += `\n\${${i++}:---@return } \${${i++}:Type} \${${i++}:Description}`;
 		return docCommentSnippet;
 	}
 
@@ -107,7 +107,7 @@ export class CodeCompletion {
 		let completeItem = {
 			label: "@type",
 			kind: CompletionItemKind.Snippet,
-			insertText: "@type ",
+			insertText: "@type ${1:Type} ${2:Description}",
 			detail: "comment var type",
 			insertTextFormat: InsertTextFormat.Snippet
 		};
