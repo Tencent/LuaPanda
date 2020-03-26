@@ -376,6 +376,24 @@ const char* getPath(lua_State *L,const char* source){
     return retSource;
 }
 
+// 向 lua 中 checkRealHitBreakpoint 查询是否在缓存中，以判断是否真正命中断点
+const int checkRealHitBreakpoint(lua_State *L,const char* source, int line){
+    debug_auto_stack _tt(L);
+
+    if(source == nullptr){
+        print_to_vscode(L, "[Debug Lib Error]: checkRealHitBreakpoint Exception: source == nullptr", 2);
+        return 0;
+    }
+
+    //若缓存中没有，到lua中转换
+    int lua_ret = call_lua_function(L, "checkRealHitBreakpoint", 2 , source, line);
+    if (lua_ret != 0) {
+        return 0;
+    }
+    int realHit = lua_tointeger(L, -1);
+    return realHit;
+}
+
 //供lua调用,把断点列表同步给c端
 extern "C" int sync_breakpoints(lua_State *L) {
     debug_auto_stack _tt(L);
@@ -521,6 +539,10 @@ int breakpoint_process(lua_State *L, lua_Debug *ar){
     int is_hit = 0;
     if (ar->event == LINE) {
         is_hit = debug_ishit_bk(L, ar->source, ar->currentline);
+        // 同名文件可能会命中假断点 folder1/a.lua 和 folder2/a.lua 截取文件名都是 a.lua, 可能导致命中混淆
+        if(is_hit){
+            is_hit = checkRealHitBreakpoint(L, ar->source, ar->currentline);
+        }
 
         if (is_hit == 1 || BPhit) {
             BPhit = 0;

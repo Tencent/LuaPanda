@@ -1648,6 +1648,19 @@ function this.checkCurrentLayerisLua( checkLayer )
     return nil;
 end
 
+-- 在 fakeBreakPointCache 中查询此断点是否真实存在
+-- 因为同名文件的影响， 有些断点是命中错误的。经过VScode校验后，这些错误命中的断点信息被存在fakeBreakPointCache中
+function this.checkRealHitBreakpoint( oPath, line )
+    -- 在假命中列表中搜索，如果本行有过假命中记录，返回 false
+    if oPath and fakeBreakPointCache[oPath] then
+        for _, value in ipairs(fakeBreakPointCache[oPath]) do
+            if value == line then 
+                return false;
+            end
+        end
+    end
+    return true;  
+end
 
 ------------------------断点处理-------------------------
 -- 参数info是当前堆栈信息
@@ -1676,15 +1689,15 @@ function this.isHitBreakpoint( info )
                 end
             end
 
-            if line_hit then
+            if line_hit and this.checkRealHitBreakpoint(info.orininal_source, curLine) then
                 -- 在假命中列表中搜索，如果本行有过假命中记录，返回 false
-                if fakeBreakPointCache[info.orininal_source] then
-                    for _, value in ipairs(fakeBreakPointCache[info.orininal_source]) do
-                        if value == curLine then 
-                            return false;
-                        end
-                    end
-                end
+                -- if info.orininal_source and fakeBreakPointCache[info.orininal_source] then
+                --     for _, value in ipairs(fakeBreakPointCache[info.orininal_source]) do
+                --         if value == curLine then 
+                --             return false;
+                --         end
+                --     end
+                -- end
 
                 -- type是TS中的枚举类型，其定义在BreakPoint.tx文件中
                 --[[
