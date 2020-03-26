@@ -112,9 +112,14 @@ export class LuaDebugSession extends LoggingDebugSession {
     private checkIsRealHitBreakpoint(){
         let steak = this._runtime.breakStack;
         let steakPath = steak[0].file;
+        let steakLine = steak[0].line;
         for (let bkMap of this.breakpointsArray) {
             if(bkMap.bkPath === steakPath){
-                return true;
+                for (const node of bkMap.bksArray) {
+                    if(node.line == steakLine){
+                        return true;
+                    }
+                }
             }
         }
         return false;

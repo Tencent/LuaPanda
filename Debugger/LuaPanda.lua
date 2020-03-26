@@ -138,9 +138,11 @@ local coroutineCreate;          --用来记录lua原始的coroutine.create函数
 local stopConnectTime = 0;      --用来临时记录stop断开连接的时间
 local isInMainThread;
 local receiveMsgTimer = 0;
-local formatPathCache = {};     -- getinfo -> format
 local isUserSetClibPath = false; --用户是否在本文件中自设了clib路径
+local formatPathCache = {};     -- getinfo -> format
+this.formatPathCache = formatPathCache;
 local fakeBreakPointCache = {};  --其中用 路径-{行号列表} 形式保存错误命中信息
+this.fakeBreakPointCache = fakeBreakPointCache;
 --5.1/5.3兼容
 if _VERSION == "Lua 5.1" then
     debugger_loadString = loadstring;
@@ -297,6 +299,7 @@ function this.clearData()
     -- reset breaks
     breaks = {};
     formatPathCache = {};
+    fakeBreakPointCache = {};
     this.breaks = breaks;
     if hookLib ~= nil then
         hookLib.sync_breakpoints(); --清空断点信息
@@ -900,13 +903,14 @@ function this.dataProcess( dataStr )
     end
 
     if dataTable.cmd == "continue" then
+        local info = dataTable.info;
         this.changeRunState(runState.RUN);
-        if dataTable.isFakeHit == "true" and dataTable.fakeBKPath and dataTable.fakeBKLine then 
+        if info.isFakeHit == "true" and info.fakeBKPath and info.fakeBKLine then 
             -- 把假断点的信息加入cache
-            if  nil == fakeBreakPointCache[dataTable.fakeBKPath] then
-                fakeBreakPointCache[dataTable.fakeBKPath] = {};
+            if  nil == fakeBreakPointCache[info.fakeBKPath] then
+                fakeBreakPointCache[info.fakeBKPath] = {};
             end
-            fakeBreakPointCache[dataTable.fakeBKPath].insert(dataTable.fakeBKLine);
+            table.insert(fakeBreakPointCache[info.fakeBKPath] ,info.fakeBKLine);
         end
         local msgTab = this.getMsgTable("continue", this.getCallbackId());
         this.sendMsg(msgTab);
@@ -937,10 +941,24 @@ function this.dataProcess( dataStr )
         bkPath = this.genUnifiedPath(bkPath);
         if autoPathMode then 
             -- 自动路径模式下，仅保留文件名
-            bkPath = this.getFilenameFromPath(bkPath);
+            -- table[文件名.后缀] -- [fullpath] -- [line , type]
+            --                  | - [fullpath] -- [line , type]
+
+            local bkShortPath = this.getFilenameFromPath(bkPath);
+            if breaks[bkShortPath] == nil then 
+                breaks[bkShortPath] = {};
+            end
+            breaks[bkShortPath][bkPath] = dataTable.info.bks;
+            -- 当v为空时，从断点列表中去除文件
+            for k, v in pairs(breaks[bkShortPath]) do
+                if next(v) == nil then
+                    breaks[bkShortPath][k] = nil;
+                end
+            end
+        else
+            this.printToVSCode("setBreakPoint path:"..tostring(bkPath));
+            breaks[bkPath] = dataTable.info.bks;
         end
-        this.printToVSCode("setBreakPoint path:"..tostring(bkPath));
-        breaks[bkPath] = dataTable.info.bks;
 
         -- 当v为空时，从断点列表中去除文件
         for k, v in pairs(breaks) do
@@ -1640,12 +1658,25 @@ function this.isHitBreakpoint( info )
     local isPathHit = false;
     -- 当前路径在断点列表中
     if breaks[breakpointPath] then
-        isPathHit = true;
+        isPathHit = true;        -- 文件名命中
     end
 
     if isPathHit then
-        for k,v in ipairs(breaks[breakpointPath]) do
-            if tostring(v["line"]) == tostring(curLine) then
+        for k,v in pairs(breaks[breakpointPath]) do
+            local line_hit = false; -- 行号命中
+            if autoPathMode then
+                for _, node in ipairs(v) do
+                    if  tostring(node["line"]) == tostring(curLine) then 
+                        line_hit = true;
+                    end
+                end
+            else 
+                if tostring(v["line"]) == tostring(curLine) then
+                    line_hit = true;
+                end
+            end
+
+            if line_hit then
                 -- 在假命中列表中搜索，如果本行有过假命中记录，返回 false
                 if fakeBreakPointCache[info.orininal_source] then
                     for _, value in ipairs(fakeBreakPointCache[info.orininal_source]) do
@@ -1785,9 +1816,17 @@ function this.checkfuncHasBreakpoint(sLine, eLine, fileName)
     if #breaks[fileName] <= 0 then
         return false;
     else
-        for k,v in ipairs(breaks[fileName]) do
-            if tonumber(v.line) > sLine and tonumber(v.line) <= eLine then
-                return true;
+        for k,v in pairs(breaks[fileName]) do
+            if autoPathMode then 
+                for _, node in ipairs(v) do
+                    if tonumber(node.line) > sLine and tonumber(node.line) <= eLine then
+                        return true;
+                    end   
+                end
+            else
+                if tonumber(v.line) > sLine and tonumber(v.line) <= eLine then
+                    return true;
+                end
             end
         end
     end
