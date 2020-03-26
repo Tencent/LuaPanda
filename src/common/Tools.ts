@@ -130,6 +130,14 @@ export class Tools {
         return { name, ext };
     }
 
+    // 从URI分析出文件路径，文件名，后缀
+    public static getDirAndFileName(UriOrPath): Object{
+        let retObj = this.getPathNameAndExt(UriOrPath)
+        let _dir = path.dirname(UriOrPath)
+        retObj["dir"] = _dir;
+        return retObj;
+    }
+
     public static removeDir(dir): boolean {
         let files;
         try{

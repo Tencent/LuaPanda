@@ -92,7 +92,7 @@ export class PathManager {
     }
 
     // 传入局部路径，返回完整路径
-    public checkFullPath( shortPath: string ): string{
+    public checkFullPath( shortPath: string , oPath?: string): string{
         if(this.useAutoPathMode === false){
             return shortPath;
         }
@@ -120,10 +120,15 @@ export class PathManager {
         if(fullPath){
             if(isArray(fullPath)){
                 // 存在同名文件
-                for (const key in fullPath) {
-                    const element = fullPath[key];
-                    if(element.indexOf(shortPath)){
-                        return element; // 这里固定返回第一个元素
+                if(oPath){
+                    return this.checkRightPath( shortPath , oPath , fullPath);
+                }else{
+                    // 如果lua文件没有更新，没有传过来oPath，则打开第一个文件
+                    for (const key in fullPath) {
+                        const element = fullPath[key];
+                        if(element.indexOf(shortPath)){
+                            return element; // 这里固定返回第一个元素
+                        }
                     }
                 }
             }else if(typeof fullPath === "string"){
@@ -133,5 +138,34 @@ export class PathManager {
         //最终没有找到，返回输入的地址
         DebugLogger.showTips("调试器没有找到文件 " + shortPath + " 。 请检查launch.json文件中lua后缀是否配置正确, 以及VSCode打开的工程是否正确", 2);
         return shortPath;
+    }
+
+    // 存在同名文件的情况下, 根据lua虚拟机传来的 fullPath , 判断断点处具体是哪一个文件
+    public checkRightPath( fileName: string , oPath: string, fullPathArray): string{
+        //如果首字符是@，去除@
+        if('@' === oPath.substr(0,1)){
+            oPath = oPath.substr(1);
+        }
+        //如果是相对路径，把 ./ 替换成 /
+        if('./' === oPath.substr(0,2)){
+            oPath = oPath.substr(1);
+        }
+
+        // 从oPath中把文件名截取掉
+        let idx = oPath.indexOf(fileName);
+        oPath = oPath.substring(0, idx + 1);
+        // 使用path.dirname获取路径
+        oPath = Tools.getDirAndFileName(oPath)["dir"];
+        // oPath中的. 替换成 /
+        oPath = oPath.replace(/\./g, "/");
+
+        for (const iteratorPath of fullPathArray) {
+            if(iteratorPath.indexOf(oPath) >= 0){
+                // fullPathArray 中包含oPath, 命中
+                return iteratorPath;
+            }
+        }
+        // 如果最终都无法明中， 第一条
+        return fullPathArray[0];
     }
 }

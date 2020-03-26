@@ -71,6 +71,21 @@ export class LuaDebugRuntime extends EventEmitter {
     }
 
     /**
+     * 通知Debugger继续执行
+     * @param callback: 收到请求返回后的回调函数
+     * @param callbackArgs：回调参数
+     * @param event：事件名
+     */
+    public continueWithFakeHitBk(callback ,callbackArgs = null, event = 'continue') {
+        DebugLogger.AdapterInfo("continue");
+        let arrSend = new Object();
+        arrSend["fakeBKPath"] = String(this.breakStack[0].file);
+        arrSend["fakeBKLine"] = String(this.breakStack[0].line);
+        arrSend["isFakeHit"] = String(true);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
+    }
+
+    /**
      * 从 Debugger 获取监视变量的值
      * @param callback: 收到请求返回后的回调函数
      * @param callbackArgs：回调参数
@@ -232,7 +247,8 @@ export class LuaDebugRuntime extends EventEmitter {
             let linenum: string = element.line;
             element.line = parseInt(linenum); //转为VSCode行号(int)
             let getinfoPath : string = element.file;
-            element.file = this._pathManager.checkFullPath(getinfoPath); 
+            let oPath = element.oPath;
+            element.file = this._pathManager.checkFullPath(getinfoPath, oPath); 
         });
         //先保存堆栈信息，再发暂停请求
         this.breakStack = stack;

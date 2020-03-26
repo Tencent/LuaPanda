@@ -81,7 +81,17 @@ export class LuaDebugSession extends LoggingDebugSession {
         });
 
         this._runtime.on('stopOnBreakpoint', () => {
-            this.sendEvent(new StoppedEvent('breakpoint', this._threadManager.CUR_THREAD_ID));
+            // 因为breakpoint在lua端可能出现同名文件错误匹配，这里要再次校验
+            
+            // breakpointsArray 中是否包含断点
+            if(this.checkIsRealHitBreakpoint()){
+                this.sendEvent(new StoppedEvent('breakpoint', this._threadManager.CUR_THREAD_ID));
+            }else{
+                // go on running
+                this._runtime.continueWithFakeHitBk(() => {
+                    DebugLogger.AdapterInfo("错误命中同名文件中的断点, 确认继续运行");
+                });
+            }
         });
         this._runtime.on('stopOnException', () => {
             this.sendEvent(new StoppedEvent('exception', this._threadManager.CUR_THREAD_ID));
@@ -96,6 +106,18 @@ export class LuaDebugSession extends LoggingDebugSession {
         this._runtime.on('logInDebugConsole', (message) => {
             this.printLogInDebugConsole(message);
         });
+    }
+
+    // 在有同名文件的情况下，需要再次进行命中判断。
+    private checkIsRealHitBreakpoint(){
+        let steak = this._runtime.breakStack;
+        let steakPath = steak[0].file;
+        for (let bkMap of this.breakpointsArray) {
+            if(bkMap.bkPath === steakPath){
+                return true;
+            }
+        }
+        return false;
     }
 
     // 在调试控制台打印日志

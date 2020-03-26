@@ -38,20 +38,20 @@
 --         把table序列化为字符串，返回值类型是string。
 
 --     LuaPanda.stopAttach()
---         断开连接，关闭attach接口，本次被调试程序运行过程无法再次进行attach连接。
+--         断开连接，停止attach，本次被调试程序运行过程无法再次进行attach连接。
 
 --用户设置项
 local openAttachMode = true;            --是否开启attach模式。attach模式开启后可以在任意时刻启动vscode连接调试。缺点是没有连接调试时也会略降低lua执行效率(会不断进行attach请求)
 local attachInterval = 3;               --attach间隔时间(s)
 local customGetSocketInstance = nil;    --支持用户实现一个自定义调用luasocket的函数，函数返回值必须是一个socket实例。例: function() return require("socket.core").tcp() end;
 local consoleLogLevel = 2;           --打印在控制台(print)的日志等级 0 : all/ 1: info/ 2: error.
-local connectTimeoutSec = 0.005;       --等待连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
-local listeningTimeoutSec = 0.5;
+local connectTimeoutSec = 0.005;       --lua进程作为Client时, 连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
+local listeningTimeoutSec = 0.5;       -- lua进程作为Server时,连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.1 - 1
 local userDotInRequire = true;         --兼容require中使用 require(a.b) 和 require(a/b) 的形式引用文件夹中的文件
-local traversalUserData = true;        --如果可以的话(取决于userdata原表中的__pairs)，展示userdata中的元素。 如果在调试其中展开userdata时有错误，请关闭此项
+local traversalUserData = true;        --如果可以的话(取决于userdata原表中的__pairs)，展示userdata中的元素。 如果在调试器中展开userdata时有错误，请关闭此项.
 --用户设置项END
 
-local debuggerVer = "3.1.0";                 --debugger版本号
+local debuggerVer = "3.1.10";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = {};     --引用的开源工具，包括json解析和table展开工具等
@@ -139,7 +139,8 @@ local stopConnectTime = 0;      --用来临时记录stop断开连接的时间
 local isInMainThread;
 local receiveMsgTimer = 0;
 local formatPathCache = {};     -- getinfo -> format
-local isUserSetClibPath = false;        --用户是否在本文件中自设了clib路径
+local isUserSetClibPath = false; --用户是否在本文件中自设了clib路径
+local fakeBreakPointCache = {};  --其中用 路径-{行号列表} 形式保存错误命中信息
 --5.1/5.3兼容
 if _VERSION == "Lua 5.1" then
     debugger_loadString = loadstring;
@@ -900,6 +901,13 @@ function this.dataProcess( dataStr )
 
     if dataTable.cmd == "continue" then
         this.changeRunState(runState.RUN);
+        if dataTable.isFakeHit == "true" and dataTable.fakeBKPath and dataTable.fakeBKLine then 
+            -- 把假断点的信息加入cache
+            if  nil == fakeBreakPointCache[dataTable.fakeBKPath] then
+                fakeBreakPointCache[dataTable.fakeBKPath] = {};
+            end
+            fakeBreakPointCache[dataTable.fakeBKPath].insert(dataTable.fakeBKLine);
+        end
         local msgTab = this.getMsgTable("continue", this.getCallbackId());
         this.sendMsg(msgTab);
 
@@ -923,6 +931,8 @@ function this.dataProcess( dataStr )
 
     elseif dataTable.cmd == "setBreakPoint" then
         this.printToVSCode("dataTable.cmd == setBreakPoint");
+        -- 设置断点时，把 fakeBreakPointCache 清空。这是一个简单的做法，也可以清除具体的条目
+        fakeBreakPointCache = {}
         local bkPath = dataTable.info.path;
         bkPath = this.genUnifiedPath(bkPath);
         if autoPathMode then 
@@ -1439,6 +1449,7 @@ function this.getStackTable( level )
 
         local ss = {};
         ss.file = this.getPath(info);
+        ss.oPath = info.source; --从lua虚拟机获得的原始路径, 它用于帮助定位VScode端原始lua文件的位置(存在重名文件的情况)。
         ss.name = "文件名"; --这里要做截取
         ss.line = tostring(info.currentline);
         --使用hookLib时，堆栈有偏移量，这里统一调用栈顶编号2
@@ -1627,7 +1638,7 @@ function this.isHitBreakpoint( info )
     local curLine = tostring(info.currentline);
     local breakpointPath = info.source;
     local isPathHit = false;
-    
+    -- 当前路径在断点列表中
     if breaks[breakpointPath] then
         isPathHit = true;
     end
@@ -1635,6 +1646,15 @@ function this.isHitBreakpoint( info )
     if isPathHit then
         for k,v in ipairs(breaks[breakpointPath]) do
             if tostring(v["line"]) == tostring(curLine) then
+                -- 在假命中列表中搜索，如果本行有过假命中记录，返回 false
+                if fakeBreakPointCache[info.orininal_source] then
+                    for _, value in ipairs(fakeBreakPointCache[info.orininal_source]) do
+                        if value == curLine then 
+                            return false;
+                        end
+                    end
+                end
+
                 -- type是TS中的枚举类型，其定义在BreakPoint.tx文件中
                 --[[
                     enum BreakpointType {
@@ -1869,6 +1889,7 @@ function this.real_hook_process(info)
 
     --标准路径处理
     if jumpFlag == false then
+        info.orininal_source = info.source; --使用 info.orininal_source 记录lua虚拟机传来的原始路径
         info.source = this.getPath(info);
     end
     --本次执行的函数和上次执行的函数作对比，防止在一行停留两次
