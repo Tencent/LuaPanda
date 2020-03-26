@@ -190,7 +190,7 @@ template <typename ... ARGS>
 int call_lua_function(lua_State *L, const char * lua_function_name, int retCount , ARGS... args){
     lua_getglobal(L, LUA_DEBUGGER_NAME);
     if (!lua_istable(L, -1)) {
-        const char *err_msg = "[Debug Lib Error]:call_lua_function Get LUA_DEBUGGER_NAME error.\n";
+        const char *err_msg = "[C Module Error]:call_lua_function Get LUA_DEBUGGER_NAME error.\n";
         print_to_vscode(L, err_msg, 2);
         return -1;
     }
@@ -198,7 +198,7 @@ int call_lua_function(lua_State *L, const char * lua_function_name, int retCount
     lua_getfield(L, -1, lua_function_name);
     if (!lua_isfunction(L, -1)) {
         char err_msg[100];
-        snprintf(err_msg, sizeof(err_msg), "[Debug Lib Error]:call_lua_function Get lua function '%s' error\n.", lua_function_name);
+        snprintf(err_msg, sizeof(err_msg), "[C Module Error]:call_lua_function Get lua function '%s' error\n.", lua_function_name);
         print_to_vscode(L, err_msg, 2);
         return -1;
     }
@@ -208,7 +208,7 @@ int call_lua_function(lua_State *L, const char * lua_function_name, int retCount
     if (err_code) {
         char err_msg[1024];
         const char *lua_error = lua_tostring(L, -1);
-        snprintf(err_msg, sizeof(err_msg), "[Debug Lib Error]:call_lua_function Call '%s' error. ErrorCode: %d, ErrorMessage: %s.\n", lua_function_name, err_code, lua_error);
+        snprintf(err_msg, sizeof(err_msg), "[C Module Error]:call_lua_function Call '%s' error. ErrorCode: %d, ErrorMessage: %s.\n", lua_function_name, err_code, lua_error);
         print_to_vscode(L, err_msg, 2);
         lua_pop(L, 1);
         return err_code;
@@ -351,7 +351,7 @@ const char* getPath(lua_State *L,const char* source){
     debug_auto_stack _tt(L);
 
     if(source == nullptr){
-        print_to_vscode(L, "[Debug Lib Error]: getPath Exception: source == nullptr", 2);
+        print_to_vscode(L, "[C Module Error]: getPath Exception: source == nullptr", 2);
         return "";
     }
 
@@ -381,7 +381,7 @@ const int checkRealHitBreakpoint(lua_State *L,const char* source, int line){
     debug_auto_stack _tt(L);
 
     if(source == nullptr){
-        print_to_vscode(L, "[Debug Lib Error]: checkRealHitBreakpoint Exception: source == nullptr", 2);
+        print_to_vscode(L, "[C Module Error]: checkRealHitBreakpoint Exception: source == nullptr", 2);
         return 0;
     }
 
@@ -400,13 +400,13 @@ extern "C" int sync_breakpoints(lua_State *L) {
     //取数组
     lua_getglobal(L, LUA_DEBUGGER_NAME);     //-1 LuaPanda
     if (!lua_istable(L, -1)) {
-        print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk get LUA_DEBUGGER_NAME error", 2);
+        print_to_vscode(L, "[C Module Error] debug_ishit_bk get LUA_DEBUGGER_NAME error", 2);
         return -1;
     }
 
     lua_getfield(L, -1, "breaks");
     if (!lua_istable(L, -1)) {
-        print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk get breaks error", 2);
+        print_to_vscode(L, "[C Module Error] debug_ishit_bk get breaks error", 2);
         return -1;
     }
 
@@ -458,7 +458,7 @@ extern "C" int sync_breakpoints(lua_State *L) {
                     break;
 
                 default:
-                    print_to_vscode(L, "[Debug Lib Error] Invalid breakpoint type!", 2);
+                    print_to_vscode(L, "[C Module Error] Invalid breakpoint type!", 2);
                     return -1;
             }
 
@@ -481,7 +481,6 @@ extern "C" int sync_breakpoints(lua_State *L) {
 
 //断点命中判断
 int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
-    print_to_vscode(L, "debug_ishit_bk\n");
     debug_auto_stack _tt(L);
 
     const char *standardPath = getPath(L, curPath);
@@ -545,14 +544,17 @@ int breakpoint_process(lua_State *L, lua_Debug *ar){
         }
 
         if (is_hit == 1 || BPhit) {
-            BPhit = 0;
-            print_to_vscode(L, "bk HIT");
-
+            print_to_vscode(L, "[C Module] Breakpoint hit!");
             stackdeep_counter = 0;
             sync_runstate_toLua(L, HIT_BREAKPOINT);
             //c层掌握 STEPOVER 计数器，状态机放在lua层，c主要去读（毕竟C作为lua的扩展）
             //通知lua层,lua层阻塞，发消息
-            call_lua_function(L, "SendMsgWithStack", 0, "stopOnBreakpoint");
+            if(BPhit){
+                BPhit = 0;
+                call_lua_function(L, "SendMsgWithStack", 0, "stopOnCodeBreakpoint");
+            }else{
+                call_lua_function(L, "SendMsgWithStack", 0, "stopOnBreakpoint");
+            }
         }
     }
     return is_hit;
