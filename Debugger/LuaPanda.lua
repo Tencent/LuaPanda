@@ -139,10 +139,11 @@ local stopConnectTime = 0;      --用来临时记录stop断开连接的时间
 local isInMainThread;
 local receiveMsgTimer = 0;
 local isUserSetClibPath = false; --用户是否在本文件中自设了clib路径
+local hitBpTwiceCheck;  -- 命中断点的Vscode校验结果，默认true (true是命中，false是未命中)
 local formatPathCache = {};     -- getinfo -> format
-this.formatPathCache = formatPathCache;
-local fakeBreakPointCache = {};  --其中用 路径-{行号列表} 形式保存错误命中信息
-this.fakeBreakPointCache = fakeBreakPointCache;
+function this.formatPathCache() return formatPathCache; end
+local fakeBreakPointCache = {};   --其中用 路径-{行号列表} 形式保存错误命中信息
+function this.fakeBreakPointCache() return fakeBreakPointCache; end
 --5.1/5.3兼容
 if _VERSION == "Lua 5.1" then
     debugger_loadString = loadstring;
@@ -904,13 +905,16 @@ function this.dataProcess( dataStr )
 
     if dataTable.cmd == "continue" then
         local info = dataTable.info;
-        this.changeRunState(runState.RUN);
         if info.isFakeHit == "true" and info.fakeBKPath and info.fakeBKLine then 
+            -- 设置校验结果标志位，以便hook流程知道结果
+            hitBpTwiceCheck = false;
             -- 把假断点的信息加入cache
             if  nil == fakeBreakPointCache[info.fakeBKPath] then
                 fakeBreakPointCache[info.fakeBKPath] = {};
             end
             table.insert(fakeBreakPointCache[info.fakeBKPath] ,info.fakeBKLine);
+        else
+            this.changeRunState(runState.RUN);
         end
         local msgTab = this.getMsgTable("continue", this.getCallbackId());
         this.sendMsg(msgTab);
@@ -1690,15 +1694,6 @@ function this.isHitBreakpoint( info )
             end
 
             if line_hit and this.checkRealHitBreakpoint(info.orininal_source, curLine) then
-                -- 在假命中列表中搜索，如果本行有过假命中记录，返回 false
-                -- if info.orininal_source and fakeBreakPointCache[info.orininal_source] then
-                --     for _, value in ipairs(fakeBreakPointCache[info.orininal_source]) do
-                --         if value == curLine then 
-                --             return false;
-                --         end
-                --     end
-                -- end
-
                 -- type是TS中的枚举类型，其定义在BreakPoint.tx文件中
                 --[[
                     enum BreakpointType {
@@ -1826,7 +1821,7 @@ function this.checkfuncHasBreakpoint(sLine, eLine, fileName)
         return true;
     end
 
-    if #breaks[fileName] <= 0 then
+    if this.getTableMemberNum(breaks[fileName]) <= 0 then
         return false;
     else
         for k,v in pairs(breaks[fileName]) do
@@ -1969,6 +1964,7 @@ function this.real_hook_process(info)
 
     --仅在line时做断点判断。进了断点之后不再进入本次STEP类型的判断，用Aflag做标记
     local isHit = false;
+    local recordCurrentRunState;
     if tostring(event) == "line" and jumpFlag == false then
         if currentRunState == runState.RUN or currentRunState == runState.STEPOVER or currentRunState == runState.STEPIN or currentRunState == runState.STEPOUT then
             --断点判断
@@ -1979,15 +1975,24 @@ function this.real_hook_process(info)
                 --计数器清0
                 stepOverCounter = 0;
                 stepOutCounter = 0;
+                recordCurrentRunState = currentRunState;
                 this.changeRunState(runState.HIT_BREAKPOINT);
+                -- 命中标志默认设置为true, 如果校验通过，会保留这个标记，校验失败会修改
+                hitBpTwiceCheck = true;
                 --发消息并等待
                 this.SendMsgWithStack("stopOnBreakpoint");
             end
         end
     end
 
-    if  isHit == true then
-        return;
+    if isHit == true then
+        if hitBpTwiceCheck == true then
+            -- 确认命中
+            return;
+        else
+            -- 确认未命中，把状态恢复，继续运行
+            this.changeRunState(recordCurrentRunState);
+        end
     end
 
     if currentRunState == runState.STEPOVER then

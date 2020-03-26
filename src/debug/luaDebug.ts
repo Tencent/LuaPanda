@@ -168,7 +168,6 @@ export class LuaDebugSession extends LoggingDebugSession {
     protected async attachRequest(response: DebugProtocol.AttachResponse, args) {
         await this._configurationDone.wait(1000);
         this.initProcess(response, args);
-        this.printLogInDebugConsole("[Listening] 调试器插件已启动，正在等待连接。   Target:" + args.name  + " Port:" + args.connectionPort );
         this.sendResponse(response);
     }
 
@@ -178,7 +177,6 @@ export class LuaDebugSession extends LoggingDebugSession {
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args) {
         await this._configurationDone.wait(1000);
         this.initProcess(response, args);
-        this.printLogInDebugConsole("[Listening] 调试器插件已启动，正在等待连接。  Target:" + args.name  + " Port:" + args.connectionPort );
         this.sendResponse(response);
     }
 
@@ -262,8 +260,10 @@ export class LuaDebugSession extends LoggingDebugSession {
         StatusBarManager.reset();
         if(this.VSCodeAsClient){
             // VSCode = Client ; Debugger = Server
+            this.printLogInDebugConsole("[Connecting] 调试器 VSCode Client 已启动，正在尝试连接。  Target:" + args.name  + " Port:" + args.connectionPort );
             this.startClient(sendArgs);
         }else{
+            this.printLogInDebugConsole("[Listening] 调试器 VSCode Server 已启动，正在等待连接。  Target:" + args.name  + " Port:" + args.connectionPort );
             this.startServer(sendArgs);
         }
 
@@ -345,7 +345,7 @@ export class LuaDebugSession extends LoggingDebugSession {
             this._dataProcessor._socket = socket;
             //向debugger发送含配置项的初始化协议
             this._runtime.start(( _ , info) => {
-                let connectMessage = "[Connected] VSCode Server Connected! Remote device info  " + socket.remoteAddress + ":" + socket.remotePort ;
+                let connectMessage = "[Connected] VSCode Server 已建立连接! Remote device info  " + socket.remoteAddress + ":" + socket.remotePort ;
                 DebugLogger.AdapterInfo(connectMessage);
                 this.printLogInDebugConsole(connectMessage);
                 this.printLogInDebugConsole("[Tips] 当停止在断点处时，可使用调试控制台观察变量或执行表达式. 调试控制台使用帮助: http://" );
@@ -406,7 +406,7 @@ export class LuaDebugSession extends LoggingDebugSession {
 				clearInterval(instance.connectInterval);		 //连接后清除循环请求
                 instance._dataProcessor._socket = instance._client;
 				instance._runtime.start(( _ , info) => {
-                    let connectMessage = "[Connected] VSCode Client Connected!";
+                    let connectMessage = "[Connected] VSCode Client 已建立连接!";
                     DebugLogger.AdapterInfo(connectMessage);
                     instance.printLogInDebugConsole(connectMessage);
                     instance.printLogInDebugConsole("[Tips] 当停止在断点处时，可使用调试控制台观察变量或执行表达式. 调试控制台使用帮助: http://" );
