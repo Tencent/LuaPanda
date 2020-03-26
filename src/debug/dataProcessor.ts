@@ -136,6 +136,7 @@ export class DataProcessor {
                     case "tipError":
                         this._runtime.showError(cmdInfo["info"]["logInfo"]);                        
                         break;
+                    case "stopOnCodeBreakpoint":
                     case "stopOnBreakpoint":
                     case "stopOnEntry":
                     case "stopOnStep":

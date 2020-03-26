@@ -1971,17 +1971,22 @@ function this.real_hook_process(info)
             --断点判断
             isHit = this.isHitBreakpoint(info) or hitBP;
             if isHit == true then
-                this.printToVSCode(" + HitBreakpoint true");
-                hitBP = false; --hitBP是断点硬性命中标记
+                this.printToVSCode("HitBreakpoint!");
+                -- 命中标志默认设置为true, 如果校验通过，会保留这个标记，校验失败会修改
+                hitBpTwiceCheck = true;
                 --计数器清0
                 stepOverCounter = 0;
                 stepOutCounter = 0;
                 recordCurrentRunState = currentRunState;
                 this.changeRunState(runState.HIT_BREAKPOINT);
-                -- 命中标志默认设置为true, 如果校验通过，会保留这个标记，校验失败会修改
-                hitBpTwiceCheck = true;
-                --发消息并等待
-                this.SendMsgWithStack("stopOnBreakpoint");
+                if hitBP then 
+                    hitBP = false; --hitBP是断点硬性命中标记
+                    --发消息并等待
+                    this.SendMsgWithStack("stopOnCodeBreakpoint");
+                else
+                    --发消息并等待
+                    this.SendMsgWithStack("stopOnBreakpoint");    
+                end
             end
         end
     end

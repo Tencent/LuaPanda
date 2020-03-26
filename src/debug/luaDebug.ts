@@ -80,10 +80,13 @@ export class LuaDebugSession extends LoggingDebugSession {
             this.sendEvent(new StoppedEvent('step', this._threadManager.CUR_THREAD_ID));
         });
 
-        this._runtime.on('stopOnBreakpoint', () => {
-            // 因为breakpoint在lua端可能出现同名文件错误匹配，这里要再次校验
-            
-            // breakpointsArray 中是否包含断点
+        this._runtime.on('stopOnCodeBreakpoint', () => {
+            // stopOnCodeBreakpoint 指的是遇到 LuaPanda.BP()，因为是代码中的硬断点，VScode中不会保存这个断点信息，故不做校验
+            this.sendEvent(new StoppedEvent('breakpoint', this._threadManager.CUR_THREAD_ID));
+        });
+
+        this._runtime.on('stopOnBreakpoint', () => {            
+            // 因为lua端所做的断点命中可能出现同名文件错误匹配，这里要再次校验lua端命中的行列号是否在 breakpointsArray 中
             if(this.checkIsRealHitBreakpoint()){
                 this.sendEvent(new StoppedEvent('breakpoint', this._threadManager.CUR_THREAD_ID));
             }else{
