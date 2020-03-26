@@ -19,7 +19,9 @@ export class CppCodeProcessor {
 	public static get cppInterfaceIntelliSenseResPath() {
 		if(!this._cppInterfaceIntelliSenseResPath){
 			// joezhuoli TODO
-            this._cppInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolders() + "/.vscode/LuaPanda/IntelliSenseRes/UECppInterface/";        
+			if(Tools.getVSCodeOpenedFolders() && Tools.getVSCodeOpenedFolders().length > 0){
+				this._cppInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolders()[0] + "/.vscode/LuaPanda/IntelliSenseRes/UECppInterface/";   
+			}     
         }
         return this._cppInterfaceIntelliSenseResPath;
 	}

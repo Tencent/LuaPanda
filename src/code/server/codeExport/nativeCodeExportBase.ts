@@ -12,7 +12,9 @@ export class NativeCodeExportBase {
 	public static get LuaPandaInterfaceIntelliSenseResPath() {
 		if(!this._LuaPandaInterfaceIntelliSenseResPath){
             // stuartwang TODO
-            this._LuaPandaInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolders() + "/.vscode/LuaPanda/IntelliSenseRes/";
+            if(Tools.getVSCodeOpenedFolders() && Tools.getVSCodeOpenedFolders().length > 0){
+                this._LuaPandaInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolders()[0] + "/.vscode/LuaPanda/IntelliSenseRes/";
+            }
         }
         return this._LuaPandaInterfaceIntelliSenseResPath;
     }
