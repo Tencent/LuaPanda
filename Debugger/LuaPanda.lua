@@ -1658,7 +1658,8 @@ function this.checkRealHitBreakpoint( oPath, line )
     -- 在假命中列表中搜索，如果本行有过假命中记录，返回 false
     if oPath and fakeBreakPointCache[oPath] then
         for _, value in ipairs(fakeBreakPointCache[oPath]) do
-            if value == line then 
+            if value == line then
+                this.printToVSCode("cache hit bp in same name file.  source:" .. tostring(oPath) .. " line:" .. tostring(line)); 
                 return false;
             end
         end

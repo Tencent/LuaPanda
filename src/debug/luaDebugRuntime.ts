@@ -79,7 +79,7 @@ export class LuaDebugRuntime extends EventEmitter {
     public continueWithFakeHitBk(callback ,callbackArgs = null, event = 'continue') {
         DebugLogger.AdapterInfo("continue");
         let arrSend = new Object();
-        arrSend["fakeBKPath"] = String(this.breakStack[0].file);
+        arrSend["fakeBKPath"] = String(this.breakStack[0].oPath);
         arrSend["fakeBKLine"] = String(this.breakStack[0].line);
         arrSend["isFakeHit"] = String(true);
         this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
