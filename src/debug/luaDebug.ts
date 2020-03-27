@@ -151,7 +151,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         response.body.supportsHitConditionalBreakpoints = true;
         response.body.supportsLogPoints = true;
         // response.body.supportsRestartRequest = false;
-    // response.body.supportsRestartFrame = false;     
+        // response.body.supportsRestartFrame = false;     
         this.sendResponse(response);
     }
 
