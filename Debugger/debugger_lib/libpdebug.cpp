@@ -31,6 +31,7 @@ const char* last_source;
 int ar_current_line = 0;
 int ar_def_line = 0;
 int ar_lastdef_line = 0;
+int bp_twice_check_res = 1;
 struct path_transfer_node;
 struct breakpoint;
 // 路径缓存队列 getinfo -> format
@@ -262,6 +263,13 @@ extern "C" int sync_config(lua_State *L) {
 //同步临时文件路径
 extern "C" int sync_tempfile_path(lua_State *L) {
     config_tempfile_path = luaL_checkstring(L, 1);
+    return 0;
+}
+
+
+//同步临时文件路径
+extern "C" int set_bp_twice_check_res(lua_State *L) {
+    bp_twice_check_res = luaL_checknumber(L, 1);
     return 0;
 }
 
@@ -549,8 +557,11 @@ int breakpoint_process(lua_State *L, lua_Debug *ar){
 
         if (is_hit == 1 || BPhit) {
             print_to_vscode(L, "[C Module] Breakpoint hit!");
+            int record_stackdeep_counter = stackdeep_counter;
+            int record_cur_run_state = cur_run_state;
             stackdeep_counter = 0;
             sync_runstate_toLua(L, HIT_BREAKPOINT);
+            bp_twice_check_res = 1;
             //c层掌握 STEPOVER 计数器，状态机放在lua层，c主要去读（毕竟C作为lua的扩展）
             //通知lua层,lua层阻塞，发消息
             if(BPhit){
@@ -558,6 +569,11 @@ int breakpoint_process(lua_State *L, lua_Debug *ar){
                 call_lua_function(L, "SendMsgWithStack", 0, "stopOnCodeBreakpoint");
             }else{
                 call_lua_function(L, "SendMsgWithStack", 0, "stopOnBreakpoint");
+                if( bp_twice_check_res == 0 ){
+                    is_hit = 0;
+                    stackdeep_counter = record_stackdeep_counter;
+                    sync_runstate_toLua(L, record_cur_run_state);
+                }
             }
         }
     }
@@ -804,6 +820,7 @@ static luaL_Reg libpdebug[] = {
     { "get_libhook_state", get_libhook_state },
     { "get_last_source", get_last_source },
     { "clear_pathcache", clear_pathcache },
+    { "set_bp_twice_check_res", set_bp_twice_check_res },
     { NULL, NULL }
 };
 

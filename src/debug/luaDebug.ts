@@ -92,7 +92,7 @@ export class LuaDebugSession extends LoggingDebugSession {
             }else{
                 // go on running
                 this._runtime.continueWithFakeHitBk(() => {
-                    DebugLogger.AdapterInfo("错误命中同名文件中的断点, 确认继续运行");
+                    DebugLogger.AdapterInfo("命中同名文件中的断点, 确认继续运行");
                 });
             }
         });

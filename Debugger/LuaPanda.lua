@@ -907,6 +907,10 @@ function this.dataProcess( dataStr )
         if info.isFakeHit == "true" and info.fakeBKPath and info.fakeBKLine then 
             -- 设置校验结果标志位，以便hook流程知道结果
             hitBpTwiceCheck = false;
+            if hookLib ~= nil then
+                -- 把结果同步给C
+                hookLib.set_bp_twice_check_res(0);
+            end
             -- 把假断点的信息加入cache
             if  nil == fakeBreakPointCache[info.fakeBKPath] then
                 fakeBreakPointCache[info.fakeBKPath] = {};
@@ -1666,7 +1670,7 @@ function this.checkRealHitBreakpoint( oPath, line )
     -- 在假命中列表中搜索，如果本行有过假命中记录，返回 false
     if oPath and fakeBreakPointCache[oPath] then
         for _, value in ipairs(fakeBreakPointCache[oPath]) do
-            if value == line then
+            if tonumber(value) == tonumber(line) then
                 this.printToVSCode("cache hit bp in same name file.  source:" .. tostring(oPath) .. " line:" .. tostring(line)); 
                 return false;
             end
@@ -1679,7 +1683,7 @@ end
 -- 参数info是当前堆栈信息
 -- @info getInfo获取的当前调用信息
 function this.isHitBreakpoint( info )
-    local curLine = tostring(info.currentline);
+    local curLine = info.currentline;
     local breakpointPath = info.source;
     local isPathHit = false;
     -- 当前路径在断点列表中
@@ -1986,6 +1990,7 @@ function this.real_hook_process(info)
                     this.SendMsgWithStack("stopOnBreakpoint");   
                     --若二次校验未命中，恢复状态
                     if hitBpTwiceCheck == false then 
+                        isHit = false;
                         -- 确认未命中，把状态恢复，继续运行
                         this.changeRunState(recordCurrentRunState);
                         stepOverCounter = recordStepOverCounter;
@@ -1996,7 +2001,7 @@ function this.real_hook_process(info)
         end
     end
 
-    if isHit == true and hitBpTwiceCheck == true then
+    if isHit == true then
         return;        
     end
 
