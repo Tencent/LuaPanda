@@ -152,6 +152,9 @@ export class PathManager {
             oPath = oPath.substr(1);
         }
 
+        //标准化路径, 盘符变成小写
+        oPath = Tools.genUnifiedPath(oPath);
+
         // 从oPath中把文件名截取掉
         let idx = oPath.indexOf(fileName);
         oPath = oPath.substring(0, idx + 1);
@@ -166,7 +169,7 @@ export class PathManager {
                 return iteratorPath;
             }
         }
-        // 如果最终都无法明中， 第一条
+        // 如果最终都无法命中， 默认第一条。这种情况要避免，否则二次验证也通不过
         return fullPathArray[0];
     }
 }
