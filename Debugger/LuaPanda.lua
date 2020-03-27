@@ -91,7 +91,7 @@ local breaks = {};              --保存断点的数组
 this.breaks = breaks;           --供hookLib调用
 local recCallbackId = "";
 --VSCode端传过来的配置，在VSCode端的launch配置，传过来并赋值
-local luaFileExtension = "";    --脚本后缀
+local luaFileExtension = "";    --vscode传过来的脚本后缀
 local cwd = "";                 --工作路径
 local DebuggerFileName = "";    --Debugger文件名(原始,未经path处理), 函数中会自动获取
 local DebuggerToolsName = "";
@@ -125,7 +125,7 @@ local isAbsolutePath = false;
 local stopOnEntry;         --用户在VSCode端设置的是否打开stopOnEntry
 local userSetUseClib;    --用户在VSCode端设置的是否是用clib库
 local autoPathMode = false;
-local autoExt;           --调试器启动时自动获取到的后缀, 用于检测lua虚拟机返回的路径是否代友问价后缀。他可以是空值或者".lua"等
+local autoExt;           --调试器启动时自动获取到的后缀, 用于检测lua虚拟机返回的路径是否带有文件后缀。他可以是空值或者".lua"等
 local luaProcessAsServer;
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
@@ -1514,7 +1514,7 @@ end
 -- @filePath 被替换的路径
 -- @ext      后缀(后缀前的 . 不会被替换)
 function this.changePotToLine(filePath, ext)
-    local idx = filePath:find(ext)
+    local idx = filePath:find(ext, (-1) * ext:len() , true)
     if idx then 
         local tmp = filePath:sub(1, idx - 1):gsub("%.", "/");
         filePath = tmp .. ext;
@@ -1543,7 +1543,7 @@ function this.getPath( info )
         if autoExt == '' then
             -- 在虚拟机返回路径没有后缀的情况下，用户必须自设后缀
             -- 确定filePath中最后一个.xxx 不等于用户配置的后缀, 则把所有的. 转为 /
-            if filePath:find(luaFileExtension) ~= (filePath:len() - luaFileExtension:len() + 1) then
+            if filePath:find(luaFileExtension , (-1) * luaFileExtension:len(), true) then
                 filePath = string.gsub(filePath, "%.", "/");
             else
                 -- 如果等于，那么把除后缀外的部分中的. 转为 / 
