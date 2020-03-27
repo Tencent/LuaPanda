@@ -22,7 +22,8 @@ export class PathManager {
         let workspaceFileCount = workspaceFiles.length;
         let processFilNum = 0; //记录最终处理了多少个文件
         for(let processingFileIdx = 0; processingFileIdx < workspaceFileCount ; processingFileIdx++){
-            let nameExtObject = Tools.getPathNameAndExt(workspaceFiles[processingFileIdx]);
+            let formatedPath = Tools.genUnifiedPath(workspaceFiles[processingFileIdx]);
+            let nameExtObject = Tools.getPathNameAndExt(formatedPath);
             if( !Tools.extMap[nameExtObject['ext']] ){
                 // 文件类型不在可处理列表中
                 continue;
@@ -32,17 +33,17 @@ export class PathManager {
             if(_fileNameToPathMap[fileNameKey]){
                 //存在同名文件
                 if(isArray(_fileNameToPathMap[fileNameKey])){
-                    _fileNameToPathMap[fileNameKey].push(workspaceFiles[processingFileIdx]);
+                    _fileNameToPathMap[fileNameKey].push(formatedPath);
                 }else if(typeof _fileNameToPathMap[fileNameKey] === "string"){
                     //冲突, 对应的key已有值（存在同名文件), 使用数组保存数据
                     let tempSaveValue = _fileNameToPathMap[fileNameKey];
                     let tempArray = new Array();
                     tempArray.push(tempSaveValue);
-                    tempArray.push(workspaceFiles[processingFileIdx]);
+                    tempArray.push(formatedPath);
                     _fileNameToPathMap[fileNameKey] = tempArray;
                 }
             }else{
-                _fileNameToPathMap[fileNameKey] = workspaceFiles[processingFileIdx]; 
+                _fileNameToPathMap[fileNameKey] = formatedPath; 
             }
             // 显示进度
             let processingRate = Math.floor( processingFileIdx / workspaceFileCount * 100 );

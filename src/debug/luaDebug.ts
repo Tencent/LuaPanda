@@ -117,9 +117,6 @@ export class LuaDebugSession extends LoggingDebugSession {
         let steakPath = steak[0].file;
         let steakLine = steak[0].line;
         for (let bkMap of this.breakpointsArray) {
-            // bkPath 来源于 VScode 的断点列表, steakPath 来源于 fileMap。 路径分隔符和盘符大小写不一样。
-            steakPath = Tools.genUnifiedPath(steakPath);
-            //
             if(bkMap.bkPath === steakPath){
                 for (const node of bkMap.bksArray) {
                     if(node.line == steakLine){
@@ -154,9 +151,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         response.body.supportsHitConditionalBreakpoints = true;
         response.body.supportsLogPoints = true;
         // response.body.supportsRestartRequest = false;
-        // response.body.supportsRestartFrame = false;
-
-        
+    // response.body.supportsRestartFrame = false;     
         this.sendResponse(response);
     }
 
