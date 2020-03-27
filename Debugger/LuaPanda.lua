@@ -563,8 +563,7 @@ function this.getInfo()
         strTable[#strTable + 1] = '\n' .. pathErrTip;
     end
 
-    strTable[#strTable + 1] = "\n\n- Breaks Info: \n";
-    strTable[#strTable + 1] = this.serializeTable(this.getBreaks(), "breaks");
+    strTable[#strTable + 1] = "\n\n- Breaks Info: \nUse 'LuaPanda.getBreaks()' to watch.";
     return table.concat(strTable);
 end
 
@@ -960,8 +959,17 @@ function this.dataProcess( dataStr )
                 end
             end
         else
-            this.printToVSCode("setBreakPoint path:"..tostring(bkPath));
-            breaks[bkPath] = dataTable.info.bks;
+            if breaks[bkPath] == nil then 
+                breaks[bkPath] = {};
+            end
+            -- 两级 bk path 是为了和自动路径模式结构保持一致
+            breaks[bkPath][bkPath] = dataTable.info.bks;
+            -- 当v为空时，从断点列表中去除文件
+            for k, v in pairs(breaks[bkPath]) do
+                if next(v) == nil then
+                    breaks[bkPath][k] = nil;
+                end
+            end
         end
 
         -- 当v为空时，从断点列表中去除文件
@@ -1682,14 +1690,9 @@ function this.isHitBreakpoint( info )
     if isPathHit then
         for k,v in pairs(breaks[breakpointPath]) do
             local line_hit = false; -- 行号命中
-            if autoPathMode then
-                for _, node in ipairs(v) do
-                    if  tostring(node["line"]) == tostring(curLine) then 
-                        line_hit = true;
-                    end
-                end
-            else 
-                if tostring(v["line"]) == tostring(curLine) then
+
+            for _, node in ipairs(v) do
+                if  tostring(node["line"]) == tostring(curLine) then 
                     line_hit = true;
                 end
             end
@@ -1826,16 +1829,10 @@ function this.checkfuncHasBreakpoint(sLine, eLine, fileName)
         return false;
     else
         for k,v in pairs(breaks[fileName]) do
-            if autoPathMode then 
-                for _, node in ipairs(v) do
-                    if tonumber(node.line) > sLine and tonumber(node.line) <= eLine then
-                        return true;
-                    end   
-                end
-            else
-                if tonumber(v.line) > sLine and tonumber(v.line) <= eLine then
+            for _, node in ipairs(v) do
+                if tonumber(node.line) > sLine and tonumber(node.line) <= eLine then
                     return true;
-                end
+                end   
             end
         end
     end

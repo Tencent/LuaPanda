@@ -386,11 +386,11 @@ const int checkRealHitBreakpoint(lua_State *L,const char* source, int line){
     }
 
     //若缓存中没有，到lua中转换
-    int lua_ret = call_lua_function(L, "checkRealHitBreakpoint", 2 , source, line);
+    int lua_ret = call_lua_function(L, "checkRealHitBreakpoint", 1 , source, line);
     if (lua_ret != 0) {
         return 0;
     }
-    int realHit = lua_tointeger(L, -1);
+    int realHit = lua_toboolean(L, -1);
     return realHit;
 }
 
@@ -420,6 +420,8 @@ extern "C" int sync_breakpoints(lua_State *L) {
         std::map<int, breakpoint> file_breakpoint_map;
         lua_pushnil(L);//k，v, nil
         while (lua_next(L, -2)) {
+            lua_pushnil(L);//k，v, nil
+            while (lua_next(L, -2)) {
             //k,v,k,v
             lua_getfield(L, -1, "line");            //k,v,k,v,line
             int line = (int)lua_tointeger(L, -1);
@@ -466,6 +468,8 @@ extern "C" int sync_breakpoints(lua_State *L) {
 
             lua_pop(L, 1);//value
             //k,v,k
+            }
+            lua_pop(L, 1);//value
         }
         all_breakpoint_map[std::string(source)] = file_breakpoint_map;
         //k,v
