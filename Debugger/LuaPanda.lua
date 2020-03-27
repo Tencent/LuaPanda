@@ -51,7 +51,7 @@ local userDotInRequire = true;         --兼容require中使用 require(a.b) 和
 local traversalUserData = true;        --如果可以的话(取决于userdata原表中的__pairs)，展示userdata中的元素。 如果在调试器中展开userdata时有错误，请关闭此项.
 --用户设置项END
 
-local debuggerVer = "3.1.10";                 --debugger版本号
+local debuggerVer = "3.1.20";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = {};     --引用的开源工具，包括json解析和table展开工具等
@@ -1962,40 +1962,42 @@ function this.real_hook_process(info)
 
     --仅在line时做断点判断。进了断点之后不再进入本次STEP类型的判断，用Aflag做标记
     local isHit = false;
-    local recordCurrentRunState;
     if tostring(event) == "line" and jumpFlag == false then
         if currentRunState == runState.RUN or currentRunState == runState.STEPOVER or currentRunState == runState.STEPIN or currentRunState == runState.STEPOUT then
             --断点判断
             isHit = this.isHitBreakpoint(info) or hitBP;
             if isHit == true then
                 this.printToVSCode("HitBreakpoint!");
-                -- 命中标志默认设置为true, 如果校验通过，会保留这个标记，校验失败会修改
-                hitBpTwiceCheck = true;
+                --备份信息
+                local recordStepOverCounter = stepOverCounter;
+                local recordStepOutCounter = stepOutCounter;
+                local recordCurrentRunState = currentRunState;
                 --计数器清0
                 stepOverCounter = 0;
                 stepOutCounter = 0;
-                recordCurrentRunState = currentRunState;
                 this.changeRunState(runState.HIT_BREAKPOINT);
+                hitBpTwiceCheck = true; -- 命中标志默认设置为true, 如果校验通过，会保留这个标记，校验失败会修改
                 if hitBP then 
                     hitBP = false; --hitBP是断点硬性命中标记
                     --发消息并等待
                     this.SendMsgWithStack("stopOnCodeBreakpoint");
                 else
                     --发消息并等待
-                    this.SendMsgWithStack("stopOnBreakpoint");    
+                    this.SendMsgWithStack("stopOnBreakpoint");   
+                    --若二次校验未命中，恢复状态
+                    if hitBpTwiceCheck == false then 
+                        -- 确认未命中，把状态恢复，继续运行
+                        this.changeRunState(recordCurrentRunState);
+                        stepOverCounter = recordStepOverCounter;
+                        stepOutCounter = recordStepOutCounter;
+                    end
                 end
             end
         end
     end
 
-    if isHit == true then
-        if hitBpTwiceCheck == true then
-            -- 确认命中
-            return;
-        else
-            -- 确认未命中，把状态恢复，继续运行
-            this.changeRunState(recordCurrentRunState);
-        end
+    if isHit == true and hitBpTwiceCheck == true then
+        return;        
     end
 
     if currentRunState == runState.STEPOVER then
