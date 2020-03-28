@@ -125,8 +125,7 @@ export class PathManager {
                     return this.checkRightPath( shortPath , oPath , fullPath);
                 }else{
                     // 如果lua文件没有更新，没有传过来oPath，则打开第一个文件
-                    for (const key in fullPath) {
-                        const element = fullPath[key];
+                    for (const element of fullPath) {
                         if(element.indexOf(shortPath)){
                             return element; // 这里固定返回第一个元素
                         }
@@ -154,6 +153,14 @@ export class PathManager {
 
         //标准化路径, 盘符变成小写
         oPath = Tools.genUnifiedPath(oPath);
+
+        if(!this.pathCaseSensitivity){
+            oPath = oPath.toLowerCase();
+        }
+
+        //因为 filename 存在不确定性（是否包含后缀），这里把后缀去掉进行对比
+        let nameExtObject = Tools.getPathNameAndExt(fileName);
+        fileName = nameExtObject['name'];
 
         // 从oPath中把文件名截取掉
         let idx = oPath.indexOf(fileName);
