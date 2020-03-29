@@ -1543,10 +1543,11 @@ function this.getPath( info )
         if autoExt == '' then
             -- 在虚拟机返回路径没有后缀的情况下，用户必须自设后缀
             -- 确定filePath中最后一个.xxx 不等于用户配置的后缀, 则把所有的. 转为 /
-            if filePath:find(luaFileExtension , (-1) * luaFileExtension:len(), true) then
+            if not filePath:find(luaFileExtension , (-1) * luaFileExtension:len(), true) then
+                -- getinfo 路径没有后缀，把 . 全部替换成 / ，我们不允许用户在文件（或文件夹）名称中出现"." , 因为无法区分 
                 filePath = string.gsub(filePath, "%.", "/");
             else
-                -- 如果等于，那么把除后缀外的部分中的. 转为 / 
+                -- 有后缀，那么把除后缀外的部分中的. 转为 / 
                 filePath = this.changePotToLine(filePath, luaFileExtension);
             end
 
