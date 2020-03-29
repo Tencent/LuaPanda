@@ -375,7 +375,7 @@ export class LuaDebugSession extends LoggingDebugSession {
 
             socket.on('close', () => {
                 DebugLogger.AdapterInfo('Socket close!');
-                vscode.window.showInformationMessage('Stop connecting!');
+                vscode.window.showInformationMessage('[LuaPanda] 调试器连接已断开');
                 // this._dataProcessor._socket 是在建立连接后赋值，所以在断开连接时删除
                 delete this._dataProcessor._socket;
                 this.sendEvent(new TerminatedEvent(this.autoReconnect));
@@ -434,7 +434,7 @@ export class LuaDebugSession extends LoggingDebugSession {
 			instance._client.on('end', () => {
                 // VScode client 主动发起断开连接
                 DebugLogger.AdapterInfo("client end");
-                vscode.window.showInformationMessage('Stop connecting!');
+                vscode.window.showInformationMessage('[LuaPanda] 调试器连接已断开');
                 // this._dataProcessor._socket 是在建立连接后赋值，所以在断开连接时删除
                 delete instance._dataProcessor._socket;
                 instance.sendEvent(new TerminatedEvent(instance.autoReconnect));

@@ -164,9 +164,8 @@ export class PathManager {
 
         // 从oPath中把文件名截取掉
         let idx = oPath.indexOf(fileName);
-        oPath = oPath.substring(0, idx + 1);
-        // 使用path.dirname获取路径
-        oPath = Tools.getDirAndFileName(oPath)["dir"];
+        oPath = oPath.substring(0, idx - 1); // 此时opath是dir
+        
         // oPath中的. 替换成 /
         oPath = oPath.replace(/\./g, "/");
 

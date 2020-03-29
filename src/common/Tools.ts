@@ -131,6 +131,7 @@ export class Tools {
     }
 
     // 从URI分析出文件路径，文件名，后缀
+    // 注意：如果dirname 取不到，默认是 .
     public static getDirAndFileName(UriOrPath): Object{
         let retObj = this.getPathNameAndExt(UriOrPath)
         let _dir = path.dirname(UriOrPath)
