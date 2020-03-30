@@ -48,7 +48,7 @@ local consoleLogLevel = 2;           --打印在控制台(print)的日志等级 
 local connectTimeoutSec = 0.005;       --lua进程作为Client时, 连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
 local listeningTimeoutSec = 0.5;       -- lua进程作为Server时,连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.1 - 1
 local userDotInRequire = true;         --兼容require中使用 require(a.b) 和 require(a/b) 的形式引用文件夹中的文件
-local traversalUserData = true;        --如果可以的话(取决于userdata原表中的__pairs)，展示userdata中的元素。 如果在调试器中展开userdata时有错误，请关闭此项.
+local traversalUserData = false;        --如果可以的话(取决于userdata原表中的__pairs)，展示userdata中的元素。 如果在调试器中展开userdata时有错误，请关闭此项.
 --用户设置项END
 
 local debuggerVer = "3.1.20";                 --debugger版本号

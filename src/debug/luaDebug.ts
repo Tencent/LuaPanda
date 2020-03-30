@@ -355,7 +355,7 @@ export class LuaDebugSession extends LoggingDebugSession {
                 let connectMessage = "[Connected] VSCode Server 已建立连接! Remote device info  " + socket.remoteAddress + ":" + socket.remotePort ;
                 DebugLogger.AdapterInfo(connectMessage);
                 this.printLogInDebugConsole(connectMessage);
-                this.printLogInDebugConsole("[Tips] 当停止在断点处时，可使用调试控制台观察变量或执行表达式. 调试控制台使用帮助: http://" );
+                this.printLogInDebugConsole("[Tips] 当停止在断点处时，可在调试控制台输入要观察变量或执行表达式. " );
 
                 if (info.UseLoadstring === "1") {
                     this.UseLoadstring = true;
@@ -416,7 +416,7 @@ export class LuaDebugSession extends LoggingDebugSession {
                     let connectMessage = "[Connected] VSCode Client 已建立连接!";
                     DebugLogger.AdapterInfo(connectMessage);
                     instance.printLogInDebugConsole(connectMessage);
-                    instance.printLogInDebugConsole("[Tips] 当停止在断点处时，可使用调试控制台观察变量或执行表达式. 调试控制台使用帮助: http://" );
+                    instance.printLogInDebugConsole("[Tips] 当停止在断点处时，可在调试控制台输入要观察变量或执行表达式." );
                     //已建立连接，并完成初始化
 					if (info.UseLoadstring === "1") {
                         instance.UseLoadstring = true;
