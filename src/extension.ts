@@ -232,7 +232,7 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
                 config.program = '';
             }
 
-            if(!config.dbCheckBreakpoint){
+            if(config.dbCheckBreakpoint == undefined){
                 config.dbCheckBreakpoint = true;
             }
 
@@ -240,7 +240,7 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
                 config.args = new Array<string>();
             }
 
-            if(!config.autoPathMode){
+            if(config.autoPathMode == undefined){
                 // 默认使用自动路径模式
                 config.autoPathMode = true;
             }

@@ -784,7 +784,7 @@ export class LuaDebugSession extends LoggingDebugSession {
      * 当lua进程主动停止连接 : socket end -> socket close -> disconnectRequest
      */
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args): void {
-        let disconnectMessage = "[Disconnect Request] disconnectRequest";
+        let disconnectMessage = "[Disconnect Request] 调试器已断开连接.";
         DebugLogger.AdapterInfo(disconnectMessage);
         this.printLogInDebugConsole(disconnectMessage);
 

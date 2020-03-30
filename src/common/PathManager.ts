@@ -163,14 +163,18 @@ export class PathManager {
         fileName = nameExtObject['name'];
 
         // 从oPath中把文件名截取掉
-        let idx = oPath.indexOf(fileName);
+        let idx = oPath.lastIndexOf(fileName);
         oPath = oPath.substring(0, idx - 1); // 此时opath是dir
         
         // oPath中的. 替换成 /
         oPath = oPath.replace(/\./g, "/");
 
         for (const iteratorPath of fullPathArray) {
-            if(iteratorPath.indexOf(oPath) >= 0){
+            let pathForCompare = iteratorPath;
+            if(!this.pathCaseSensitivity){
+                pathForCompare = iteratorPath.toLowerCase()
+            }
+            if(pathForCompare.indexOf(oPath) >= 0){
                 // fullPathArray 中包含oPath, 命中
                 return iteratorPath;
             }

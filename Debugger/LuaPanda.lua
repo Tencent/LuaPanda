@@ -42,7 +42,7 @@
 
 --用户设置项
 local openAttachMode = true;            --是否开启attach模式。attach模式开启后可以在任意时刻启动vscode连接调试。缺点是没有连接调试时也会略降低lua执行效率(会不断进行attach请求)
-local attachInterval = 3;               --attach间隔时间(s)
+local attachInterval = 1;               --attach间隔时间(s)
 local customGetSocketInstance = nil;    --支持用户实现一个自定义调用luasocket的函数，函数返回值必须是一个socket实例。例: function() return require("socket.core").tcp() end;
 local consoleLogLevel = 2;           --打印在控制台(print)的日志等级 0 : all/ 1: info/ 2: error.
 local connectTimeoutSec = 0.005;       --lua进程作为Client时, 连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
@@ -51,7 +51,7 @@ local userDotInRequire = true;         --兼容require中使用 require(a.b) 和
 local traversalUserData = false;        --如果可以的话(取决于userdata原表中的__pairs)，展示userdata中的元素。 如果在调试器中展开userdata时有错误，请关闭此项.
 --用户设置项END
 
-local debuggerVer = "3.1.20";                 --debugger版本号
+local debuggerVer = "3.1.50";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = {};     --引用的开源工具，包括json解析和table展开工具等

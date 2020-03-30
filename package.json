@@ -383,7 +383,7 @@
 								"default": "127.0.0.1"
 							},
 							"dbCheckBreakpoint":{
-								"type": "bool",
+								"type": "boolean",
 								"description": "Whether double check breakpoint hit",
 								"default": true
 							}
