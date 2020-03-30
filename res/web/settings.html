@@ -13,7 +13,7 @@
     <label style="margin:20px 0px 50px 30px">&nbsp;&nbsp;*本配置项读取的是 launch.json 文件中的数据, 并在配置结束后把结果保存回此文件。在本页面修改配置和直接修改 launch.json 效果是一致的</label>
 
     <br> <br>
-    <select id="path_select" onchange='target_change(this[selectedIndex].value)'>
+    <select style="margin:30px 0px 10px 15%" id="path_select" onchange='target_change(this[selectedIndex].value)'>
     </select>
     <br> <br>
 
@@ -278,7 +278,7 @@
                 }
 
                 if (target["pathCaseSensitivity"] == undefined) {
-                    setCheckboxStatue("pathCaseSensitivity", true);
+                    setCheckboxStatue("pathCaseSensitivity", false);
                 } else {
                     setCheckboxStatue("pathCaseSensitivity", target["pathCaseSensitivity"]);
                 }
@@ -296,7 +296,7 @@
                 }
 
                 if (target["autoPathMode"] == undefined) {
-                    setCheckboxStatue("autoPathMode", false);
+                    setCheckboxStatue("autoPathMode", true);
                 } else {
                     setCheckboxStatue("autoPathMode", target["autoPathMode"]);
                 }
