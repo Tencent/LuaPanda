@@ -1513,7 +1513,7 @@ end
 -- 把路径中去除后缀部分的.变为/, 
 -- @filePath 被替换的路径
 -- @ext      后缀(后缀前的 . 不会被替换)
-function this.changePotToLine(filePath, ext)
+function this.changePotToSep(filePath, ext)
     local idx = filePath:find(ext, (-1) * ext:len() , true)
     if idx then 
         local tmp = filePath:sub(1, idx - 1):gsub("%.", "/");
@@ -1548,12 +1548,12 @@ function this.getPath( info )
                 filePath = string.gsub(filePath, "%.", "/");
             else
                 -- 有后缀，那么把除后缀外的部分中的. 转为 / 
-                filePath = this.changePotToLine(filePath, luaFileExtension);
+                filePath = this.changePotToSep(filePath, luaFileExtension);
             end
 
         else
             -- 虚拟机路径有后缀
-            filePath = this.changePotToLine(filePath, autoExt);
+            filePath = this.changePotToSep(filePath, autoExt);
         end
     end
 
