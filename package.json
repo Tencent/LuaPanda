@@ -1,7 +1,7 @@
 {
 	"name": "luapanda",
 	"displayName": "LuaPanda",
-	"version": "3.1.20",
+	"version": "3.1.50",
 	"publisher": "stuartwang",
 	"description": "lua debug and code tools for VS Code.",
 	"author": {
@@ -267,6 +267,11 @@
 								"enum": ["normal", "attach", "single_file"],
 								"description": "Mark run mode, don't modify it. There are three modes: normal, attach, single_file. \n标记运行方式，请勿修改。 有三种模式 normal , attach , single_file。",
 								"default": "normal"
+							},
+							"dbCheckBreakpoint":{
+								"type": "string",
+								"description": "If adapter is client , the IP to connect. Default is '127.0.0.1'。",
+								"default": "127.0.0.1"
 							}
 						}
 					},
@@ -376,6 +381,11 @@
 								"type": "string",
 								"description": "If adapter is client , the IP to connect. Default is '127.0.0.1'。",
 								"default": "127.0.0.1"
+							},
+							"dbCheckBreakpoint":{
+								"type": "bool",
+								"description": "Whether double check breakpoint hit",
+								"default": true
 							}
 						}
 					}
@@ -386,21 +396,13 @@
 						"request": "launch",
 						"tag": "normal",
 						"name": "LuaPanda",
-						"program": "",
 						"cwd": "${workspaceFolder}",
 						"luaFileExtension": "",
 						"connectionPort": 8818,
-						"pathCaseSensitivity": false,
 						"stopOnEntry": true,
 						"useCHook": true,
 						"autoPathMode": true,
 						"logLevel": 1
-					},
-					{
-						"type": "lua",
-						"request": "attach",
-						"tag": "attach",
-						"name": "LuaPanda-Attach"
 					},
 					{
 						"type": "lua",

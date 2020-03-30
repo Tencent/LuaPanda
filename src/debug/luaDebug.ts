@@ -43,7 +43,7 @@ export class LuaDebugSession extends LoggingDebugSession {
     private _threadManager:ThreadManager;
     private _pathManager: PathManager;
     private UseLoadstring: boolean = false;
-
+    private _dbCheckBreakpoint = true;
     //terminal实例，便于销毁
     private _debugFileTermianl;
     private _programTermianl;
@@ -113,6 +113,11 @@ export class LuaDebugSession extends LoggingDebugSession {
 
     // 在有同名文件的情况下，需要再次进行命中判断。
     private checkIsRealHitBreakpoint(){
+        if( !this._dbCheckBreakpoint ){
+            // 用户关闭了二次断点校验，直接返回成功
+            return true;
+        }
+
         let steak = this._runtime.breakStack;
         let steakPath = steak[0].file;
         let steakLine = steak[0].line;
@@ -220,6 +225,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         this._pathManager.rootFolder = args.rootFolder;
         this._pathManager.useAutoPathMode = !!args.autoPathMode;
         this._pathManager.pathCaseSensitivity = !!args.pathCaseSensitivity;
+        this._dbCheckBreakpoint = !!args.dbCheckBreakpoint;
 
         if(this._pathManager.useAutoPathMode === true){
             Tools.rebuildAcceptExtMap(args.luaFileExtension);

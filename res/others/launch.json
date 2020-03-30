@@ -9,7 +9,6 @@
             "cwd": "${workspaceFolder}",
             "luaFileExtension": "lua",
             "connectionPort": 8818,
-            "pathCaseSensitivity": true,
             "stopOnEntry": true,
             "useCHook": true,
             "autoPathMode": true,
@@ -23,7 +22,7 @@
             "luaPath": "",
             "packagePath": [],
             "luaFileExtension": "",
-            "connectionPort": 8818,
+            "connectionPort": 8820,
             "stopOnEntry": true,
             "useCHook": true,
             "logLevel": 1
