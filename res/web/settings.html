@@ -11,9 +11,9 @@
     <!--title-->
     <h1 style="margin:50px 0px 10px 30px">LuaPanda Settings</h1>
     <label style="margin:20px 0px 50px 30px">&nbsp;&nbsp;*本配置项读取的是 launch.json 文件中的数据, 并在配置结束后把结果保存回此文件。在本页面修改配置和直接修改 launch.json 效果是一致的</label>
-
+    <!--target_select-->
     <br> <br>
-    <select style="margin:30px 0px 10px 15%" id="path_select" onchange='target_change(this[selectedIndex].value)'>
+    <select style="margin:30px 0px 10px 15%" id="target_select" onchange='target_change(this[selectedIndex].value)'>
     </select>
     <br> <br>
 
@@ -94,7 +94,9 @@
     <label class="lab" style="margin:10px 0px" title="分析CPP文件，生成对应的lua文件用于代码补全"><font size="3" face="Arial">用于IntelliSense的文件夹路径:  </font></label>&nbsp;&nbsp;&nbsp;<input style="margin:5px" id="preAnalysisPath"
     type="text" name="lname" /> <input class="btn_st" style="margin:20px" type="button" value="生成文件" onclick="preProcess();" />
     <!-- <input class="btn_st2" style="margin:10px" type="button" value="清除生成文件" onclick="clearPreProcessFile();" /> -->
-    目前可用于生成 slua / slua-unreal 的导出符号
+    <br />
+    <label style="margin:30px 0px 10px 15%">目前可用于生成 slua / slua-unreal 的导出符号</label>
+    
     <br />
     <br>
 
@@ -153,7 +155,7 @@
 
         function saveConfig() {
             // 当前选中的是哪一项
-            let selected_item = document.getElementById('path_select').selectedIndex;
+            let selected_item = document.getElementById('target_select').selectedIndex;
             let config_index = setting_targets_array[selected_item]["config_index"];
             let target_name = setting_targets_array[selected_item]["tgt_name"];
      
@@ -170,71 +172,39 @@
             let useCHook = document.getElementById('useCHook');
             let autoPathMode = document.getElementById('autoPathMode');
 
-            // let luapanda = new Object();
-            // luapanda["type"] = "lua";
-            // luapanda["request"] = "launch";
-            // luapanda["name"] = "LuaPanda";
-            // luapanda["luaFileExtension"] = luaFileExtension.value;
             saveObj["luaFileExtension"] = luaFileExtension.value;
-
-            // luapanda["connectionPort"] = parseInt(connectionPort.value);
             saveObj["connectionPort"] = parseInt(connectionPort.value);;
-
-            // luapanda["cwd"] = cwd.value;
             saveObj["cwd"] = cwd.value;
 
             if(updateTips.checked){
                 saveObj["updateTips"] = true;
-                // global_configs[selected_item]["launch.json"]["updateTips"] = true;
-
             }else{
                 saveObj["updateTips"] = false;
-                // global_configs[selected_item]["launch.json"]["updateTips"] = false;
-
             }
 
             // if (pathCaseSensitivity.checked) {
             //     saveObj["pathCaseSensitivity"] = true;
-            //     // global_configs[selected_item]["launch.json"]["pathCaseSensitivity"] = true;
-
             // } else {
             //     saveObj["pathCaseSensitivity"] = false;
-            //     // global_configs[selected_item]["launch.json"]["pathCaseSensitivity"] = false;
-
             // }
 
             if (stopOnEntry.checked) {
                 saveObj["stopOnEntry"] = true;
-                // global_configs[selected_item]["launch.json"]["stopOnEntry"] = true;
-
             } else {
                 saveObj["stopOnEntry"] = false;
-                // global_configs[selected_item]["launch.json"]["stopOnEntry"] = false;
-
             }
 
             if (useCHook.checked) {
                 saveObj["useCHook"] = true;
-                // global_configs[selected_item]["launch.json"]["useCHook"] = true;
-
             } else {
                 saveObj["useCHook"] = false;
-                // global_configs[selected_item]["launch.json"]["useCHook"] = false;
-
             }
 
             if (autoPathMode.checked) {
                 saveObj["autoPathMode"] = true;
-                // global_configs[selected_item]["launch.json"]["autoPathMode"] = true;
-
             } else {
                 saveObj["autoPathMode"] = false;
-                // global_configs[selected_item]["launch.json"]["autoPathMode"] = false;
-
             }
-            // luapanda["logLevel"] = 1;
-
-            // let luapanda_debugfile = new Object();
 
             let returnObj = new Object();
             returnObj["command"] = "save_settings";
@@ -307,22 +277,21 @@
                     setCheckboxStatue("updateTips", target["updateTips"]);
                 }           
 
-                // TODO
-                if (congif["isOpenAnalyzer"] == undefined) {
+                if (global_configs["isOpenAnalyzer"] == undefined) {
                     setCheckboxStatue("luaAnalyzerSwitch", true);
                 } else {
-                    setCheckboxStatue("luaAnalyzerSwitch", congif["isOpenAnalyzer"]);
+                    setCheckboxStatue("luaAnalyzerSwitch", global_configs["isOpenAnalyzer"]);
                 }
         }
 
         function target_change(index){
-            // 切换时是否自动保存
+            // 切换时目前不会自动保存
             select_setting(index)
         }
 
         let setting_targets_array = [];
         function init_select_opt(){
-            let select = document.getElementById("path_select");
+            let select = document.getElementById("target_select");
             let vs_tgt_counter = 0;
             for(let index = 0 ; index < global_configs.length ; index++){
                 let launch_path = global_configs[index]["path"];
@@ -341,16 +310,14 @@
             }
         }
 
-        // pathArray = [];
         window.addEventListener('message', event => {
             const message = JSON.parse(event.data); // The JSON data our extension sent
             switch (message.command) {
                 case 'init_setting':
                     global_configs = message.configs;
-                    console.log("aaaa")
-                    init_select_opt();
-                    console.log("bbbb")
+                    global_configs["isOpenAnalyzer"] = message["isOpenAnalyzer"];
 
+                    init_select_opt();
                     select_setting();
                     break;
             }
