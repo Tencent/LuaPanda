@@ -51,7 +51,7 @@ local userDotInRequire = true;         --兼容require中使用 require(a.b) 和
 local traversalUserData = false;        --如果可以的话(取决于userdata原表中的__pairs)，展示userdata中的元素。 如果在调试器中展开userdata时有错误，请关闭此项.
 --用户设置项END
 
-local debuggerVer = "3.1.50";                 --debugger版本号
+local debuggerVer = "3.1.60";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = {};     --引用的开源工具，包括json解析和table展开工具等
@@ -947,7 +947,7 @@ function this.dataProcess( dataStr )
         if info.isFakeHit == "true" and info.fakeBKPath and info.fakeBKLine then 
             -- 设置校验结果标志位，以便hook流程知道结果
             hitBpTwiceCheck = false;
-            if hookLib ~= nil then
+            if hookLib ~= nil and hookLib.set_bp_twice_check_res then
                 -- 把结果同步给C
                 hookLib.set_bp_twice_check_res(0);
             end
@@ -1263,6 +1263,11 @@ function this.dataProcess( dataStr )
         if hookLib ~= nil then
             isUseHookLib = 1;
             --同步数据给c hook
+            local luaVerTable = this.stringSplit(debuggerVer , '%.');
+            local luaVerNum = luaVerTable[1] * 10000 + luaVerTable[2] * 100 + luaVerTable[3];
+            if hookLib.sync_lua_debugger_ver then
+            hookLib.sync_lua_debugger_ver(luaVerNum);
+            end
             -- hookLib.sync_config(logLevel, pathCaseSensitivity and 1 or 0, autoPathMode and 1 or 0);
             hookLib.sync_config(logLevel, pathCaseSensitivity and 1 or 0);
             hookLib.sync_tempfile_path(TempFilePath_luaString);
