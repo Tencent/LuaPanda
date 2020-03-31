@@ -348,6 +348,7 @@ export class LuaDebugSession extends LoggingDebugSession {
     private startServer(sendArgs){
         //3. 启动Adapter的socket   |   VSCode = Server ; Debugger = Client
         this._server = Net.createServer(socket => {
+            this._server.close(); //_server 已建立连接，不再接受新的连接
             //--connect--
             this._dataProcessor._socket = socket;
             //向debugger发送含配置项的初始化协议

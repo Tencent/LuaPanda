@@ -188,8 +188,8 @@ function this.startServer(host, port)
 
     server = sock
     server:settimeout(listeningTimeoutSec);
-    server:setoption("reuseaddr", true)
     assert(server:bind(host, port));
+    -- server:setoption("reuseaddr", true); --防止已连接状态下新的连接进入，不再reuse
     assert(server:listen(1));
     local connectSuccess = server:accept();
     sock = connectSuccess;
