@@ -777,6 +777,45 @@ end
 function this.setCacheFormatPath(source, dest)
     formatPathCache[source] = dest;
 end
+
+-- 处理 opath(info.source) 的函数, 生成一个规范的路径函数(和VScode端checkRightPath逻辑完全一致)
+function this.formatOpath(opath)
+    -- delete @
+    if opath:sub(1,1) == '@' then
+        opath = opath:sub(2);
+    end
+    -- change ./ to /
+    if opath:sub(1,2) == './' then
+        opath = opath:sub(2);
+    end
+
+    opath = this.genUnifiedPath(opath);
+
+    -- lower
+    opath = string.lower(opath);
+
+    --把filename去除后缀
+    if autoExt == '' then
+        -- 在虚拟机返回路径没有后缀的情况下，用户必须自设后缀
+        -- 确定filePath中最后一个.xxx 不等于用户配置的后缀, 则把所有的. 转为 /
+        if not opath:find(luaFileExtension , (-1) * luaFileExtension:len(), true) then
+            -- getinfo 路径没有后缀，把 . 全部替换成 / ，我们不允许用户在文件（或文件夹）名称中出现"." , 因为无法区分 
+            opath = string.gsub(opath, "%.", "/");
+        else
+            -- 有后缀，那么把除后缀外的部分中的. 转为 / 
+            opath = this.changePotToSep(opath, luaFileExtension);
+        end
+    else
+        -- 虚拟机路径有后缀
+        opath = this.changePotToSep(opath, autoExt);
+    end
+
+    -- 截取 路径+文件名 (不带后缀)
+    -- change pot to /
+    -- opath = string.gsub(opath, "%.", "/");
+    return opath;
+end
+
 -----------------------------------------------------------------------------
 -- 内存相关
 -----------------------------------------------------------------------------
@@ -1599,7 +1638,7 @@ function this.getPath( info )
     return filePath;
 end
 
---从路径中获取文件名
+--从路径中获取[文件名.后缀]
 function this.getFilenameFromPath(path)
     if path == nil then 
         return ''; 
@@ -1681,48 +1720,55 @@ function this.checkRealHitBreakpoint( oPath, line )
 end
 
 ------------------------断点处理-------------------------
--- 参数info是当前堆栈信息
--- @info getInfo获取的当前调用信息
-function this.isHitBreakpoint( info )
-    local curLine = info.currentline;
-    local breakpointPath = info.source;
-    local isPathHit = false;
-    -- 当前路径在断点列表中
+--- this.isHitBreakpoint 判断断点是否命中。这个方法在c mod以及lua中都有调用
+-- @param breakpointPath 文件名+后缀
+-- @param opath          getinfo path
+-- @param curLine        当前执行行号
+function this.isHitBreakpoint(breakpointPath, opath, curLine)
     if breaks[breakpointPath] then
-        isPathHit = true;        -- 文件名命中
-    end
-
-    if isPathHit then
-        for k,v in pairs(breaks[breakpointPath]) do
-            local line_hit = false; -- 行号命中
-
-            for _, node in ipairs(v) do
-                if  tostring(node["line"]) == tostring(curLine) then 
-                    line_hit = true;
+        local oPathFormated;
+        for fullpath, fullpathNode in pairs(breaks[breakpointPath]) do
+            local line_hit = false, cur_node; 
+            for _, node in ipairs(fullpathNode) do
+                if tonumber(node["line"]) == tonumber(curLine) then 
+                    line_hit = true;    -- fullpath 文件中 有行号命中
+                    cur_node = node;
+                    break;
                 end
             end
 
-            if line_hit and this.checkRealHitBreakpoint(info.orininal_source, curLine) then
-                -- type是TS中的枚举类型，其定义在BreakPoint.tx文件中
-                --[[
-                    enum BreakpointType {
-                        conditionBreakpoint = 0,
-                        logPoint,
-                        lineBreakpoint
-                    }
-                ]]
-
-                if v["type"] == "0" then
-                    -- condition breakpoint
-                    -- 注意此处不要使用尾调用，否则会影响调用栈，导致Lua5.3和Lua5.1中调用栈层级不同
-                    local conditionRet = this.IsMeetCondition(v["condition"]);
-                    return conditionRet;
-                elseif v["type"] == "1" then
-                    -- log point
-                    this.printToVSCode("[log point output]: " .. v["logMessage"], 1);
-                else
-                    -- line breakpoint
-                    return true;
+            -- 在lua端不知道是否有同名文件，基本思路是先取文件名，用文件名和breakpointArray 进行匹配。
+            -- 当文件名匹配上时，可能存在多个同名文件中存在断点的情况。这时候需要用 oPath 和 fullpath 进行对比，取出正确的。
+            -- 当本地文件中有断点，lua做了初步命中后，可能存在 stack , 断点文件有同名的情况。这就需要vscode端也需要checkfullpath函数，使用opath进行文件校验。
+            if line_hit then
+                if oPathFormated == nil then
+                    -- 为了避免性能消耗，仅在行号命中时才处理 opath 到标准化路径
+                    oPathFormated = this.formatOpath(opath);
+                end
+                
+                if  string.match(fullpath, oPathFormated ) and this.checkRealHitBreakpoint(opath, curLine) then
+                    -- type是TS中的枚举类型，其定义在BreakPoint.tx文件中
+                        -- enum BreakpointType {
+                        --     conditionBreakpoint = 0,
+                        --     logPoint,
+                        --     lineBreakpoint
+                        -- }
+                        
+                    -- 处理断点
+                    if cur_node["type"] == "0" then
+                        -- condition breakpoint
+                        -- 注意此处不要使用尾调用，否则会影响调用栈，导致Lua5.3和Lua5.1中调用栈层级不同
+                        local conditionRet = this.IsMeetCondition(cur_node["condition"]);
+                        -- this.printToVSCode("Condition BK: condition:" .. cur_node["condition"] .. "  conditionRet " .. tostring(conditionRet));
+                        return conditionRet;
+                    elseif cur_node["type"] == "1" then
+                        -- log point
+                        this.printToVSCode("[LogPoint Output]: " .. cur_node["logMessage"], 2, 2);
+                        return false;
+                    else
+                        -- line breakpoint
+                        return true;
+                    end
                 end
             end
         end
@@ -1970,7 +2016,7 @@ function this.real_hook_process(info)
     if tostring(event) == "line" and jumpFlag == false then
         if currentRunState == runState.RUN or currentRunState == runState.STEPOVER or currentRunState == runState.STEPIN or currentRunState == runState.STEPOUT then
             --断点判断
-            isHit = this.isHitBreakpoint(info) or hitBP;
+            isHit = this.isHitBreakpoint(info.source, info.orininal_source, info.currentline) or hitBP;
             if isHit == true then
                 this.printToVSCode("HitBreakpoint!");
                 --备份信息

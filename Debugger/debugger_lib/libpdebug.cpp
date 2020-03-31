@@ -494,7 +494,7 @@ extern "C" int sync_breakpoints(lua_State *L) {
 //断点命中判断
 int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
     debug_auto_stack _tt(L);
-
+    // 获取标准路径[文件名.后缀]
     const char *standardPath = getPath(L, curPath);
     // 判断是否存在同名文件
     std::map<std::string, std::map<int, struct breakpoint>>::const_iterator const_iter1 = all_breakpoint_map.find(std::string(standardPath));
@@ -502,37 +502,22 @@ int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
         return 0;
     }
 
+    // c++ all_breakpoint_map 的数据结构保持不变，和lua不一样
     // 根据是否存在相同行号
     std::map<int, struct breakpoint>::const_iterator const_iter2 = const_iter1->second.find(current_line);
     if (const_iter2 == const_iter1->second.end()) {
         return 0;
     }
 
-    // 条件断点
-    if (const_iter2->second.type == CONDITION_BREAKPOINT) {
-        std::string condition = const_iter2->second.info;
-        int lua_ret = call_lua_function(L, "IsMeetCondition", 1, condition.c_str());
-        if (lua_ret != 0) {
-            return 0;
-        }
-        // if (!lua_isboolean(L, -1)) {
-        //     print_to_vscode(L, "[Debug Lib Error] debug_ishit_bk process condition expression result error!", 2);
-        //     return 0;
-        // }
-        int is_meet_condition = lua_toboolean(L, -1);
-        lua_pop(L, 1);
-        return is_meet_condition;
+    // 初步命中，到lua层中检测是否真正命中，以及断点类型
+    int lua_ret = call_lua_function(L, "isHitBreakpoint", 1, standardPath, curPath, current_line);
+    if (lua_ret != 0) {
+        // 调用出错时，按命中处理
+        return 1;
     }
-
-    // 记录点
-    if (const_iter2->second.type == LOG_POINT) {
-        std::string log_message = "[log point output]: ";
-        log_message.append(const_iter2->second.info);
-        print_to_vscode(L, log_message.c_str() , 1);
-        return 0;
-    }
-
-    return 1;
+    
+    int realHit = lua_toboolean(L, -1);
+    return realHit;
 }
 
 //判断字符串是否匹配[string "
