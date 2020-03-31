@@ -53,14 +53,14 @@
             </label>
         </div> <br>
 
-        <label class="lab" title="路径大小写敏感，默认开启"><font size="3" face="Arial">pathCaseSensitivity: </font></label>
+        <!-- <label class="lab" title="路径大小写敏感，默认开启"><font size="3" face="Arial">pathCaseSensitivity: </font></label>
         <div class="onoffswitch" style="margin:20px">
             <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="pathCaseSensitivity">
             <label class="onoffswitch-label" for="pathCaseSensitivity">
                 <span class="onoffswitch-inner"></span>
                 <span class="onoffswitch-switch"></span>
             </label>
-        </div> <br>
+        </div> <br> -->
 
         <label class="lab" title="是否打开 LuaPanda 自动升级提示"><font size="3" face="Arial">updateTips: </font></label>
         <div class="onoffswitch" style="margin:20px">
@@ -165,7 +165,7 @@
             let cwd = document.getElementById('cwd');
             let updateTips = document.getElementById('updateTips');
 
-            let pathCaseSensitivity = document.getElementById('pathCaseSensitivity');
+            // let pathCaseSensitivity = document.getElementById('pathCaseSensitivity');
             let stopOnEntry = document.getElementById('stopOnEntry');
             let useCHook = document.getElementById('useCHook');
             let autoPathMode = document.getElementById('autoPathMode');
@@ -193,15 +193,15 @@
 
             }
 
-            if (pathCaseSensitivity.checked) {
-                saveObj["pathCaseSensitivity"] = true;
-                // global_configs[selected_item]["launch.json"]["pathCaseSensitivity"] = true;
+            // if (pathCaseSensitivity.checked) {
+            //     saveObj["pathCaseSensitivity"] = true;
+            //     // global_configs[selected_item]["launch.json"]["pathCaseSensitivity"] = true;
 
-            } else {
-                saveObj["pathCaseSensitivity"] = false;
-                // global_configs[selected_item]["launch.json"]["pathCaseSensitivity"] = false;
+            // } else {
+            //     saveObj["pathCaseSensitivity"] = false;
+            //     // global_configs[selected_item]["launch.json"]["pathCaseSensitivity"] = false;
 
-            }
+            // }
 
             if (stopOnEntry.checked) {
                 saveObj["stopOnEntry"] = true;
@@ -277,11 +277,11 @@
                     setInputContent("cwd", target["cwd"]);
                 }
 
-                if (target["pathCaseSensitivity"] == undefined) {
-                    setCheckboxStatue("pathCaseSensitivity", false);
-                } else {
-                    setCheckboxStatue("pathCaseSensitivity", target["pathCaseSensitivity"]);
-                }
+                // if (target["pathCaseSensitivity"] == undefined) {
+                //     setCheckboxStatue("pathCaseSensitivity", false);
+                // } else {
+                //     setCheckboxStatue("pathCaseSensitivity", target["pathCaseSensitivity"]);
+                // }
 
                 if (target["stopOnEntry"] == undefined ) {
                     setCheckboxStatue("stopOnEntry", true);

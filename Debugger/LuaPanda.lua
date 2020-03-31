@@ -792,8 +792,9 @@ function this.formatOpath(opath)
     opath = this.genUnifiedPath(opath);
 
     -- lower
-    opath = string.lower(opath);
-
+    if pathCaseSensitivity == false then
+        opath = string.lower(opath);
+    end
     --把filename去除后缀
     if autoExt == '' then
         -- 在虚拟机返回路径没有后缀的情况下，用户必须自设后缀
@@ -1577,6 +1578,15 @@ function this.getPath( info )
     -- originalPath是getInfo的原始路径，后面用来填充路径缓存的key
     local originalPath = filePath;
     
+    --如果路径头部有@,去除
+    if filePath:sub(1,1) == '@' then
+        filePath = filePath:sub(2);
+    end
+
+    --如果路径头部有./,去除
+    if filePath:sub(1,2) == './' then
+        filePath = filePath:sub(3);
+    end
     -- getPath的参数路径可能来自于hook, 也可能是一个已标准的路径
     if userDotInRequire then 
         if autoExt == '' then
@@ -1607,10 +1617,6 @@ function this.getPath( info )
         end
     end
 
-    --如果路径头部有@,去除
-    if filePath:sub(1,1) == '@' then
-        filePath = filePath:sub(2);
-    end
 
     if not autoPathMode then
         --绝对路径和相对路径的处理  |  若在Mac下以/开头，或者在Win下以*:开头，说明是绝对路径，不需要再拼。
