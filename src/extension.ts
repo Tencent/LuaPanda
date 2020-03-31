@@ -233,7 +233,7 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             }
 
             if(config.dbCheckBreakpoint == undefined){
-                config.dbCheckBreakpoint = true;
+                config.dbCheckBreakpoint = false;
             }
 
             if(!config.args){

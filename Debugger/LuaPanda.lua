@@ -375,7 +375,7 @@ function this.getBaseInfo()
         jitVer = "," .. tostring(jit.version);
     end
 
-    strTable[#strTable + 1] = "Lua Ver:" .. _VERSION .. jitVer .." | adapterVer:" .. tostring(adapterVer) .. " | Debugger Ver:" .. tostring(debuggerVer);
+    strTable[#strTable + 1] = "Lua Ver:" .. _VERSION .. jitVer .." | Adapter Ver:" .. tostring(adapterVer) .. " | Debugger Ver:" .. tostring(debuggerVer);
     local moreInfoStr = "";
     if hookLib ~= nil then
         local clibVer, forluaVer = hookLib.sync_getLibVersion();
