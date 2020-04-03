@@ -396,7 +396,7 @@ export class LuaDebugSession extends LoggingDebugSession {
                 DebugLogger.AdapterInfo('[Get Msg]:' + data);
                 this._dataProcessor.processMsg(data.toString());
             });
-        }).listen(this.TCPPort, 1 , function () {
+        }).listen(this.TCPPort, 0 , function () {
             DebugLogger.AdapterInfo("listening...");
             DebugLogger.DebuggerInfo("listening...");
 

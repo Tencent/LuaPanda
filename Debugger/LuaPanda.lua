@@ -41,7 +41,7 @@ local userDotInRequire = true;         --兼容require中使用 require(a.b) 和
 local traversalUserData = false;        --如果可以的话(取决于userdata原表中的__pairs)，展示userdata中的元素。 如果在调试器中展开userdata时有错误，请关闭此项.
 --用户设置项END
 
-local debuggerVer = "3.1.60";                 --debugger版本号
+local debuggerVer = "3.1.66";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = {};     --引用的开源工具，包括json解析和table展开工具等
@@ -89,8 +89,8 @@ local lastRunFunction = {};     --上一个执行过的函数。在有些复杂�
 local currentCallStack = {};    --获取当前调用堆栈信息
 local hitBP = false;            --BP()中的强制断点命中标记
 local TempFilePath_luaString = ""; --VSCode端配置的临时文件存放路径
-local connectHost;              --记录连接端IP
-local connectPort;              --记录连接端口号
+local recordHost;              --记录连接端IP
+local recordPort;              --记录连接端口号
 local sock;                   --lua socket 文件描述符
 local server;                 --server 描述符
 local OSType;                --VSCode识别出的系统类型，也可以自行设置。Windows_NT | Linux | Darwin
@@ -159,6 +159,17 @@ local env = setmetatable({ }, {
 -----------------------------------------------------------------------------
 -- 流程
 -----------------------------------------------------------------------------
+
+---this.bindServer 当lua进程作为Server时，server绑定函数
+--- server 在bind时创建, 连接成功后关闭listen , disconnect时置空。reconnect时会查询server，没有的话重新绑定，如果已存在直接accept
+function this.bindServer(host, port)
+    server = sock
+    server:settimeout(listeningTimeoutSec);
+    assert(server:bind(host, port));
+    server:setoption("reuseaddr", true); --防止已连接状态下新的连接进入，不再reuse
+    assert(server:listen(0));
+end
+
 -- 以lua作为服务端的形式启动调试器
 -- @host 绑定ip , 默认 0.0.0.0
 -- @port 绑定port, 默认 8818
@@ -178,12 +189,10 @@ function this.startServer(host, port)
         this.printToConsole("[Error] Start debugger but get Socket fail , please install luasocket!", 2);
         return;
     end
+    recordHost = host;
+    recordPort = port;
 
-    server = sock
-    server:settimeout(listeningTimeoutSec);
-    assert(server:bind(host, port));
-    -- server:setoption("reuseaddr", true); --防止已连接状态下新的连接进入，不再reuse
-    assert(server:listen(1));
+    this.bindServer(recordHost, recordPort);
     local connectSuccess = server:accept();
     sock = connectSuccess;
 
@@ -214,11 +223,11 @@ function this.start(host, port)
         this.printToConsole("[Error] Start debugger but get Socket fail , please install luasocket!", 2);
         return;
     end
-    connectHost = host;
-    connectPort = port;
+    recordHost = host;
+    recordPort = port;
 
     sock:settimeout(connectTimeoutSec);
-    local connectSuccess = sock and sock:connect(connectHost, connectPort);
+    local connectSuccess = sock and sock:connect(recordHost, recordPort);
 
     if connectSuccess then
         this.printToConsole("First connect success!");
@@ -231,6 +240,10 @@ end
 
 -- 连接成功，开始初始化
 function this.connectSuccess()
+    if server then
+        server:close(); -- 停止listen 
+    end
+
     this.changeRunState(runState.WAIT_CMD);
     this.printToConsole("connectSuccess", 1);
     --设置初始状态
@@ -311,7 +324,7 @@ function this.stopAttach()
     this.changeRunState(runState.DISCONNECT);
     if sock ~= nil then
         sock:close();
-        if luaProcessAsServer and server then server:close(); end;
+        if luaProcessAsServer and server then server = nil; end;
     end   
 end
 
@@ -325,10 +338,11 @@ function this.disconnect()
 
     if sock ~= nil then
         sock:close();
-        -- if luaProcessAsServer then server:close(); end;
+        sock = nil;
+        server = nil;
     end
 
-    if connectPort == nil or connectHost == nil then
+    if recordHost == nil or recordPort == nil then
         --异常情况处理, 在调用LuaPanda.start()前首先调用了LuaPanda.disconnect()
         this.printToConsole("[Warning] User call LuaPanda.disconnect() before set debug ip & port, please call LuaPanda.start() first!", 2);
         return;
@@ -913,11 +927,15 @@ function this.reConnect()
         local connectSuccess;
         if luaProcessAsServer == true and currentRunState == runState.DISCONNECT then
             -- 在 Server 模式下，以及当前处于未连接状态下，才尝试accept新链接。如果不判断可能会出现多次连接，导致sock被覆盖
+            if server == nil then
+                this.bindServer(recordHost, recordPort);
+            end
+
             sock = server:accept();
             connectSuccess = sock;
         else
             sock:settimeout(connectTimeoutSec);
-            connectSuccess = sock and sock:connect(connectHost, connectPort);
+            connectSuccess = sock and sock:connect(recordHost, recordPort);
         end
 
         if connectSuccess then
