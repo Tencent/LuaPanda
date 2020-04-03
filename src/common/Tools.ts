@@ -10,6 +10,7 @@ export class Tools {
     public static adapterVersion;  //赋值放在了插件初始化时
     public static VSCodeExtensionPath;  // VSCode插件所在路径，插件初始化时就会被赋值.
     public static client;
+    public static developmentMode = false;
 
     // 路径相关函数
     // 获取扩展中预置的lua文件位置

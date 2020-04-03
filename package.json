@@ -272,6 +272,21 @@
 								"type": "string",
 								"description": "If adapter is client , the IP to connect. Default is '127.0.0.1'。",
 								"default": "127.0.0.1"
+							},
+							"DistinguishSameNameFile":{
+								"type": "boolean",
+								"description": "Whether distinguish breakpoint in files with same name",
+								"default": true
+							},
+							"TruncatedOPath":{
+								"type": "string",
+								"description": " ",
+								"default": ""
+							},
+							"DevelopmentMode":{
+								"type": "boolean",
+								"description": "Whether enter development mode",
+								"default": false
 							}
 						}
 					},
@@ -386,6 +401,21 @@
 								"type": "boolean",
 								"description": "Whether double check breakpoint hit",
 								"default": true
+							},
+							"DistinguishSameNameFile":{
+								"type": "boolean",
+								"description": "Whether distinguish breakpoint in files with same name",
+								"default": true
+							},
+							"TruncatedOPath":{
+								"type": "string",
+								"description": " ",
+								"default": ""
+							},
+							"DevelopmentMode":{
+								"type": "boolean",
+								"description": "Whether enter development mode",
+								"default": false
 							}
 						}
 					}
@@ -402,6 +432,7 @@
 						"stopOnEntry": true,
 						"useCHook": true,
 						"autoPathMode": true,
+						"DistinguishSameNameFile" :false,
 						"logLevel": 1
 					},
 					{

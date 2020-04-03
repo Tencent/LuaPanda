@@ -142,6 +142,7 @@ export class PathManager {
 
     // 存在同名文件的情况下, 根据lua虚拟机传来的 fullPath , 判断断点处具体是哪一个文件
     public checkRightPath( fileName: string , oPath: string, fullPathArray): string{
+        //------ 这部分还需要么？
         //如果首字符是@，去除@
         if('@' === oPath.substr(0,1)){
             oPath = oPath.substr(1);
@@ -168,6 +169,7 @@ export class PathManager {
         oPath = oPath + '/' + fileName;
         // oPath中的. 替换成 /
         oPath = oPath.replace(/\./g, "/");
+        //------
 
         for (const iteratorPath of fullPathArray) {
             let pathForCompare = iteratorPath;
@@ -180,6 +182,17 @@ export class PathManager {
             }
         }
         // 如果最终都无法命中， 默认第一条。这种情况要避免，否则二次验证也通不过
+        if(Tools.developmentMode === true){
+            // 开发模式下提示
+            let str = "file_name:" + fileName +  "  opath:" + oPath + "无法命中任何文件路径!"
+            DebugLogger.showTips(str);
+            let Adapterlog = "同名文件无法命中!\n";
+            for (const iteratorPath of fullPathArray) {
+                Adapterlog += " + " + iteratorPath + "\n";
+            }
+            Adapterlog += str;
+            DebugLogger.AdapterInfo(Adapterlog);
+        }
         return fullPathArray[0];
     }
 }

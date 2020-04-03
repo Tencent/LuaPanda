@@ -255,7 +255,11 @@ export class LuaDebugSession extends LoggingDebugSession {
         sendArgs["useCHook"] = args.useCHook;
         sendArgs["adapterVersion"] = String(Tools.adapterVersion);
         sendArgs["autoPathMode"] = this._pathManager.useAutoPathMode;
-        
+        sendArgs["DistinguishSameNameFile"] = !!args.DistinguishSameNameFile;
+        sendArgs["TruncatedOPath"] = String(args.TruncatedOPath);
+        sendArgs["DevelopmentMode"] = String(args.DevelopmentMode);
+        Tools.developmentMode = args.DevelopmentMode;
+
         if(args.docPathReplace instanceof Array && args.docPathReplace.length === 2 ){
             this.replacePath = new Array( Tools.genUnifiedPath(String(args.docPathReplace[0])), Tools.genUnifiedPath(String(args.docPathReplace[1])));
         }else{

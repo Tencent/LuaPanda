@@ -226,10 +226,25 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             config.TempFilePath = '${workspaceFolder}';
         }
 
+        // 开发模式设置
+        if( config.DevelopmentMode !== true ){
+            config.DevelopmentMode = false;
+        }
+
         // attach 模式这里不用赋初值，后面会拷贝luapanda模式的配置信息
         if(config.tag !== "attach"){
             if(!config.program){
                 config.program = '';
+            }
+
+            
+            if(config.TruncatedOPath == undefined){
+                config.TruncatedOPath = "";
+            }
+
+
+            if(config.DistinguishSameNameFile == undefined){
+                config.DistinguishSameNameFile = false;
             }
 
             if(config.dbCheckBreakpoint == undefined){
