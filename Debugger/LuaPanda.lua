@@ -21,16 +21,6 @@
 --     LuaPanda.doctor()
 --         返回对当前环境的诊断信息，提示可能存在的问题。返回值类型string, 推荐在调试控制台中使用。
 
---     LuaPanda.getCWD()
---         用户可以调用或在调试控制台中输出这个函数，返回帮助设置CWD的路径。比如
---         cwd:      F:/1/2/3/4/5
---         getinfo:  @../../../../../unreal_10/slua-unreal_1018/Content//Lua/TestArray.lua
---         format:   f:/unreal_10/slua-unreal_1018/Content/Lua/TestArray.lua
---         cwd是vscode传来的配置路径。getinfo是通过getinfo获取到的正在运行的文件路径。format是经过 cwd + getinfo 整合后的格式化路径。
---         format是传给VSCode的最终路径。
---         如果format路径和文件真实路径不符，导致VSCode找不到文件，通过调整工程中launch.json的cwd，使format路径和真实路径一致。
---         返回值类型string, 推荐在调试控制台中使用。
-
 --     LuaPanda.getBreaks()
 --         获取断点信息，返回值类型string, 推荐在调试控制台中使用。
 
@@ -107,6 +97,8 @@ local OSType;                --VSCode识别出的系统类型，也可以自行�
 local clibPath;                 --chook库在VScode端的路径，也可自行设置。
 local hookLib;                  --chook库的引用实例
 local adapterVer;               --VScode传来的adapter版本号
+local TruncatedOPath;           --VScode中用户设置的用于截断opath路径的标志，注意这里可以接受lua魔法字符
+local DistinguishSameNameFile = false;  --是否区分lua同名文件中的断点，在VScode launch.json 中 DistinguishSameNameFile 控制
 --标记位
 local logLevel = 1;             --日志等级all/info/error. 此设置对应的是VSCode端设置的日志等级.
 local variableRefIdx = 1;       --变量索引
@@ -134,6 +126,7 @@ local HOOK_LEVEL = 3;           --调用栈偏移量，使用clib时为3，lua�
 local isUseLoadstring = 0;
 local debugger_loadString;
 --临时变量
+local recordBreakPointPath;     --记录最后一个[可能命中]的断点，用于getInfo以及doctor的断点测试
 local coroutineCreate;          --用来记录lua原始的coroutine.create函数
 local stopConnectTime = 0;      --用来临时记录stop断开连接的时间
 local isInMainThread;
@@ -354,7 +347,7 @@ end
 
 -- 返回路径相关信息
 -- cwd:配置的工程路径  |  info["source"]:通过 debug.getinfo 获得执行文件的路径  |  format：格式化后的文件路径
-function this.getCWD()
+function this.testBreakpoint()
     local ly = this.getSpecificFunctionStackLevel(lastRunFunction.func);
     if type(ly) ~= "number" then
         ly = 2;
@@ -364,7 +357,54 @@ function this.getCWD()
         runSource = this.getPath(tostring(hookLib.get_last_source()));
     end
     local info = debug.getinfo(ly, "S");
-    return "cwd:      "..cwd .."\ngetinfo:  ".. info["source"] .. "\nformat:   " .. tostring(runSource) ;
+    local NormalizedPath =  this.formatOpath(info["source"]);
+    NormalizedPath = this.truncatedPath(NormalizedPath, TruncatedOPath);
+
+    local strTable = {}
+    local FormatedPath = tostring(runSource);
+    strTable[#strTable + 1] = "\n- BreakPoint Test:"
+    strTable[#strTable + 1] = "\nUser set lua extension:   ." .. tostring(luaFileExtension);
+    strTable[#strTable + 1] = "\nAuto get lua extension:   " .. tostring(autoExt);
+    if TruncatedOPath and TruncatedOPath ~= '' then
+    strTable[#strTable + 1] = "\nUser set TruncatedOPath:  " .. TruncatedOPath;
+    end
+    strTable[#strTable + 1] = "\nGetInfo:    ".. info["source"];
+    strTable[#strTable + 1] = "\nNormalized: " .. NormalizedPath;
+    strTable[#strTable + 1] = "\nFormated:   " .. FormatedPath;
+    if recordBreakPointPath and recordBreakPointPath ~= "" then
+    strTable[#strTable + 1] = "\nBreakpoint: " .. recordBreakPointPath;
+    end
+
+    if not autoPathMode then
+        if isAbsolutePath then
+            strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，Formated使用GetInfo路径。" .. winDiskSymbolTip;
+        else
+            strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的路径(GetInfo)是相对路径，调试器运行依赖的绝对路径(Formated)是来源于cwd+GetInfo拼接。如Formated路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。也可以在Formated对应的文件下打一个断点，调整直到Formated和Breaks Info中断点路径完全一致。" .. winDiskSymbolTip;
+        end
+    else
+        strTable[#strTable + 1] = "\n说明:自动路径(autoPathMode)模式已开启。";
+        if recordBreakPointPath and recordBreakPointPath ~= "" then
+            if string.find(recordBreakPointPath , FormatedPath, (-1) * string.len(FormatedPath) , true) then
+                -- 短路径断点命中
+                if DistinguishSameNameFile == false then
+                    strTable[#strTable + 1] = "本文件中断点可正常命中。"
+                    strTable[#strTable + 1] = "同名文件中的断点识别(DistinguishSameNameFile) 未开启，请确保 VSCode 断点不要存在于同名lua文件中。相关介绍：http://";
+                else
+                    strTable[#strTable + 1] = "同名文件中的断点识别(DistinguishSameNameFile) 已开启。";
+                    if string.find(recordBreakPointPath, NormalizedPath, 1, true) then
+                        strTable[#strTable + 1] = "本文件中断点可被正常命中"
+                    else
+                        strTable[#strTable + 1] = "断点可能无法被命中，因为 lua 虚拟机中获得的路径 Normalized 不是断点路径 Breakpoint 的子串。 如有需要，可以在 launch.json 中设置 TruncatedOPath 来去除 Normalized 部分路径，相关参考："
+                    end
+                end
+            else
+                strTable[#strTable + 1] = "断点未被命中，原因是 FormatedPath 不是 Breakpoint 路径的子串。"
+            end
+        else
+            strTable[#strTable + 1] = "本文件中无断点。如果要进行断点测试，请在本文件中StopOnEntry或者BP位置打一个断点。"
+        end
+    end
+    return table.concat(strTable)
 end
 
 --返回版本号等配置
@@ -394,6 +434,8 @@ function this.getBaseInfo()
     strTable[#strTable + 1] = " | supportREPL:".. tostring(outputIsUseLoadstring);
     strTable[#strTable + 1] = " | useBase64EncodeString:".. tostring(isNeedB64EncodeStr);
     strTable[#strTable + 1] = " | codeEnv:" .. tostring(OSType) .. '\n';
+    strTable[#strTable + 1] = " | DistinguishSameNameFile:" .. tostring(DistinguishSameNameFile) .. '\n';
+
     strTable[#strTable + 1] = moreInfoStr;
     if OSTypeErrTip ~= nil and OSTypeErrTip ~= '' then
         strTable[#strTable + 1] = '\n' ..OSTypeErrTip;
@@ -478,7 +520,7 @@ function this.doctor()
                     --和断点匹配了
                     fileMatch = true;
                     -- retStr = retStr .. "\n请对比如下路径:\n";
-                    strTable[#strTable + 1] = this.getCWD();
+                    strTable[#strTable + 1] = this.testBreakpoint();
                     strTable[#strTable + 1] = "\nfilepath: " .. key;
                     if isAbsolutePath then
                         strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。";
@@ -547,17 +589,8 @@ function this.getInfo()
     strTable[#strTable + 1] = "\n\n- Path Info: \n";
     strTable[#strTable + 1] = "clibPath: " .. tostring(clibPath) .. '\n';
     strTable[#strTable + 1] = "debugger: " .. this.getPath(DebuggerFileName) .. '\n';
-    strTable[#strTable + 1] = this.getCWD();
-
-    if not autoPathMode then
-        if isAbsolutePath then
-            strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。" .. winDiskSymbolTip;
-        else
-            strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的路径(getinfo)是相对路径，调试器运行依赖的绝对路径(format)是来源于cwd+getinfo拼接。如format路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。也可以在format对应的文件下打一个断点，调整直到format和Breaks Info中断点路径完全一致。" .. winDiskSymbolTip;
-        end
-    else
-        strTable[#strTable + 1] = "\n说明:已开启autoPathMode自动路径模式，调试器会根据getinfo获得的文件名自动查找文件位置，请确保VSCode打开的工程中不存在同名lua文件。";
-    end
+    strTable[#strTable + 1] = "cwd     : " .. cwd .. '\n';
+    strTable[#strTable + 1] = this.testBreakpoint();
 
     if pathErrTip ~= nil and pathErrTip ~= '' then
         strTable[#strTable + 1] = '\n' .. pathErrTip;
@@ -796,7 +829,7 @@ function this.formatOpath(opath)
         opath = string.lower(opath);
     end
     --把filename去除后缀
-    if autoExt == '' then
+    if autoExt == nil or autoExt == '' then
         -- 在虚拟机返回路径没有后缀的情况下，用户必须自设后缀
         -- 确定filePath中最后一个.xxx 不等于用户配置的后缀, 则把所有的. 转为 /
         if not opath:find(luaFileExtension , (-1) * luaFileExtension:len(), true) then
@@ -1166,7 +1199,7 @@ function this.dataProcess( dataStr )
             isNeedB64EncodeStr = false;
         end
         --path
-        luaFileExtension = dataTable.info.luaFileExtension
+        luaFileExtension = dataTable.info.luaFileExtension;
         local TempFilePath = dataTable.info.TempFilePath;
         if TempFilePath:sub(-1, -1) == [[\]] or TempFilePath:sub(-1, -1) == [[/]] then
             TempFilePath = TempFilePath:sub(1, -2);
@@ -1184,10 +1217,18 @@ function this.dataProcess( dataStr )
 
         if  dataTable.info.pathCaseSensitivity == "true" then
             pathCaseSensitivity =  true;
+            TruncatedOPath = dataTable.info.TruncatedOPath;
         else
             pathCaseSensitivity =  false;
+            TruncatedOPath = string.lower(dataTable.info.TruncatedOPath);
         end
- 
+
+        if  dataTable.info.DistinguishSameNameFile == "true" then
+            DistinguishSameNameFile =  true;
+        else
+            DistinguishSameNameFile =  false;
+        end
+
         --OS type
         if nil == OSType then
             --用户未主动设置OSType, 接收VSCode传来的数据
@@ -1528,7 +1569,8 @@ function this.getStackTable( level )
 
         local ss = {};
         ss.file = this.getPath(info);
-        ss.oPath = info.source; --从lua虚拟机获得的原始路径, 它用于帮助定位VScode端原始lua文件的位置(存在重名文件的情况)。
+        local oPathFormated = this.formatOpath(info.source) ; --从lua虚拟机获得的原始路径, 它用于帮助定位VScode端原始lua文件的位置(存在重名文件的情况)。
+        ss.oPath = this.truncatedPath(oPathFormated, TruncatedOPath);
         ss.name = "文件名"; --这里要做截取
         ss.line = tostring(info.currentline);
         --使用hookLib时，堆栈有偏移量，这里统一调用栈顶编号2
@@ -1567,6 +1609,17 @@ function this.changePotToSep(filePath, ext)
     return filePath;
 end
 
+--- this.truncatedPath 从 beTruncatedPath 字符串中去除 rep 匹配到的部分
+function this.truncatedPath(beTruncatedPath, rep)
+    if beTruncatedPath and beTruncatedPath ~= '' and rep and rep ~= "" then
+        local _, lastIdx = string.find(beTruncatedPath , rep);
+        if lastIdx then
+            beTruncatedPath = string.sub(beTruncatedPath, lastIdx + 1);
+        end
+    end
+    return beTruncatedPath;
+end
+
 --这个方法是根据的cwd和luaFileExtension对getInfo获取到的路径进行标准化
 -- @info getInfo获取的包含调用信息table
 function this.getPath( info )
@@ -1594,7 +1647,7 @@ function this.getPath( info )
     end
     -- getPath的参数路径可能来自于hook, 也可能是一个已标准的路径
     if userDotInRequire then 
-        if autoExt == '' then
+        if autoExt == nil or autoExt == '' then
             -- 在虚拟机返回路径没有后缀的情况下，用户必须自设后缀
             -- 确定filePath中最后一个.xxx 不等于用户配置的后缀, 则把所有的. 转为 /
             if not filePath:find(luaFileExtension , (-1) * luaFileExtension:len(), true) then
@@ -1739,11 +1792,13 @@ function this.isHitBreakpoint(breakpointPath, opath, curLine)
     if breaks[breakpointPath] then
         local oPathFormated;
         for fullpath, fullpathNode in pairs(breaks[breakpointPath]) do
-            local line_hit = false, cur_node; 
+            recordBreakPointPath = fullpath; --这里是为了兼容用户断点行号没有打对的情况
+            local line_hit = false, cur_node;
             for _, node in ipairs(fullpathNode) do
                 if tonumber(node["line"]) == tonumber(curLine) then 
                     line_hit = true;    -- fullpath 文件中 有行号命中
                     cur_node = node;
+                    recordBreakPointPath = fullpath;  --行号命中后，再设置一次，保证路径准确
                     break;
                 end
             end
@@ -1755,9 +1810,11 @@ function this.isHitBreakpoint(breakpointPath, opath, curLine)
                 if oPathFormated == nil then
                     -- 为了避免性能消耗，仅在行号命中时才处理 opath 到标准化路径
                     oPathFormated = this.formatOpath(opath);
+                    -- 截取
+                    oPathFormated = this.truncatedPath(oPathFormated, TruncatedOPath);
                 end
                 
-                if  string.match(fullpath, oPathFormated ) and this.checkRealHitBreakpoint(opath, curLine) then
+                if (not DistinguishSameNameFile) or (string.match(fullpath, oPathFormated ) and this.checkRealHitBreakpoint(opath, curLine)) then
                     -- type是TS中的枚举类型，其定义在BreakPoint.tx文件中
                         -- enum BreakpointType {
                         --     conditionBreakpoint = 0,
@@ -1783,6 +1840,8 @@ function this.isHitBreakpoint(breakpointPath, opath, curLine)
                 end
             end
         end
+    else
+        recordBreakPointPath = '';  --当切换文件时置空，避免提示给用户错误信息
     end
     return false;
 end
