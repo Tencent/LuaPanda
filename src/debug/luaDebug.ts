@@ -50,6 +50,7 @@ export class LuaDebugSession extends LoggingDebugSession {
     //保存所有活动的LuaDebugSession实例
     private static _debugSessionArray:Map<number ,LuaDebugSession> = new Map<number ,LuaDebugSession>();
     static get debugSessionArray(){    return LuaDebugSession._debugSessionArray; }
+    private connectionFlag = false; //连接成功的标志位 
 
     public constructor() {
         super("lua-debug.txt");
@@ -350,13 +351,17 @@ export class LuaDebugSession extends LoggingDebugSession {
     }
 
     private startServer(sendArgs){
+        this.connectionFlag = false;
         //3. 启动Adapter的socket   |   VSCode = Server ; Debugger = Client
         this._server = Net.createServer(socket => {
-            this._server.close(); //_server 已建立连接，不再接受新的连接
             //--connect--
             this._dataProcessor._socket = socket;
             //向debugger发送含配置项的初始化协议
             this._runtime.start(( _ , info) => {
+                //之所以使用 connectionFlag 连接成功标志位， 是因为代码进入 Net.createServer 的回调后，仍然可能被client超时断开连接。所以标志位被放入了
+                //_runtime.start 初始化消息发送成功之后。
+                this.connectionFlag = true;
+                this._server.close(); //_server 已建立连接，不再接受新的连接
                 let connectMessage = "[Connected] VSCode Server 已建立连接! Remote device info  " + socket.remoteAddress + ":" + socket.remotePort ;
                 DebugLogger.AdapterInfo(connectMessage);
                 this.printLogInDebugConsole(connectMessage);
@@ -385,11 +390,14 @@ export class LuaDebugSession extends LoggingDebugSession {
             });
 
             socket.on('close', () => {
-                DebugLogger.AdapterInfo('Socket close!');
-                vscode.window.showInformationMessage('[LuaPanda] 调试器连接已断开');
-                // this._dataProcessor._socket 是在建立连接后赋值，所以在断开连接时删除
-                delete this._dataProcessor._socket;
-                this.sendEvent(new TerminatedEvent(this.autoReconnect));
+                if( this.connectionFlag ){
+                    this.connectionFlag = false;
+                    DebugLogger.AdapterInfo('Socket close!');
+                    vscode.window.showInformationMessage('[LuaPanda] 调试器连接已断开');
+                    // this._dataProcessor._socket 是在建立连接后赋值，所以在断开连接时删除
+                    delete this._dataProcessor._socket;
+                    this.sendEvent(new TerminatedEvent(this.autoReconnect));
+                }
             });
 
             socket.on('data', (data) => {
