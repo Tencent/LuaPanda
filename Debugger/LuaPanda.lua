@@ -18,6 +18,10 @@
 --     LuaPanda.getInfo()
 --         返回获取调试器信息。包括版本号，是否使用lib库，系统是否支持loadstring(load方法)。返回值类型string, 推荐在调试控制台中使用。
 
+--     LuaPanda.testBreakpoint()
+--         测试断点，用于路径错误导致断点不停地情况。方法是打开stopOnEntry, 或者在代码中加入LuaPanda.BP(), 当这两个位置可以停止但是断点无法停止时，使用此命令
+--         可以帮助用户查询断点无法停止的原因
+
 --     LuaPanda.doctor()
 --         返回对当前环境的诊断信息，提示可能存在的问题。返回值类型string, 推荐在调试控制台中使用。
 
@@ -363,14 +367,14 @@ end
 ---testBreakpoint 测试断点
 function this.testBreakpoint()
     if recordBreakPointPath and recordBreakPointPath ~= "" then
-        testBreakpointFlag = false;
-        this.breakpointTestInfo();    
+        -- testBreakpointFlag = false;
+        return this.breakpointTestInfo();    
     else
-        local sreTable = {};
-        strTable[#strTable + 1] = "正在准备进行断点测试，请按照如下步骤操作"
-        strTable[#strTable + 1] = "1. 请[清除]当前项目中所有断点;"
-        strTable[#strTable + 1] = "2. 在当前停止的位置打一个断点;"
-        strTable[#strTable + 1] = "3. 再次运行 'LuaPanda.testBreakpoint()'。"
+        local strTable = {};
+        strTable[#strTable + 1] = "正在准备进行断点测试，请按照如下步骤操作\n"
+        strTable[#strTable + 1] = "1. 请[清除]当前项目中所有断点;\n"
+        strTable[#strTable + 1] = "2. 在当前调用栈顶层的停止位置打一个断点;\n"
+        strTable[#strTable + 1] = "3. 再次运行 'LuaPanda.testBreakpoint()'"
         testBreakpointFlag = true;
         
         return table.concat(strTable);
