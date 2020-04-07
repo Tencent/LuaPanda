@@ -697,6 +697,7 @@ void step_process(lua_State *L, lua_Debug *ar){
     }
 }
 
+// 无需reconnect返回1 ，需要重连时返回0
 int hook_process_reconnect(lua_State *L){
     time_t currentSecs = time(static_cast<time_t*>(NULL));
     if(cur_hook_state == DISCONNECT_HOOK){

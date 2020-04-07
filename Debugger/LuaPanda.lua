@@ -934,12 +934,14 @@ function this.reGetSock()
 end
 
 -- 定时(以函数return为时机) 进行attach连接
+-- 返回值 hook 可以继续往下走时返回1 ，无需继续时返回0
 function this.reConnect()
     if currentHookState == hookState.DISCONNECT_HOOK then
         if os.time() - stopConnectTime < attachInterval then
+            -- 未到重连时间
             -- this.printToConsole("Reconnect time less than 1s");
             -- this.printToConsole("os.time:".. os.time() .. " | stopConnectTime:" ..stopConnectTime);
-            return 1;
+            return 0;
         end
         this.printToConsole("Reconnect !");
         if sock == nil then
@@ -963,14 +965,15 @@ function this.reConnect()
         if connectSuccess then
             this.printToConsole("reconnect success");
             this.connectSuccess();
+            return 1;
         else
             this.printToConsole("reconnect failed" );
             stopConnectTime = os.time();
+            return 0;
         end
-
-        return 1;
     end
-    return 0;
+    -- 不必重连，正常继续运行
+    return 1;
 end
 
 -- 向adapter发消息
