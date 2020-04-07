@@ -41,6 +41,9 @@ export class PathManager {
                     tempArray.push(tempSaveValue);
                     tempArray.push(formatedPath);
                     _fileNameToPathMap[fileNameKey] = tempArray;
+                }else{
+                    // 可能和元方法冲突, 此时key是一个function
+                    _fileNameToPathMap[fileNameKey] = formatedPath; 
                 }
             }else{
                 _fileNameToPathMap[fileNameKey] = formatedPath; 
