@@ -1901,7 +1901,12 @@ function this.IsMeetCondition(conditionExp)
     currentCallStack = {};
     variableRefTab = {};
     variableRefIdx = 1;
-    this.getStackTable();
+    if  hookLib then
+        this.getStackTable(4);
+    else
+        this.getStackTable();
+    end
+
     this.curStackId = 2; --在用户空间最上层执行
 
     local conditionExpTable = {["varName"] = conditionExp}
