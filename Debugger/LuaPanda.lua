@@ -119,6 +119,7 @@ local userSetUseClib;    --用户在VSCode端设置的是否是用clib库
 local autoPathMode = false;
 local autoExt;           --调试器启动时自动获取到的后缀, 用于检测lua虚拟机返回的路径是否带有文件后缀。他可以是空值或者".lua"等
 local luaProcessAsServer;
+local testBreakpointFlag = false;   -- 测试断点的标志位。结合 LuaPanda.testBreakpoint() 测试断点无法停止的原因
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
 local stepOutCounter = 0;       --STEPOVER out计数器
@@ -359,9 +360,26 @@ function this.getBreaks()
     return breaks;
 end
 
+---testBreakpoint 测试断点
+function this.testBreakpoint()
+    if recordBreakPointPath and recordBreakPointPath ~= "" then
+        testBreakpointFlag = false;
+        this.breakpointTestInfo();    
+    else
+        local sreTable = {};
+        strTable[#strTable + 1] = "正在准备进行断点测试，请按照如下步骤操作"
+        strTable[#strTable + 1] = "1. 请[清除]当前项目中所有断点;"
+        strTable[#strTable + 1] = "2. 在当前停止的位置打一个断点;"
+        strTable[#strTable + 1] = "3. 再次运行 'LuaPanda.testBreakpoint()'。"
+        testBreakpointFlag = true;
+        
+        return table.concat(strTable);
+    end
+end
+
 -- 返回路径相关信息
 -- cwd:配置的工程路径  |  info["source"]:通过 debug.getinfo 获得执行文件的路径  |  format：格式化后的文件路径
-function this.testBreakpoint()
+function this.breakpointTestInfo()
     local ly = this.getSpecificFunctionStackLevel(lastRunFunction.func);
     if type(ly) ~= "number" then
         ly = 2;
@@ -534,7 +552,7 @@ function this.doctor()
                     --和断点匹配了
                     fileMatch = true;
                     -- retStr = retStr .. "\n请对比如下路径:\n";
-                    strTable[#strTable + 1] = this.testBreakpoint();
+                    strTable[#strTable + 1] = this.breakpointTestInfo();
                     strTable[#strTable + 1] = "\nfilepath: " .. key;
                     if isAbsolutePath then
                         strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。";
@@ -604,7 +622,7 @@ function this.getInfo()
     strTable[#strTable + 1] = "clibPath: " .. tostring(clibPath) .. '\n';
     strTable[#strTable + 1] = "debugger: " .. this.getPath(DebuggerFileName) .. '\n';
     strTable[#strTable + 1] = "cwd     : " .. cwd .. '\n';
-    strTable[#strTable + 1] = this.testBreakpoint();
+    strTable[#strTable + 1] = this.breakpointTestInfo();
 
     if pathErrTip ~= nil and pathErrTip ~= '' then
         strTable[#strTable + 1] = '\n' .. pathErrTip;
@@ -1037,6 +1055,9 @@ function this.dataProcess( dataStr )
         fakeBreakPointCache = {}
         local bkPath = dataTable.info.path;
         bkPath = this.genUnifiedPath(bkPath);
+        if testBreakpointFlag then
+            recordBreakPointPath = bkPath;
+        end
         if autoPathMode then 
             -- 自动路径模式下，仅保留文件名
             -- table[文件名.后缀] -- [fullpath] -- [line , type]
@@ -1859,6 +1880,7 @@ function this.isHitBreakpoint(breakpointPath, opath, curLine)
             end
         end
     else
+        testBreakpointFlag = false; --如果用户打开了测试断点的标志位而未主动关闭，会在lua继续运行时关闭。
         recordBreakPointPath = '';  --当切换文件时置空，避免提示给用户错误信息
     end
     return false;
