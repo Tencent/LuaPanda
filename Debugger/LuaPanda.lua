@@ -41,7 +41,7 @@ local userDotInRequire = true;         --兼容require中使用 require(a.b) 和
 local traversalUserData = false;        --如果可以的话(取决于userdata原表中的__pairs)，展示userdata中的元素。 如果在调试器中展开userdata时有错误，请关闭此项.
 --用户设置项END
 
-local debuggerVer = "3.1.66";                 --debugger版本号
+local debuggerVer = "3.1.80";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = {};     --引用的开源工具，包括json解析和table展开工具等
@@ -420,13 +420,13 @@ function this.breakpointTestInfo()
                 -- 短路径断点命中
                 if DistinguishSameNameFile == false then
                     strTable[#strTable + 1] = "本文件中断点可正常命中。"
-                    strTable[#strTable + 1] = "同名文件中的断点识别(DistinguishSameNameFile) 未开启，请确保 VSCode 断点不要存在于同名lua文件中。相关介绍：http://";
+                    strTable[#strTable + 1] = "同名文件中的断点识别(DistinguishSameNameFile) 未开启，请确保 VSCode 断点不要存在于同名lua文件中。";
                 else
                     strTable[#strTable + 1] = "同名文件中的断点识别(DistinguishSameNameFile) 已开启。";
                     if string.find(recordBreakPointPath, NormalizedPath, 1, true) then
                         strTable[#strTable + 1] = "本文件中断点可被正常命中"
                     else
-                        strTable[#strTable + 1] = "断点可能无法被命中，因为 lua 虚拟机中获得的路径 Normalized 不是断点路径 Breakpoint 的子串。 如有需要，可以在 launch.json 中设置 TruncatedOPath 来去除 Normalized 部分路径，相关参考："
+                        strTable[#strTable + 1] = "断点可能无法被命中，因为 lua 虚拟机中获得的路径 Normalized 不是断点路径 Breakpoint 的子串。 如有需要，可以在 launch.json 中设置 TruncatedOPath 来去除 Normalized 部分路径。"
                     end
                 end
             else
