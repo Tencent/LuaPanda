@@ -1263,10 +1263,10 @@ function this.dataProcess( dataStr )
 
         if  dataTable.info.pathCaseSensitivity == "true" then
             pathCaseSensitivity =  true;
-            TruncatedOPath = dataTable.info.TruncatedOPath;
+            TruncatedOPath = dataTable.info.TruncatedOPath or "";
         else
             pathCaseSensitivity =  false;
-            TruncatedOPath = string.lower(dataTable.info.TruncatedOPath);
+            TruncatedOPath = string.lower(dataTable.info.TruncatedOPath or "");
         end
 
         if  dataTable.info.DistinguishSameNameFile == "true" then
@@ -2011,7 +2011,7 @@ end
 -- @event 执行状态(call,return,line)
 -- @line    行号
 function this.debug_hook(event, line)
-    if this.reConnect() == 1 then return; end
+    if this.reConnect() == 0 then return; end
 
     if logLevel == 0 then
         local logTable = {"-----enter debug_hook-----\n", "event:", event, "  line:", tostring(line), " currentHookState:",currentHookState," currentRunState:", currentRunState};
