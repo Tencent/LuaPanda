@@ -13,7 +13,6 @@ import {
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { basename } from 'path';
 import { LuaDebugRuntime, LuaBreakpoint } from './luaDebugRuntime';
-const { Subject } = require('await-notify');
 import * as Net from 'net';
 import { DataProcessor } from './dataProcessor';
 import { DebugLogger } from '../common/logManager';
@@ -24,6 +23,8 @@ import { UpdateManager } from './updateManager';
 import { ThreadManager } from '../common/ThreadManager';
 import { PathManager } from '../common/PathManager';
 import { VisualSetting } from './visualSetting'
+const { Subject } = require('await-notify');
+let fs = require('fs');
 
 export class LuaDebugSession extends LoggingDebugSession {
     public TCPPort;			//和客户端连接的端口号，通过VScode的设置赋值
@@ -230,6 +231,12 @@ export class LuaDebugSession extends LoggingDebugSession {
 
         if(this._pathManager.useAutoPathMode === true){
             Tools.rebuildAcceptExtMap(args.luaFileExtension);
+            // 判断 args.cwd 是否存在， 如果不存在给出提示，并停止运行
+            let isCWDExist = fs.existsSync(args.cwd);
+            if(!isCWDExist){
+                vscode.window.showErrorMessage("[Error] launch.json 文件中 cwd 指向的路径 " + args.cwd + " 不存在，请修改后再次运行！" , "好的");
+                return;
+            }
             this._pathManager.rebuildWorkspaceNamePathMap(args.cwd);
             this._pathManager.checkSameNameFile();
         }
@@ -325,7 +332,6 @@ export class LuaDebugSession extends LoggingDebugSession {
         else{
             // 非单文件调试模式下，拉起program
             if(args.program != undefined && args.program.trim() != ''){
-                let fs = require('fs');
                 if(fs.existsSync(args.program) && fs.statSync(args.program).isFile()){
                     //program 和 args 分开
                     if(this._programTermianl){
