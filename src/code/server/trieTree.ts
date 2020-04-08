@@ -38,6 +38,7 @@ export class trieTree {
         }
 
         let currentPtr = root;
+        searchKey = searchKey.toLowerCase()
         let searchArray = searchKey.split('');
 
         for (let index = 0; index < searchArray.length; index++) {
@@ -70,7 +71,7 @@ export class trieTree {
     // @symbol 单个符号名
     private static addNodeOnTrieTree(root , symbol){
         let currentPtr = root;
-        let searchName= symbol.searchName;
+        let searchName = symbol.searchName.toLowerCase();
         let searchArray = searchName.split('');
         for (let index = 0; index < searchArray.length; index++) {
             const it = searchArray[index];

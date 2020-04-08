@@ -1,53 +1,51 @@
---[[
-Tencent is pleased to support the open source community by making LuaPanda available.
-Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
-Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
-https://opensource.org/licenses/BSD-3-Clause
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+-- Tencent is pleased to support the open source community by making LuaPanda available.
+-- Copyright (C) 2019 THL A29 Limited, a Tencent company. All rights reserved.
+-- Licensed under the BSD 3-Clause License (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+-- https://opensource.org/licenses/BSD-3-Clause
+-- Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 
-API:
-    LuaPanda.printToVSCode(logStr, printLevel, type)
-        打印日志到VSCode Output下Debugger/log中
-        @printLevel: debug(0)/info(1)/error(2) 这里的日志等级需高于launch.json中配置等级日志才能输出 (可选参数，默认0)
-        @type: 0:VSCode output console  1:VSCode tip (可选参数，默认0)
+-- API:
+--     LuaPanda.printToVSCode(logStr, printLevel, type)
+--         打印日志到VSCode Output下Debugger/log中
+--         @printLevel: debug(0)/info(1)/error(2) 这里的日志等级需高于launch.json中配置等级日志才能输出 (可选参数，默认0)
+--         @type(可选参数，默认0): 0:VSCode output console  1:VSCode tip  2:VSCode debug console
 
-    LuaPanda.BP()
-        强制打断点，可以在协程中使用。建议使用以下写法:
-        local ret = LuaPanda and LuaPanda.BP and LuaPanda.BP();
-        如果成功加入断点ret返回true，否则是nil
+--     LuaPanda.BP()
+--         强制打断点，可以在协程中使用。建议使用以下写法:
+--         local ret = LuaPanda and LuaPanda.BP and LuaPanda.BP();
+--         如果成功加入断点ret返回true，否则是nil
 
-    LuaPanda.getInfo()
-        返回获取调试器信息。包括版本号，是否使用lib库，系统是否支持loadstring(load方法)。返回值类型string, 推荐在调试控制台中使用。
+--     LuaPanda.getInfo()
+--         返回获取调试器信息。包括版本号，是否使用lib库，系统是否支持loadstring(load方法)。返回值类型string, 推荐在调试控制台中使用。
 
-    LuaPanda.doctor()
-        返回对当前环境的诊断信息，提示可能存在的问题。返回值类型string, 推荐在调试控制台中使用。
+--     LuaPanda.testBreakpoint()
+--         测试断点，用于路径错误导致断点不停地情况。方法是打开stopOnEntry, 或者在代码中加入LuaPanda.BP(), 当这两个位置可以停止但是断点无法停止时，使用此命令
+--         可以帮助用户查询断点无法停止的原因
 
-    LuaPanda.getCWD()
-        用户可以调用或在调试控制台中输出这个函数，返回帮助设置CWD的路径。比如
-        cwd:      F:/1/2/3/4/5
-        getinfo:  @../../../../../unreal_10/slua-unreal_1018/Content//Lua/TestArray.lua
-        format:   f:/unreal_10/slua-unreal_1018/Content/Lua/TestArray.lua
-        cwd是vscode传来的配置路径。getinfo是通过getinfo获取到的正在运行的文件路径。format是经过 cwd + getinfo 整合后的格式化路径。
-        format是传给VSCode的最终路径。
-        如果format路径和文件真实路径不符，导致VSCode找不到文件，通过调整工程中launch.json的cwd，使format路径和真实路径一致。
-        返回值类型string, 推荐在调试控制台中使用。
+--     LuaPanda.doctor()
+--         返回对当前环境的诊断信息，提示可能存在的问题。返回值类型string, 推荐在调试控制台中使用。
 
-    LuaPanda.getBreaks()
-        获取断点信息，返回值类型string, 推荐在调试控制台中使用。
+--     LuaPanda.getBreaks()
+--         获取断点信息，返回值类型string, 推荐在调试控制台中使用。
 
-    LuaPanda.serializeTable(table)
-        把table序列化为字符串，返回值类型是string。
-]]
+--     LuaPanda.serializeTable(table)
+--         把table序列化为字符串，返回值类型是string。
+
+--     LuaPanda.stopAttach()
+--         断开连接，停止attach，本次被调试程序运行过程无法再次进行attach连接。
 
 --用户设置项
 local openAttachMode = true;            --是否开启attach模式。attach模式开启后可以在任意时刻启动vscode连接调试。缺点是没有连接调试时也会略降低lua执行效率(会不断进行attach请求)
 local attachInterval = 1;               --attach间隔时间(s)
 local customGetSocketInstance = nil;    --支持用户实现一个自定义调用luasocket的函数，函数返回值必须是一个socket实例。例: function() return require("socket.core").tcp() end;
 local consoleLogLevel = 2;           --打印在控制台(print)的日志等级 0 : all/ 1: info/ 2: error.
-local connectTimeoutSec = 0.005;       --等待连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
+local connectTimeoutSec = 0.005;       --lua进程作为Client时, 连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
+local listeningTimeoutSec = 0.5;       -- lua进程作为Server时,连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.1 - 1
+local userDotInRequire = true;         --兼容require中使用 require(a.b) 和 require(a/b) 的形式引用文件夹中的文件
+local traversalUserData = false;        --如果可以的话(取决于userdata原表中的__pairs)，展示userdata中的元素。 如果在调试器中展开userdata时有错误，请关闭此项.
 --用户设置项END
 
-local debuggerVer = "3.1.0";                 --debugger版本号
+local debuggerVer = "3.1.80";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = {};     --引用的开源工具，包括json解析和table展开工具等
@@ -57,7 +55,7 @@ this.curStackId = 0;
 local json;
 --hook状态列表
 local hookState = {
-    DISCONNECT_HOOK = 0,                --断开连接
+    DISCONNECT_HOOK = 0,        --断开连接
     LITE_HOOK = 1,              --全局无断点
     MID_HOOK = 2,               --全局有断点，本文件无断点
     ALL_HOOK = 3,               --本文件有断点
@@ -87,7 +85,7 @@ local breaks = {};              --保存断点的数组
 this.breaks = breaks;           --供hookLib调用
 local recCallbackId = "";
 --VSCode端传过来的配置，在VSCode端的launch配置，传过来并赋值
-local luaFileExtension = "";    --脚本后缀
+local luaFileExtension = "";    --vscode传过来的脚本后缀
 local cwd = "";                 --工作路径
 local DebuggerFileName = "";    --Debugger文件名(原始,未经path处理), 函数中会自动获取
 local DebuggerToolsName = "";
@@ -95,13 +93,16 @@ local lastRunFunction = {};     --上一个执行过的函数。在有些复杂�
 local currentCallStack = {};    --获取当前调用堆栈信息
 local hitBP = false;            --BP()中的强制断点命中标记
 local TempFilePath_luaString = ""; --VSCode端配置的临时文件存放路径
-local connectHost;              --记录连接端IP
-local connectPort;              --记录连接端口号
-local sock;                     --tcp socket
+local recordHost;              --记录连接端IP
+local recordPort;              --记录连接端口号
+local sock;                   --lua socket 文件描述符
+local server;                 --server 描述符
 local OSType;                --VSCode识别出的系统类型，也可以自行设置。Windows_NT | Linux | Darwin
 local clibPath;                 --chook库在VScode端的路径，也可自行设置。
 local hookLib;                  --chook库的引用实例
 local adapterVer;               --VScode传来的adapter版本号
+local TruncatedOPath;           --VScode中用户设置的用于截断opath路径的标志，注意这里可以接受lua魔法字符
+local DistinguishSameNameFile = false;  --是否区分lua同名文件中的断点，在VScode launch.json 中 DistinguishSameNameFile 控制
 --标记位
 local logLevel = 1;             --日志等级all/info/error. 此设置对应的是VSCode端设置的日志等级.
 local variableRefIdx = 1;       --变量索引
@@ -120,6 +121,9 @@ local isAbsolutePath = false;
 local stopOnEntry;         --用户在VSCode端设置的是否打开stopOnEntry
 local userSetUseClib;    --用户在VSCode端设置的是否是用clib库
 local autoPathMode = false;
+local autoExt;           --调试器启动时自动获取到的后缀, 用于检测lua虚拟机返回的路径是否带有文件后缀。他可以是空值或者".lua"等
+local luaProcessAsServer;
+local testBreakpointFlag = false;   -- 测试断点的标志位。结合 LuaPanda.testBreakpoint() 测试断点无法停止的原因
 --Step控制标记位
 local stepOverCounter = 0;      --STEPOVER over计数器
 local stepOutCounter = 0;       --STEPOVER out计数器
@@ -127,12 +131,17 @@ local HOOK_LEVEL = 3;           --调用栈偏移量，使用clib时为3，lua�
 local isUseLoadstring = 0;
 local debugger_loadString;
 --临时变量
+local recordBreakPointPath;     --记录最后一个[可能命中]的断点，用于getInfo以及doctor的断点测试
 local coroutineCreate;          --用来记录lua原始的coroutine.create函数
 local stopConnectTime = 0;      --用来临时记录stop断开连接的时间
 local isInMainThread;
 local receiveMsgTimer = 0;
+local isUserSetClibPath = false; --用户是否在本文件中自设了clib路径
+local hitBpTwiceCheck;  -- 命中断点的Vscode校验结果，默认true (true是命中，false是未命中)
 local formatPathCache = {};     -- getinfo -> format
-local isUserSetClibPath = false;        --用户是否在本文件中自设了clib路径
+function this.formatPathCache() return formatPathCache; end
+local fakeBreakPointCache = {};   --其中用 路径-{行号列表} 形式保存错误命中信息
+function this.fakeBreakPointCache() return fakeBreakPointCache; end
 --5.1/5.3兼容
 if _VERSION == "Lua 5.1" then
     debugger_loadString = loadstring;
@@ -156,13 +165,24 @@ local env = setmetatable({ }, {
 -- 流程
 -----------------------------------------------------------------------------
 
--- 启动调试器
--- @host adapter端ip, 默认127.0.0.1
--- @port adapter端port ,默认8818
-function this.start(host, port)
-    host = tostring(host or "127.0.0.1") ;
+---this.bindServer 当lua进程作为Server时，server绑定函数
+--- server 在bind时创建, 连接成功后关闭listen , disconnect时置空。reconnect时会查询server，没有的话重新绑定，如果已存在直接accept
+function this.bindServer(host, port)
+    server = sock
+    server:settimeout(listeningTimeoutSec);
+    assert(server:bind(host, port));
+    server:setoption("reuseaddr", true); --防止已连接状态下新的连接进入，不再reuse
+    assert(server:listen(0));
+end
+
+-- 以lua作为服务端的形式启动调试器
+-- @host 绑定ip , 默认 0.0.0.0
+-- @port 绑定port, 默认 8818
+function this.startServer(host, port)
+    host = tostring(host or "0.0.0.0") ;
     port = tonumber(port) or 8818;
-    this.printToConsole("Debugger start. connect host:" .. host .. " port:".. tostring(port), 1);
+    luaProcessAsServer = true;
+    this.printToConsole("Debugger start as SERVER. bind host:" .. host .. " port:".. tostring(port), 1);
     if sock ~= nil then
         this.printToConsole("[Warning] 调试器已经启动，请不要再次调用start()" , 1);
         return;
@@ -174,20 +194,61 @@ function this.start(host, port)
         this.printToConsole("[Error] Start debugger but get Socket fail , please install luasocket!", 2);
         return;
     end
-    connectHost = host;
-    connectPort = port;
-    local sockSuccess = sock and sock:connect(connectHost, connectPort);
-    if sockSuccess ~= nil then
-        this.printToConsole("first connect success!");
+    recordHost = host;
+    recordPort = port;
+
+    this.bindServer(recordHost, recordPort);
+    local connectSuccess = server:accept();
+    sock = connectSuccess;
+
+    if connectSuccess then
+        this.printToConsole("First connect success!");
         this.connectSuccess();
     else
-        this.printToConsole("first connect failed!");
+        this.printToConsole("First connect failed!");
+        this.changeHookState(hookState.DISCONNECT_HOOK);
+    end   
+end
+
+-- 启动调试器
+-- @host adapter端ip, 默认127.0.0.1
+-- @port adapter端port ,默认8818
+function this.start(host, port)
+    host = tostring(host or "127.0.0.1") ;
+    port = tonumber(port) or 8818;
+    this.printToConsole("Debugger start as CLIENT. connect host:" .. host .. " port:".. tostring(port), 1);
+    if sock ~= nil then
+        this.printToConsole("[Warning] 调试器已经启动，请不要再次调用start()" , 1);
+        return;
+    end
+
+    --尝试初次连接
+    this.changeRunState(runState.DISCONNECT);
+    if not this.reGetSock() then
+        this.printToConsole("[Error] Start debugger but get Socket fail , please install luasocket!", 2);
+        return;
+    end
+    recordHost = host;
+    recordPort = port;
+
+    sock:settimeout(connectTimeoutSec);
+    local connectSuccess = sock and sock:connect(recordHost, recordPort);
+
+    if connectSuccess then
+        this.printToConsole("First connect success!");
+        this.connectSuccess();
+    else
+        this.printToConsole("First connect failed!");
         this.changeHookState(hookState.DISCONNECT_HOOK);
     end
 end
 
 -- 连接成功，开始初始化
 function this.connectSuccess()
+    if server then
+        server:close(); -- 停止listen 
+    end
+
     this.changeRunState(runState.WAIT_CMD);
     this.printToConsole("connectSuccess", 1);
     --设置初始状态
@@ -200,6 +261,8 @@ function this.connectSuccess()
             if k == "source" then
                 DebuggerFileName = v;
                 this.printToVSCode("DebuggerFileName:" .. tostring(DebuggerFileName));
+                -- 从代码中去后缀
+                autoExt = DebuggerFileName:gsub('.*LuaPanda', '');
 
                 if hookLib ~= nil then
                     hookLib.sync_debugger_path(DebuggerFileName);
@@ -248,11 +311,26 @@ function this.clearData()
     -- reset breaks
     breaks = {};
     formatPathCache = {};
+    fakeBreakPointCache = {};
     this.breaks = breaks;
     if hookLib ~= nil then
         hookLib.sync_breakpoints(); --清空断点信息
         hookLib.clear_pathcache(); --清空路径缓存
     end
+end
+
+-- 本次连接过程中停止attach ,以提高运行效率
+function this.stopAttach()
+    openAttachMode = false;
+    this.printToConsole("Debugger stopAttach", 1);
+    this.clearData()
+    this.changeHookState( hookState.DISCONNECT_HOOK );
+    stopConnectTime = os.time();
+    this.changeRunState(runState.DISCONNECT);
+    if sock ~= nil then
+        sock:close();
+        if luaProcessAsServer and server then server = nil; end;
+    end   
 end
 
 --断开连接
@@ -265,9 +343,11 @@ function this.disconnect()
 
     if sock ~= nil then
         sock:close();
+        sock = nil;
+        server = nil;
     end
 
-    if connectPort == nil or connectHost == nil then
+    if recordHost == nil or recordPort == nil then
         --异常情况处理, 在调用LuaPanda.start()前首先调用了LuaPanda.disconnect()
         this.printToConsole("[Warning] User call LuaPanda.disconnect() before set debug ip & port, please call LuaPanda.start() first!", 2);
         return;
@@ -284,9 +364,26 @@ function this.getBreaks()
     return breaks;
 end
 
+---testBreakpoint 测试断点
+function this.testBreakpoint()
+    if recordBreakPointPath and recordBreakPointPath ~= "" then
+        -- testBreakpointFlag = false;
+        return this.breakpointTestInfo();    
+    else
+        local strTable = {};
+        strTable[#strTable + 1] = "正在准备进行断点测试，请按照如下步骤操作\n"
+        strTable[#strTable + 1] = "1. 请[清除]当前项目中所有断点;\n"
+        strTable[#strTable + 1] = "2. 在当前调用栈顶层的停止位置打一个断点;\n"
+        strTable[#strTable + 1] = "3. 再次运行 'LuaPanda.testBreakpoint()'"
+        testBreakpointFlag = true;
+        
+        return table.concat(strTable);
+    end
+end
+
 -- 返回路径相关信息
 -- cwd:配置的工程路径  |  info["source"]:通过 debug.getinfo 获得执行文件的路径  |  format：格式化后的文件路径
-function this.getCWD()
+function this.breakpointTestInfo()
     local ly = this.getSpecificFunctionStackLevel(lastRunFunction.func);
     if type(ly) ~= "number" then
         ly = 2;
@@ -296,7 +393,54 @@ function this.getCWD()
         runSource = this.getPath(tostring(hookLib.get_last_source()));
     end
     local info = debug.getinfo(ly, "S");
-    return "cwd:      "..cwd .."\ngetinfo:  ".. info["source"] .. "\nformat:   " .. tostring(runSource) ;
+    local NormalizedPath =  this.formatOpath(info["source"]);
+    NormalizedPath = this.truncatedPath(NormalizedPath, TruncatedOPath);
+
+    local strTable = {}
+    local FormatedPath = tostring(runSource);
+    strTable[#strTable + 1] = "\n- BreakPoint Test:"
+    strTable[#strTable + 1] = "\nUser set lua extension:   ." .. tostring(luaFileExtension);
+    strTable[#strTable + 1] = "\nAuto get lua extension:   " .. tostring(autoExt);
+    if TruncatedOPath and TruncatedOPath ~= '' then
+    strTable[#strTable + 1] = "\nUser set TruncatedOPath:  " .. TruncatedOPath;
+    end
+    strTable[#strTable + 1] = "\nGetInfo:    ".. info["source"];
+    strTable[#strTable + 1] = "\nNormalized: " .. NormalizedPath;
+    strTable[#strTable + 1] = "\nFormated:   " .. FormatedPath;
+    if recordBreakPointPath and recordBreakPointPath ~= "" then
+    strTable[#strTable + 1] = "\nBreakpoint: " .. recordBreakPointPath;
+    end
+
+    if not autoPathMode then
+        if isAbsolutePath then
+            strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，Formated使用GetInfo路径。" .. winDiskSymbolTip;
+        else
+            strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的路径(GetInfo)是相对路径，调试器运行依赖的绝对路径(Formated)是来源于cwd+GetInfo拼接。如Formated路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。也可以在Formated对应的文件下打一个断点，调整直到Formated和Breaks Info中断点路径完全一致。" .. winDiskSymbolTip;
+        end
+    else
+        strTable[#strTable + 1] = "\n说明:自动路径(autoPathMode)模式已开启。";
+        if recordBreakPointPath and recordBreakPointPath ~= "" then
+            if string.find(recordBreakPointPath , FormatedPath, (-1) * string.len(FormatedPath) , true) then
+                -- 短路径断点命中
+                if DistinguishSameNameFile == false then
+                    strTable[#strTable + 1] = "本文件中断点可正常命中。"
+                    strTable[#strTable + 1] = "同名文件中的断点识别(DistinguishSameNameFile) 未开启，请确保 VSCode 断点不要存在于同名lua文件中。";
+                else
+                    strTable[#strTable + 1] = "同名文件中的断点识别(DistinguishSameNameFile) 已开启。";
+                    if string.find(recordBreakPointPath, NormalizedPath, 1, true) then
+                        strTable[#strTable + 1] = "本文件中断点可被正常命中"
+                    else
+                        strTable[#strTable + 1] = "断点可能无法被命中，因为 lua 虚拟机中获得的路径 Normalized 不是断点路径 Breakpoint 的子串。 如有需要，可以在 launch.json 中设置 TruncatedOPath 来去除 Normalized 部分路径。"
+                    end
+                end
+            else
+                strTable[#strTable + 1] = "断点未被命中，原因是 FormatedPath 不是 Breakpoint 路径的子串。"
+            end
+        else
+            strTable[#strTable + 1] = "未能在本文件中找到断点。如果要进行断点测试，请使用 LuaPanda.testBreakpoint()。"
+        end
+    end
+    return table.concat(strTable)
 end
 
 --返回版本号等配置
@@ -307,7 +451,7 @@ function this.getBaseInfo()
         jitVer = "," .. tostring(jit.version);
     end
 
-    strTable[#strTable + 1] = "Lua Ver:" .. _VERSION .. jitVer .." | adapterVer:" .. tostring(adapterVer) .. " | Debugger Ver:" .. tostring(debuggerVer);
+    strTable[#strTable + 1] = "Lua Ver:" .. _VERSION .. jitVer .." | Adapter Ver:" .. tostring(adapterVer) .. " | Debugger Ver:" .. tostring(debuggerVer);
     local moreInfoStr = "";
     if hookLib ~= nil then
         local clibVer, forluaVer = hookLib.sync_getLibVersion();
@@ -326,6 +470,8 @@ function this.getBaseInfo()
     strTable[#strTable + 1] = " | supportREPL:".. tostring(outputIsUseLoadstring);
     strTable[#strTable + 1] = " | useBase64EncodeString:".. tostring(isNeedB64EncodeStr);
     strTable[#strTable + 1] = " | codeEnv:" .. tostring(OSType) .. '\n';
+    strTable[#strTable + 1] = " | DistinguishSameNameFile:" .. tostring(DistinguishSameNameFile) .. '\n';
+
     strTable[#strTable + 1] = moreInfoStr;
     if OSTypeErrTip ~= nil and OSTypeErrTip ~= '' then
         strTable[#strTable + 1] = '\n' ..OSTypeErrTip;
@@ -410,7 +556,7 @@ function this.doctor()
                     --和断点匹配了
                     fileMatch = true;
                     -- retStr = retStr .. "\n请对比如下路径:\n";
-                    strTable[#strTable + 1] = this.getCWD();
+                    strTable[#strTable + 1] = this.breakpointTestInfo();
                     strTable[#strTable + 1] = "\nfilepath: " .. key;
                     if isAbsolutePath then
                         strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。";
@@ -479,24 +625,14 @@ function this.getInfo()
     strTable[#strTable + 1] = "\n\n- Path Info: \n";
     strTable[#strTable + 1] = "clibPath: " .. tostring(clibPath) .. '\n';
     strTable[#strTable + 1] = "debugger: " .. this.getPath(DebuggerFileName) .. '\n';
-    strTable[#strTable + 1] = this.getCWD();
-
-    if not autoPathMode then
-        if isAbsolutePath then
-            strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的是绝对路径，format使用getinfo路径。" .. winDiskSymbolTip;
-        else
-            strTable[#strTable + 1] = "\n说明:从lua虚拟机获取到的路径(getinfo)是相对路径，调试器运行依赖的绝对路径(format)是来源于cwd+getinfo拼接。如format路径错误请尝试调整cwd或改变VSCode打开文件夹的位置。也可以在format对应的文件下打一个断点，调整直到format和Breaks Info中断点路径完全一致。" .. winDiskSymbolTip;
-        end
-    else
-        strTable[#strTable + 1] = "\n说明:已开启autoPathMode自动路径模式，调试器会根据getinfo获得的文件名自动查找文件位置，请确保VSCode打开的工程中不存在同名lua文件。";
-    end
+    strTable[#strTable + 1] = "cwd     : " .. cwd .. '\n';
+    strTable[#strTable + 1] = this.breakpointTestInfo();
 
     if pathErrTip ~= nil and pathErrTip ~= '' then
         strTable[#strTable + 1] = '\n' .. pathErrTip;
     end
 
-    strTable[#strTable + 1] = "\n\n- Breaks Info: \n";
-    strTable[#strTable + 1] = this.serializeTable(this.getBreaks(), "breaks");
+    strTable[#strTable + 1] = "\n\n- Breaks Info: \nUse 'LuaPanda.getBreaks()' to watch.";
     return table.concat(strTable);
 end
 
@@ -632,9 +768,11 @@ function this.printToVSCode(str, printLevel, type)
     local sendTab = {};
     sendTab["callbackId"] = "0";
     if type == 0 then
-        sendTab["cmd"] = "log";
-    else
+        sendTab["cmd"] = "output";
+    elseif type == 1 then
         sendTab["cmd"] =  "tip";
+    else -- type == 2
+        sendTab["cmd"] =  "debug_console";
     end
     sendTab["info"] = {};
     sendTab["info"]["logInfo"] = tostring(str);
@@ -708,6 +846,46 @@ end
 function this.setCacheFormatPath(source, dest)
     formatPathCache[source] = dest;
 end
+
+-- 处理 opath(info.source) 的函数, 生成一个规范的路径函数(和VScode端checkRightPath逻辑完全一致)
+function this.formatOpath(opath)
+    -- delete @
+    if opath:sub(1,1) == '@' then
+        opath = opath:sub(2);
+    end
+    -- change ./ to /
+    if opath:sub(1,2) == './' then
+        opath = opath:sub(2);
+    end
+
+    opath = this.genUnifiedPath(opath);
+
+    -- lower
+    if pathCaseSensitivity == false then
+        opath = string.lower(opath);
+    end
+    --把filename去除后缀
+    if autoExt == nil or autoExt == '' then
+        -- 在虚拟机返回路径没有后缀的情况下，用户必须自设后缀
+        -- 确定filePath中最后一个.xxx 不等于用户配置的后缀, 则把所有的. 转为 /
+        if not opath:find(luaFileExtension , (-1) * luaFileExtension:len(), true) then
+            -- getinfo 路径没有后缀，把 . 全部替换成 / ，我们不允许用户在文件（或文件夹）名称中出现"." , 因为无法区分 
+            opath = string.gsub(opath, "%.", "/");
+        else
+            -- 有后缀，那么把除后缀外的部分中的. 转为 / 
+            opath = this.changePotToSep(opath, luaFileExtension);
+        end
+    else
+        -- 虚拟机路径有后缀
+        opath = this.changePotToSep(opath, autoExt);
+    end
+
+    -- 截取 路径+文件名 (不带后缀)
+    -- change pot to /
+    -- opath = string.gsub(opath, "%.", "/");
+    return opath;
+end
+
 -----------------------------------------------------------------------------
 -- 内存相关
 -----------------------------------------------------------------------------
@@ -726,22 +904,23 @@ end
 -----------------------------------------------------------------------------
 -- 刷新socket
 -- @return true/false 刷新成功/失败
-function this.reGetSock()
+function this.reGetSock()  
+    if server then return true end
+
     if sock ~= nil then
         pcall(function() sock:close() end);
     end
-    --call ue4 luasocket
+
+    --call slua-unreal luasocket
     sock = lua_extension and lua_extension.luasocket and lua_extension.luasocket().tcp();
     if sock == nil then
-        --call u3d luasocket
+        --call normal luasocket
        if pcall(function() sock =  require("socket.core").tcp(); end) then
             this.printToConsole("reGetSock success");
-            sock:settimeout(connectTimeoutSec);
        else
             --call custom function to get socket
             if customGetSocketInstance and pcall( function() sock =  customGetSocketInstance(); end ) then
                 this.printToConsole("reGetSock custom success");
-                sock:settimeout(connectTimeoutSec);      
             else
                 this.printToConsole("[Error] reGetSock fail", 2);
                 return false;
@@ -750,35 +929,51 @@ function this.reGetSock()
     else
         --set ue4 luasocket
         this.printToConsole("reGetSock ue4 success");
-        sock:settimeout(connectTimeoutSec);
     end
     return true;
 end
 
 -- 定时(以函数return为时机) 进行attach连接
+-- 返回值 hook 可以继续往下走时返回1 ，无需继续时返回0
 function this.reConnect()
     if currentHookState == hookState.DISCONNECT_HOOK then
         if os.time() - stopConnectTime < attachInterval then
-            this.printToConsole("Reconnect time less than 1s");
-            this.printToConsole("os.time:".. os.time() .. " | stopConnectTime:" ..stopConnectTime);
-            return 1;
+            -- 未到重连时间
+            -- this.printToConsole("Reconnect time less than 1s");
+            -- this.printToConsole("os.time:".. os.time() .. " | stopConnectTime:" ..stopConnectTime);
+            return 0;
         end
-
+        this.printToConsole("Reconnect !");
         if sock == nil then
             this.reGetSock();
         end
 
-        local sockSuccess, status = sock:connect(connectHost, connectPort);
-        if sockSuccess == 1 or status == "already connected" then
+        local connectSuccess;
+        if luaProcessAsServer == true and currentRunState == runState.DISCONNECT then
+            -- 在 Server 模式下，以及当前处于未连接状态下，才尝试accept新链接。如果不判断可能会出现多次连接，导致sock被覆盖
+            if server == nil then
+                this.bindServer(recordHost, recordPort);
+            end
+
+            sock = server:accept();
+            connectSuccess = sock;
+        else
+            sock:settimeout(connectTimeoutSec);
+            connectSuccess = sock and sock:connect(recordHost, recordPort);
+        end
+
+        if connectSuccess then
             this.printToConsole("reconnect success");
             this.connectSuccess();
+            return 1;
         else
-            this.printToConsole("reconnect failed . retCode:" .. tostring(sockSuccess) .. "  status:" .. status);
+            this.printToConsole("reconnect failed" );
             stopConnectTime = os.time();
+            return 0;
         end
-        return 1;
     end
-    return 0;
+    -- 不必重连，正常继续运行
+    return 1;
 end
 
 -- 向adapter发消息
@@ -824,7 +1019,22 @@ function this.dataProcess( dataStr )
     end
 
     if dataTable.cmd == "continue" then
-        this.changeRunState(runState.RUN);
+        local info = dataTable.info;
+        if info.isFakeHit == "true" and info.fakeBKPath and info.fakeBKLine then 
+            -- 设置校验结果标志位，以便hook流程知道结果
+            hitBpTwiceCheck = false;
+            if hookLib ~= nil and hookLib.set_bp_twice_check_res then
+                -- 把结果同步给C
+                hookLib.set_bp_twice_check_res(0);
+            end
+            -- 把假断点的信息加入cache
+            if  nil == fakeBreakPointCache[info.fakeBKPath] then
+                fakeBreakPointCache[info.fakeBKPath] = {};
+            end
+            table.insert(fakeBreakPointCache[info.fakeBKPath] ,info.fakeBKLine);
+        else
+            this.changeRunState(runState.RUN);
+        end
         local msgTab = this.getMsgTable("continue", this.getCallbackId());
         this.sendMsg(msgTab);
 
@@ -848,14 +1058,42 @@ function this.dataProcess( dataStr )
 
     elseif dataTable.cmd == "setBreakPoint" then
         this.printToVSCode("dataTable.cmd == setBreakPoint");
+        -- 设置断点时，把 fakeBreakPointCache 清空。这是一个简单的做法，也可以清除具体的条目
+        fakeBreakPointCache = {}
         local bkPath = dataTable.info.path;
         bkPath = this.genUnifiedPath(bkPath);
+        if testBreakpointFlag then
+            recordBreakPointPath = bkPath;
+        end
         if autoPathMode then 
             -- 自动路径模式下，仅保留文件名
-            bkPath = this.getFilenameFromPath(bkPath);
+            -- table[文件名.后缀] -- [fullpath] -- [line , type]
+            --                  | - [fullpath] -- [line , type]
+
+            local bkShortPath = this.getFilenameFromPath(bkPath);
+            if breaks[bkShortPath] == nil then 
+                breaks[bkShortPath] = {};
+            end
+            breaks[bkShortPath][bkPath] = dataTable.info.bks;
+            -- 当v为空时，从断点列表中去除文件
+            for k, v in pairs(breaks[bkShortPath]) do
+                if next(v) == nil then
+                    breaks[bkShortPath][k] = nil;
+                end
+            end
+        else
+            if breaks[bkPath] == nil then 
+                breaks[bkPath] = {};
+            end
+            -- 两级 bk path 是为了和自动路径模式结构保持一致
+            breaks[bkPath][bkPath] = dataTable.info.bks;
+            -- 当v为空时，从断点列表中去除文件
+            for k, v in pairs(breaks[bkPath]) do
+                if next(v) == nil then
+                    breaks[bkPath][k] = nil;
+                end
+            end
         end
-        this.printToVSCode("setBreakPoint path:"..tostring(bkPath));
-        breaks[bkPath] = dataTable.info.bks;
 
         -- 当v为空时，从断点列表中去除文件
         for k, v in pairs(breaks) do
@@ -1007,7 +1245,7 @@ function this.dataProcess( dataStr )
             isNeedB64EncodeStr = false;
         end
         --path
-        luaFileExtension = dataTable.info.luaFileExtension
+        luaFileExtension = dataTable.info.luaFileExtension;
         local TempFilePath = dataTable.info.TempFilePath;
         if TempFilePath:sub(-1, -1) == [[\]] or TempFilePath:sub(-1, -1) == [[/]] then
             TempFilePath = TempFilePath:sub(1, -2);
@@ -1025,10 +1263,18 @@ function this.dataProcess( dataStr )
 
         if  dataTable.info.pathCaseSensitivity == "true" then
             pathCaseSensitivity =  true;
+            TruncatedOPath = dataTable.info.TruncatedOPath or "";
         else
             pathCaseSensitivity =  false;
+            TruncatedOPath = string.lower(dataTable.info.TruncatedOPath or "");
         end
- 
+
+        if  dataTable.info.DistinguishSameNameFile == "true" then
+            DistinguishSameNameFile =  true;
+        else
+            DistinguishSameNameFile =  false;
+        end
+
         --OS type
         if nil == OSType then
             --用户未主动设置OSType, 接收VSCode传来的数据
@@ -1104,6 +1350,11 @@ function this.dataProcess( dataStr )
         if hookLib ~= nil then
             isUseHookLib = 1;
             --同步数据给c hook
+            local luaVerTable = this.stringSplit(debuggerVer , '%.');
+            local luaVerNum = luaVerTable[1] * 10000 + luaVerTable[2] * 100 + luaVerTable[3];
+            if hookLib.sync_lua_debugger_ver then
+            hookLib.sync_lua_debugger_ver(luaVerNum);
+            end
             -- hookLib.sync_config(logLevel, pathCaseSensitivity and 1 or 0, autoPathMode and 1 or 0);
             hookLib.sync_config(logLevel, pathCaseSensitivity and 1 or 0);
             hookLib.sync_tempfile_path(TempFilePath_luaString);
@@ -1154,7 +1405,9 @@ function this.dataProcess( dataStr )
         --停止hook，已不在处理任何断点信息，也就不会产生日志等。发送消息后等待前端主动断开连接
         local msgTab = this.getMsgTable("stopRun", this.getCallbackId());
         this.sendMsg(msgTab);
-        this.disconnect();
+        if not luaProcessAsServer then
+            this.disconnect();
+        end
     elseif "LuaGarbageCollect" == dataTable.cmd then
         this.printToVSCode("collect garbage!");
         collectgarbage("collect");
@@ -1362,6 +1615,8 @@ function this.getStackTable( level )
 
         local ss = {};
         ss.file = this.getPath(info);
+        local oPathFormated = this.formatOpath(info.source) ; --从lua虚拟机获得的原始路径, 它用于帮助定位VScode端原始lua文件的位置(存在重名文件的情况)。
+        ss.oPath = this.truncatedPath(oPathFormated, TruncatedOPath);
         ss.name = "文件名"; --这里要做截取
         ss.line = tostring(info.currentline);
         --使用hookLib时，堆栈有偏移量，这里统一调用栈顶编号2
@@ -1388,7 +1643,30 @@ function this.getStackTable( level )
     return stackTab, userFuncSteakLevel;
 end
 
---这个方法是根据工程中的cwd和luaFileExtension修改
+-- 把路径中去除后缀部分的.变为/, 
+-- @filePath 被替换的路径
+-- @ext      后缀(后缀前的 . 不会被替换)
+function this.changePotToSep(filePath, ext)
+    local idx = filePath:find(ext, (-1) * ext:len() , true)
+    if idx then 
+        local tmp = filePath:sub(1, idx - 1):gsub("%.", "/");
+        filePath = tmp .. ext;
+    end
+    return filePath;
+end
+
+--- this.truncatedPath 从 beTruncatedPath 字符串中去除 rep 匹配到的部分
+function this.truncatedPath(beTruncatedPath, rep)
+    if beTruncatedPath and beTruncatedPath ~= '' and rep and rep ~= "" then
+        local _, lastIdx = string.find(beTruncatedPath , rep);
+        if lastIdx then
+            beTruncatedPath = string.sub(beTruncatedPath, lastIdx + 1);
+        end
+    end
+    return beTruncatedPath;
+end
+
+--这个方法是根据的cwd和luaFileExtension对getInfo获取到的路径进行标准化
 -- @info getInfo获取的包含调用信息table
 function this.getPath( info )
     local filePath = info;
@@ -1401,9 +1679,37 @@ function this.getPath( info )
         return cachePath;
     end
 
-    -- originalPath是getInfo的原始路径，后面用来填充缓存key
+    -- originalPath是getInfo的原始路径，后面用来填充路径缓存的key
     local originalPath = filePath;
     
+    --如果路径头部有@,去除
+    if filePath:sub(1,1) == '@' then
+        filePath = filePath:sub(2);
+    end
+
+    --如果路径头部有./,去除
+    if filePath:sub(1,2) == './' then
+        filePath = filePath:sub(3);
+    end
+    -- getPath的参数路径可能来自于hook, 也可能是一个已标准的路径
+    if userDotInRequire then 
+        if autoExt == nil or autoExt == '' then
+            -- 在虚拟机返回路径没有后缀的情况下，用户必须自设后缀
+            -- 确定filePath中最后一个.xxx 不等于用户配置的后缀, 则把所有的. 转为 /
+            if not filePath:find(luaFileExtension , (-1) * luaFileExtension:len(), true) then
+                -- getinfo 路径没有后缀，把 . 全部替换成 / ，我们不允许用户在文件（或文件夹）名称中出现"." , 因为无法区分 
+                filePath = string.gsub(filePath, "%.", "/");
+            else
+                -- 有后缀，那么把除后缀外的部分中的. 转为 / 
+                filePath = this.changePotToSep(filePath, luaFileExtension);
+            end
+
+        else
+            -- 虚拟机路径有后缀
+            filePath = this.changePotToSep(filePath, autoExt);
+        end
+    end
+
     --后缀处理
     if luaFileExtension ~= "" then
         --判断后缀中是否包含%1等魔法字符.用于从lua虚拟机获取到的路径含.的情况
@@ -1415,10 +1721,6 @@ function this.getPath( info )
         end
     end
 
-    --如果路径头部有@,去除
-    if filePath:sub(1,1) == '@' then
-        filePath = filePath:sub(2);
-    end
 
     if not autoPathMode then
         --绝对路径和相对路径的处理  |  若在Mac下以/开头，或者在Win下以*:开头，说明是绝对路径，不需要再拼。
@@ -1446,7 +1748,7 @@ function this.getPath( info )
     return filePath;
 end
 
---从路径中获取文件名
+--从路径中获取[文件名.后缀]
 function this.getFilenameFromPath(path)
     if path == nil then 
         return ''; 
@@ -1512,45 +1814,81 @@ function this.checkCurrentLayerisLua( checkLayer )
     return nil;
 end
 
+-- 在 fakeBreakPointCache 中查询此断点是否真实存在
+-- 因为同名文件的影响， 有些断点是命中错误的。经过VScode校验后，这些错误命中的断点信息被存在fakeBreakPointCache中
+function this.checkRealHitBreakpoint( oPath, line )
+    -- 在假命中列表中搜索，如果本行有过假命中记录，返回 false
+    if oPath and fakeBreakPointCache[oPath] then
+        for _, value in ipairs(fakeBreakPointCache[oPath]) do
+            if tonumber(value) == tonumber(line) then
+                this.printToVSCode("cache hit bp in same name file.  source:" .. tostring(oPath) .. " line:" .. tostring(line)); 
+                return false;
+            end
+        end
+    end
+    return true;  
+end
 
 ------------------------断点处理-------------------------
--- 参数info是当前堆栈信息
--- @info getInfo获取的当前调用信息
-function this.isHitBreakpoint( info )
-    local curLine = tostring(info.currentline);
-    local breakpointPath = info.source;
-    local isPathHit = false;
-    
+--- this.isHitBreakpoint 判断断点是否命中。这个方法在c mod以及lua中都有调用
+-- @param breakpointPath 文件名+后缀
+-- @param opath          getinfo path
+-- @param curLine        当前执行行号
+function this.isHitBreakpoint(breakpointPath, opath, curLine)
     if breaks[breakpointPath] then
-        isPathHit = true;
-    end
+        local oPathFormated;
+        for fullpath, fullpathNode in pairs(breaks[breakpointPath]) do
+            recordBreakPointPath = fullpath; --这里是为了兼容用户断点行号没有打对的情况
+            local line_hit = false, cur_node;
+            for _, node in ipairs(fullpathNode) do
+                if tonumber(node["line"]) == tonumber(curLine) then 
+                    line_hit = true;    -- fullpath 文件中 有行号命中
+                    cur_node = node;
+                    recordBreakPointPath = fullpath;  --行号命中后，再设置一次，保证路径准确
+                    break;
+                end
+            end
 
-    if isPathHit then
-        for k,v in ipairs(breaks[breakpointPath]) do
-            if tostring(v["line"]) == tostring(curLine) then
-                -- type是TS中的枚举类型，其定义在BreakPoint.tx文件中
-                --[[
-                    enum BreakpointType {
-                        conditionBreakpoint = 0,
-                        logPoint,
-                        lineBreakpoint
-                    }
-                ]]
-
-                if v["type"] == "0" then
-                    -- condition breakpoint
-                    -- 注意此处不要使用尾调用，否则会影响调用栈，导致Lua5.3和Lua5.1中调用栈层级不同
-                    local conditionRet = this.IsMeetCondition(v["condition"]);
-                    return conditionRet;
-                elseif v["type"] == "1" then
-                    -- log point
-                    this.printToVSCode("[log point output]: " .. v["logMessage"], 1);
-                else
-                    -- line breakpoint
-                    return true;
+            -- 在lua端不知道是否有同名文件，基本思路是先取文件名，用文件名和breakpointArray 进行匹配。
+            -- 当文件名匹配上时，可能存在多个同名文件中存在断点的情况。这时候需要用 oPath 和 fullpath 进行对比，取出正确的。
+            -- 当本地文件中有断点，lua做了初步命中后，可能存在 stack , 断点文件有同名的情况。这就需要vscode端也需要checkfullpath函数，使用opath进行文件校验。
+            if line_hit then
+                if oPathFormated == nil then
+                    -- 为了避免性能消耗，仅在行号命中时才处理 opath 到标准化路径
+                    oPathFormated = this.formatOpath(opath);
+                    -- 截取
+                    oPathFormated = this.truncatedPath(oPathFormated, TruncatedOPath);
+                end
+                
+                if (not DistinguishSameNameFile) or (string.match(fullpath, oPathFormated ) and this.checkRealHitBreakpoint(opath, curLine)) then
+                    -- type是TS中的枚举类型，其定义在BreakPoint.tx文件中
+                        -- enum BreakpointType {
+                        --     conditionBreakpoint = 0,
+                        --     logPoint,
+                        --     lineBreakpoint
+                        -- }
+                        
+                    -- 处理断点
+                    if cur_node["type"] == "0" then
+                        -- condition breakpoint
+                        -- 注意此处不要使用尾调用，否则会影响调用栈，导致Lua5.3和Lua5.1中调用栈层级不同
+                        local conditionRet = this.IsMeetCondition(cur_node["condition"]);
+                        -- this.printToVSCode("Condition BK: condition:" .. cur_node["condition"] .. "  conditionRet " .. tostring(conditionRet));
+                        return conditionRet;
+                    elseif cur_node["type"] == "1" then
+                        -- log point
+                        this.printToVSCode("[LogPoint Output]: " .. cur_node["logMessage"], 2, 2);
+                        return false;
+                    else
+                        -- line breakpoint
+                        return true;
+                    end
                 end
             end
         end
+    else
+        testBreakpointFlag = false; --如果用户打开了测试断点的标志位而未主动关闭，会在lua继续运行时关闭。
+        recordBreakPointPath = '';  --当切换文件时置空，避免提示给用户错误信息
     end
     return false;
 end
@@ -1563,7 +1901,12 @@ function this.IsMeetCondition(conditionExp)
     currentCallStack = {};
     variableRefTab = {};
     variableRefIdx = 1;
-    this.getStackTable();
+    if  hookLib then
+        this.getStackTable(4);
+    else
+        this.getStackTable();
+    end
+
     this.curStackId = 2; --在用户空间最上层执行
 
     local conditionExpTable = {["varName"] = conditionExp}
@@ -1655,12 +1998,14 @@ function this.checkfuncHasBreakpoint(sLine, eLine, fileName)
         return true;
     end
 
-    if #breaks[fileName] <= 0 then
+    if this.getTableMemberNum(breaks[fileName]) <= 0 then
         return false;
     else
-        for k,v in ipairs(breaks[fileName]) do
-            if tonumber(v.line) > sLine and tonumber(v.line) <= eLine then
-                return true;
+        for k,v in pairs(breaks[fileName]) do
+            for _, node in ipairs(v) do
+                if tonumber(node.line) > sLine and tonumber(node.line) <= eLine then
+                    return true;
+                end   
             end
         end
     end
@@ -1671,7 +2016,7 @@ end
 -- @event 执行状态(call,return,line)
 -- @line    行号
 function this.debug_hook(event, line)
-    if this.reConnect() == 1 then return; end
+    if this.reConnect() == 0 then return; end
 
     if logLevel == 0 then
         local logTable = {"-----enter debug_hook-----\n", "event:", event, "  line:", tostring(line), " currentHookState:",currentHookState," currentRunState:", currentRunState};
@@ -1762,6 +2107,7 @@ function this.real_hook_process(info)
 
     --标准路径处理
     if jumpFlag == false then
+        info.orininal_source = info.source; --使用 info.orininal_source 记录lua虚拟机传来的原始路径
         info.source = this.getPath(info);
     end
     --本次执行的函数和上次执行的函数作对比，防止在一行停留两次
@@ -1792,22 +2138,40 @@ function this.real_hook_process(info)
     if tostring(event) == "line" and jumpFlag == false then
         if currentRunState == runState.RUN or currentRunState == runState.STEPOVER or currentRunState == runState.STEPIN or currentRunState == runState.STEPOUT then
             --断点判断
-            isHit = this.isHitBreakpoint(info) or hitBP;
+            isHit = this.isHitBreakpoint(info.source, info.orininal_source, info.currentline) or hitBP;
             if isHit == true then
-                this.printToVSCode(" + HitBreakpoint true");
-                hitBP = false; --hitBP是断点硬性命中标记
+                this.printToVSCode("HitBreakpoint!");
+                --备份信息
+                local recordStepOverCounter = stepOverCounter;
+                local recordStepOutCounter = stepOutCounter;
+                local recordCurrentRunState = currentRunState;
                 --计数器清0
                 stepOverCounter = 0;
                 stepOutCounter = 0;
                 this.changeRunState(runState.HIT_BREAKPOINT);
-                --发消息并等待
-                this.SendMsgWithStack("stopOnBreakpoint");
+                hitBpTwiceCheck = true; -- 命中标志默认设置为true, 如果校验通过，会保留这个标记，校验失败会修改
+                if hitBP then 
+                    hitBP = false; --hitBP是断点硬性命中标记
+                    --发消息并等待
+                    this.SendMsgWithStack("stopOnCodeBreakpoint");
+                else
+                    --发消息并等待
+                    this.SendMsgWithStack("stopOnBreakpoint");   
+                    --若二次校验未命中，恢复状态
+                    if hitBpTwiceCheck == false then 
+                        isHit = false;
+                        -- 确认未命中，把状态恢复，继续运行
+                        this.changeRunState(recordCurrentRunState);
+                        stepOverCounter = recordStepOverCounter;
+                        stepOutCounter = recordStepOutCounter;
+                    end
+                end
             end
         end
     end
 
-    if  isHit == true then
-        return;
+    if isHit == true then
+        return;        
     end
 
     if currentRunState == runState.STEPOVER then
@@ -2341,7 +2705,7 @@ function this.getVariableRef( refStr )
             variableRefIdx = variableRefIdx + 1;
             table.insert(varTab, var);
 
-            if udMtTable.__pairs ~= nil and type(udMtTable.__pairs) == "function" then
+            if traversalUserData and udMtTable.__pairs ~= nil and type(udMtTable.__pairs) == "function" then
                 for n,v in pairs(variableRefTab[varRef]) do
                     local var = {};
                     var.name = tostring(n);

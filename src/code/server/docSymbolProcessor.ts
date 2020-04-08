@@ -190,9 +190,11 @@ export class DocSymbolProcessor {
 		// 由AST建立符号表
 		this.traversalAST(this.docInfo["docAST"], travelMode.BUILD, deepLayer);
 		// 符号表后处理，记录comment和文件/函数返回值
+		this.processRequireArrayPath()
 		this.buildSymbolTag();
 		this.buildSymbolReturns(); // 构建 B = require("A") , 记录B的类型
 		this.buildSymbolTrie();	//构建字典树
+
 		// Debug info 查看序列化的AST
 		// let tempStr = JSON.stringify(this.docInfo["docAST"]);
 		// DebugInfo
@@ -569,20 +571,40 @@ export class DocSymbolProcessor {
 			let strArr = comValue.split(' ')
 			for (let j = 0; j < strArr.length; j++) {
 				const element = strArr[j];
-				if(element.match('-@type')){
+				if(element.match('-@type') || element.match('-@return') || element.match('-@param')) {
 					let commentTypeIdx = j+1;
-					for (let k = j+1; k < strArr.length; k++) {
+					for (let k = commentTypeIdx; k < strArr.length; k++) {
 						if(strArr[k] != ''){
 							commentTypeIdx = k;
 							break;
 						}
 					}
-					let info = {
-						reason: Tools.TagReason.UserTag,
-						newType: strArr[commentTypeIdx],
-						location : commentArray[idx].loc
+
+					if(element.match('-@param')){
+						// param 类型的注释, 要标记当前变量和其对应的类型，不能仅凭行号区分
+						let functionParameter = strArr[commentTypeIdx];
+						let newType = strArr[commentTypeIdx + 1];
+						let info = {
+							reason: Tools.TagReason.UserTag,
+							functionParameter: functionParameter,
+							newType: newType,
+							location : commentArray[idx].loc
+						}
+						this.pushToCommentList(info);
+					}else{
+						let multiTypeArray = strArr[commentTypeIdx].split(',');
+						//返回值和赋值存在 ---@type a,b 多注释的情况
+						for (const multiElement of multiTypeArray) {
+							let info = {
+								reason: Tools.TagReason.UserTag,
+								newType: multiElement,
+								location : commentArray[idx].loc
+							}
+	
+							this.pushToCommentList(info);
+						}
 					}
-					this.pushToCommentList(info);
+					// 结束本行
 					break;
 				}
 			}
@@ -639,11 +661,11 @@ export class DocSymbolProcessor {
 	private setTagTypeToSymbolInfo(symbol: Tools.SymbolInformation, tagType, tagReason){
 		if(symbol.tagReason != undefined && symbol.tagReason == Tools.TagReason.UserTag){
 			// 用户标记的类型权重 > 赋值类型权重
-			return;
+			return false
 		}
-
 		symbol.tagType = tagType;
 		symbol.tagReason = tagReason;
+		return true;
 	}
 
 	//---文件尾处理（生成符号表后，对一些有注释类型的符号，进行添加tag信息）
@@ -654,31 +676,82 @@ export class DocSymbolProcessor {
 			let tagInfo = tagArray[key];
 			let loc = tagInfo.location;
 			let reason = tagInfo.reason;
+			let functionParam = tagInfo.functionParameter;
+			let paramRealLine = 0;	
 			//从allSymbols中遍历location和tag相符合的符号
 			for (let index = 0; index < this.getAllSymbolsArray().length; index++) {
 				const elm = this.getAllSymbolsArray()[index];
-				//用户标记
-				if(reason == Tools.TagReason.UserTag && elm.location.range.start.line + 1 === loc['end'].line)
-				{
-					this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
-					break;
-				}
-				//相等符号
-				if(reason == Tools.TagReason.Equal && elm.location.range.start.line + 1 === loc['end'].line)
-				{
-					// name : 被赋值符号名					
-					if(tagInfo.name && tagInfo.name == elm.searchName){
+				if (functionParam){
+					// 用户注释的 function 参数类型
+					if(tagInfo.newType === "Type"){
+						// Type是预设值
+						break;
+					}
+					
+					if(reason == Tools.TagReason.UserTag && elm.location.range.start.line + 1 > loc['end'].line ){
+						// functionParam 表示对应的文件，在location之后向下找，找到对应的符号名
+						if(paramRealLine === 0){
+							// 记录 param 类型注释后，收个符号的行号
+							paramRealLine = elm.location.range.start.line;
+						}
+						else if(elm.location.range.start.line > paramRealLine){
+							// 在 param 所在的真实行号没有找到被注释类型的参数 
+							break;
+						}
+
+						if(functionParam === elm.searchName){
+							this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
+							break;
+						}
+					}
+				}else{
+					// 用户本行标记
+					if(reason == Tools.TagReason.UserTag && elm.location.range.start.line + 1 === loc['end'].line)
+					{
+						let mulitTypeIdx = 0;
+						// 支持同一行多个类型类型注释，如  local a,b,c ---@type d,e,f 但注意 d,e,f之间不要有空格
+						while (this.getAllSymbolsArray()[mulitTypeIdx + index].location.range.start.line + 1 === loc['end'].line){
+							const elm = this.getAllSymbolsArray()[mulitTypeIdx + index];
+							let res = this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
+							if(res){
+								break;
+							}else{
+								mulitTypeIdx++;
+							}
+						}
+						break;
+					}
+					// 在函数定义上一行的标记, 查找 return 注释, 以及支持在上一行注释 @type 的情况
+					if(reason == Tools.TagReason.UserTag && elm.location.range.start.line === loc['end'].line)
+					{
+						this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
+						break;
+					}
+					// 相等符号
+					if(reason == Tools.TagReason.Equal && elm.location.range.start.line + 1 === loc['end'].line)
+					{
+						// name : 被赋值符号名					
+						if(tagInfo.name && tagInfo.name == elm.searchName){
+							this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
+							break;
+						}
+					}
+
+					// 元表标记
+					if(reason == Tools.TagReason.MetaTable && elm.searchName == tagInfo.oldType){
 						this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
 						break;
 					}
 				}
-
-				//元表标记
-				if(reason == Tools.TagReason.MetaTable && elm.searchName == tagInfo.oldType){
-					this.setTagTypeToSymbolInfo(elm, tagInfo.newType, tagInfo.reason);
-					break;
-				}
 			}
+		}
+	}
+
+	//把 require 路径中的.转换为/
+	public processRequireArrayPath(){
+		let reqArray = this.getRequiresArray();
+		for (const reqPath of reqArray) {
+			reqPath.reqName = reqPath.reqName.replace(/\./g, '/');
 		}
 	}
 
@@ -686,7 +759,8 @@ export class DocSymbolProcessor {
 	private buildSymbolReturns(){
 		//设置符号的 requireFile
 		let reqArray = this.getRequiresArray();
-		reqArray.forEach(element => {
+
+		for (const element of reqArray) {
 			let loc = element.loc;
 			let reqName = element.reqName;
 			for (let index = 0; index < this.getAllSymbolsArray().length; index++) {
@@ -698,12 +772,11 @@ export class DocSymbolProcessor {
 					elm.requireFile = reqName;
 				}
 			}
-		});
+		}
 		
 		//设置符号的 function Return
 		// let retArray = this.callFunctionRecoder;
-		for (const key in this.callFunctionRecoder ) {
-			const element = this.callFunctionRecoder[key];
+		for (const element of this.callFunctionRecoder ) {
 			let loc = element.loc;
 			let funcName = element.functionName;
 			for (let index = 0; index < this.getAllSymbolsArray().length; index++) {

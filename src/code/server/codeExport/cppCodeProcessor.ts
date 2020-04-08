@@ -18,7 +18,10 @@ export class CppCodeProcessor {
     // sluaUE的分析路径
 	public static get cppInterfaceIntelliSenseResPath() {
 		if(!this._cppInterfaceIntelliSenseResPath){
-            this._cppInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolder() + "/.vscode/LuaPanda/IntelliSenseRes/UECppInterface/";        
+			// joezhuoli TODO
+			if(Tools.getVSCodeOpenedFolders() && Tools.getVSCodeOpenedFolders().length > 0){
+				this._cppInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolders()[0] + "/.vscode/LuaPanda/IntelliSenseRes/UECppInterface/";   
+			}     
         }
         return this._cppInterfaceIntelliSenseResPath;
 	}
@@ -33,7 +36,7 @@ export class CppCodeProcessor {
 	 * 将静态导出的C++代码处理成Lua table用于代码提示。
 	 * @param cppDir C++代码根目录。
 	 */
-	public static processCppDir(cppDir: string) {
+	public static async processCppDir(cppDir: string): Promise<number> {
 		if (this.cppInterfaceIntelliSenseResPath === null) {
 			Logger.ErrorLog('未打开文件夹，无法使用此功能！');
 			Tools.showTips('未打开文件夹，无法使用此功能！');
@@ -53,16 +56,16 @@ export class CppCodeProcessor {
 		let cppHeaderFiles = this.getCppHeaderFiles(cppDir);
 		let cppSourceFiles = this.getCppSourceFiles(cppDir);
 
-		this.processParse(cppHeaderFiles, cppSourceFiles, subDir);
-		let totalProcessNum = cppHeaderFiles.length + cppSourceFiles.length;
+		let totalProcessNum = await this.processParse(cppHeaderFiles, cppSourceFiles, subDir);
 		return totalProcessNum;
 	}
 
-	private static async processParse(cppHeaderFiles: string[], cppSourceFiles: string[], subDir: string) {
+	private static async processParse(cppHeaderFiles: string[], cppSourceFiles: string[], subDir: string): Promise<number> {
 		await this.parseCppFiles(cppHeaderFiles, CppFileType.CppHeaderFile, subDir);
 		await this.parseCppFiles(cppSourceFiles, CppFileType.CppSourceFile, subDir);
 
-		// let totalProcessNum = cppHeaderFiles.length + cppSourceFiles.length;
+		let totalProcessNum = cppHeaderFiles.length + cppSourceFiles.length;
+		return Promise.resolve(totalProcessNum);
 		// Tools.showTips('CPP 导出文件处理完成！共解析 ' + totalProcessNum + ' 个文件。');
 	}
 
@@ -123,49 +126,63 @@ export class CppCodeProcessor {
 
 	/**
 	 * 获取文件内容，并对内容进行预处理。
-	 * 将 class XXX ClassName 替换为 class className
-	 * 去除宏 GENERATED_BODY
-	 * 去除宏 GENERATED_UCLASS_BODY
-	 * 去除宏 GENERATED_USTRUCT_BODY
-	 * 去除宏 DEPRECATED
 	 * @param filePath 文件路径。
+	 * @param cppFileType 文件类型
 	 */
 	private static getCppCode(filePath: string, cppFileType: CppFileType): string {
 		let content = Tools.getFileContent(filePath);
+
+		if (this.isFileNeedParse(cppFileType, content) === false) {
+			return '';
+		}
+
+		content = this.pretreatCppCode(content);
+
+		return content;
+	}
+
+	private static isFileNeedParse(cppFileType: CppFileType, content: string): boolean {
 		let regex: RegExp;
 		let result: RegExpExecArray | null;
-
-		let canIgnore: boolean = true;
 		switch (cppFileType) {
 			case CppFileType.CppHeaderFile:
 				regex = URegex.UCLASS
 				if ((result = regex.exec(content)) !== null) {
-					canIgnore = false;
-					break;
+					return true;
 				}
 				regex = URegex.USTRUCT
 				if ((result = regex.exec(content)) !== null) {
-					canIgnore = false;
-					break;
+					return true;
 				}
 				regex = URegex.UENUM
 				if ((result = regex.exec(content)) !== null) {
-					canIgnore = false;
-					break;
+					return true;
 				}
 				break;
 
 			case CppFileType.CppSourceFile:
 				regex = URegex.DefLuaClass;
 				if ((result = regex.exec(content)) !== null) {
-					canIgnore = false;
-				break;
+					return true;
 				}
 				break;
 		}
-		if (canIgnore === true) {
-			return '';
-		}
+		return false;
+	}
+
+	/**
+	 * 将 class XXX ClassName 替换为 class className
+	 * 去除宏 GENERATED_BODY
+	 * 去除宏 GENERATED_UCLASS_BODY
+	 * 去除宏 GENERATED_USTRUCT_BODY
+	 * 去除宏 DEPRECATED
+	 * 去除宏 UE_DEPRECATED
+	 * 去除宏 DECLARE_XXX
+	 * 去除宏 PRAGMA_XXX
+	 */
+	private static pretreatCppCode(content: string): string {
+		let regex: RegExp;
+		let result: RegExpExecArray | null;
 
 		// 将 class XXX ClassName 替换为 class className
 		regex = /\s*(class\s+[A-Z0-9_]+)\s+\w+.+/;
@@ -179,31 +196,47 @@ export class CppCodeProcessor {
 			content = content.replace(result[1], 'struct');
 		}
 
+		let regex2CommentArray: RegExp[] = new Array<RegExp>();
 		// 去除宏 GENERATED_BODY
-		regex = URegex.GENERATED_BODY;
-		while ((result = regex.exec(content)) !== null) {
-			content = content.replace(result[1], '//');
-		}
+		regex2CommentArray.push(URegex.GENERATED_BODY);
 		// 去除宏 GENERATED_UCLASS_BODY
-		regex = URegex.GENERATED_UCLASS_BODY;
-		while ((result = regex.exec(content)) !== null) {
-			content = content.replace(result[1], '//');
-		}
+		regex2CommentArray.push(URegex.GENERATED_UCLASS_BODY);
 		// 去除宏 GENERATED_USTRUCT_BODY
-		regex = URegex.GENERATED_USTRUCT_BODY;
-		while ((result = regex.exec(content)) !== null) {
-			content = content.replace(result[1], '//');
-		}
+		regex2CommentArray.push(URegex.GENERATED_USTRUCT_BODY);
+		// 去除宏 UE_DEPRECATED
+		regex2CommentArray.push(URegex.UE_DEPRECATED);
 		// 去除宏 DEPRECATED
-		regex = URegex.DEPRECATED;
-		while ((result = regex.exec(content)) !== null) {
-			content = content.replace(result[1], '//');
-		}
-		// 去除UMETA(xxx）
-		regex = URegex.UMETA;
-		while ((result = regex.exec(content)) !== null) {
-			content = content.replace(result[1], '');
-		}
+		regex2CommentArray.push(URegex.DEPRECATED);
+		// 去除宏 DECLARE_XXX
+		regex2CommentArray.push(URegex.DECLARE);
+		// 去除宏 PRAGMA_XXX
+		regex2CommentArray.push(URegex.PRAGMA);
+
+		let regex2BlankArray: RegExp[] = new Array<RegExp>();
+		// 去除 UMETA(xxx）
+		regex2BlankArray.push(URegex.UMETA);
+		// 去除 ENGINE_API
+		regex2BlankArray.push(URegex.ENGINE_API);
+
+		content = this.removeByRegex(content, regex2CommentArray, regex2BlankArray);
+
+		return content;
+	}
+
+	private static removeByRegex(content: string, regex2CommentArray: RegExp[], regex2BlankArray: RegExp[]): string {
+		let result: RegExpExecArray | null;
+
+		regex2CommentArray.forEach((regex: RegExp) => {
+			while ((result = regex.exec(content)) !== null) {
+				content = content.replace(result[1], '//');
+			}
+		});
+
+		regex2BlankArray.forEach((regex: RegExp) => {
+			while ((result = regex.exec(content)) !== null) {
+				content = content.replace(result[1], '');
+			}
+		});
 
 		return content;
 	}
@@ -471,9 +504,32 @@ export class CppCodeProcessor {
 
 	private static handleUFUNCTION(astNode: Node, className: string): string {
 		let luaText = 'function ';
+		let returnType = '';
 
 		astNode.children.forEach((child: Node) => {
 			switch (child.type) {
+				case 'type_identifier':
+				case 'primitive_type':
+					// 记录返回值类型（非引用和指针）
+					returnType = child.text;
+					break;
+
+				// 模板类型 TArray<UActorComponent>
+				case 'template_type':
+					returnType = this.getTemplateType(child);
+					break;
+
+				// 类类型
+				case 'class_specifier':
+					returnType = this.getClassInfo(child).className;
+					break;
+
+				// 结构体类型
+				case 'struct_specifier':
+					returnType = this.getStructType(child);
+					break;
+
+				// 函数定义
 				case 'function_declarator':
 					luaText += this.handleFunctionDeclarator(child, className);
 					break;
@@ -490,6 +546,14 @@ export class CppCodeProcessor {
 			}
 		});
 		luaText += ' end\n';
+
+		if (this.returnTypeMap.has(returnType)) {
+			returnType = this.returnTypeMap.get(returnType);
+		}
+		if (returnType !== '') {
+			luaText = '---@return ' + returnType + '\n' + luaText;
+		}
+
 		return luaText;
 	}
 
@@ -571,6 +635,29 @@ export class CppCodeProcessor {
 		});
 		return param;
 	}
+
+	private static getTemplateType(astNode: Node): string {
+		let templateType = '';
+		astNode.children.forEach((child: Node) => {
+			if (child.type === 'type_identifier') {
+				templateType = child.text;
+			}
+		});
+
+		return templateType;
+	}
+
+	private static getStructType(astNode: Node): string {
+		let structType = '';
+		astNode.children.forEach((child: Node) => {
+			if (child.type === 'type_identifier') {
+				structType = child.text;
+			}
+		});
+
+		return structType;
+	}
+
 
 	private static handleUPROPERTY(astNode: Node, className: string): string {
 		let luaText = '';
@@ -796,6 +883,31 @@ export class CppCodeProcessor {
 		return luaText;
 	}
 
+	// UFUNCTION返回值类型映射
+	private static _returnTypeMap: Map<string, string>;
+	private static get returnTypeMap() {
+		if (!this._returnTypeMap) {
+			this._returnTypeMap = new Map<string, string>();
+			this._returnTypeMap.set('void', '');
+			this._returnTypeMap.set('int', 'number');
+			this._returnTypeMap.set('int8', 'number');
+			this._returnTypeMap.set('int16', 'number');
+			this._returnTypeMap.set('int32', 'number');
+			this._returnTypeMap.set('int64', 'number');
+			this._returnTypeMap.set('uint8', 'number');
+			this._returnTypeMap.set('uint16', 'number');
+			this._returnTypeMap.set('uint32', 'number');
+			this._returnTypeMap.set('uint64', 'number');
+			this._returnTypeMap.set('float', 'number');
+			this._returnTypeMap.set('double', 'number');
+			this._returnTypeMap.set('bool', 'boolean');
+			this._returnTypeMap.set('FName', 'string');
+			this._returnTypeMap.set('FString', 'string');
+			this._returnTypeMap.set('FText', 'string');
+		}
+
+		return this._returnTypeMap;
+	}
 
 	/**
 	 * 获取tree-sitter wasm文件目录
@@ -897,7 +1009,11 @@ class URegex {
 	public static GENERATED_UCLASS_BODY  = new RegExp(/\s*(GENERATED_UCLASS_BODY\s*\(.*\))/);
 	public static GENERATED_USTRUCT_BODY = new RegExp(/\s*(GENERATED_USTRUCT_BODY\s*\(.*\))/);
 	public static DEPRECATED             = new RegExp(/\s*(DEPRECATED\s*\(.*\))/);
+	public static UE_DEPRECATED          = new RegExp(/\s*(UE_DEPRECATED\s*\(.*\))/);
+	public static PRAGMA                 = new RegExp(/\s*(PRAGMA_\w+WARNINGS)/);
+	public static DECLARE                = new RegExp(/\s*(DECLARE_\w+\s*\(.*\))/);
 	public static UMETA                  = new RegExp(/\s*(UMETA\s*\(.*\))/);
+	public static ENGINE_API             = new RegExp(/(ENGINE_API\s*)/);
 
 	public static DefLuaClass  = new RegExp(/\s*(DefLuaClass\s*\(.*\))/);
 	public static DefLuaMethod = new RegExp(/\s*(DefLuaMethod\s*\(.*\))/);

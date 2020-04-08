@@ -4,11 +4,11 @@
         {
             "type": "lua",
             "request": "launch",
+            "tag": "normal",
             "name": "LuaPanda",
             "cwd": "${workspaceFolder}",
             "luaFileExtension": "lua",
             "connectionPort": 8818,
-            "pathCaseSensitivity": true,
             "stopOnEntry": true,
             "useCHook": true,
             "autoPathMode": true,
@@ -17,11 +17,12 @@
         {
             "type": "lua",
             "request": "launch",
+            "tag": "single_file",
             "name": "LuaPanda-DebugFile",
             "luaPath": "",
             "packagePath": [],
             "luaFileExtension": "",
-            "connectionPort": 8818,
+            "connectionPort": 8820,
             "stopOnEntry": true,
             "useCHook": true,
             "logLevel": 1

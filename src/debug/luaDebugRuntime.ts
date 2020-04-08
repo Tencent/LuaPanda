@@ -4,7 +4,8 @@ import { DataProcessor } from './dataProcessor';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugLogger } from '../common/logManager';
 import { StatusBarManager } from '../common/statusBarManager';
-import { Tools } from '../common/tools';
+import { Tools } from '../common/Tools';
+import { PathManager } from '../common/PathManager';
 
 
 export interface LuaBreakpoint {
@@ -16,6 +17,8 @@ export interface LuaBreakpoint {
 export class LuaDebugRuntime extends EventEmitter {
     //当前读取的文件
     private _sourceFile: string;
+    public _dataProcessor: DataProcessor;
+    public _pathManager: PathManager;
     public get sourceFile() {
         return this._sourceFile;
     }
@@ -47,12 +50,12 @@ export class LuaDebugRuntime extends EventEmitter {
      * @param callbackArgs：回调参数
      * @param sendArgs：发给debugger的参数
      */
-    public start(callback, callbackArgs, sendArgs) {
+    public start(callback, sendArgs) {
         let arrSend = new Object();
         for (let key in sendArgs) {
             arrSend[key] = String(sendArgs[key]);
         }
-        DataProcessor.commandToDebugger('initSuccess', arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger('initSuccess', arrSend, callback);
     }
 
     /**
@@ -64,7 +67,22 @@ export class LuaDebugRuntime extends EventEmitter {
     public continue(callback, callbackArgs, event = 'continue') {
         DebugLogger.AdapterInfo("continue");
         let arrSend = new Object();
-        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
+    }
+
+    /**
+     * 通知Debugger继续执行
+     * @param callback: 收到请求返回后的回调函数
+     * @param callbackArgs：回调参数
+     * @param event：事件名
+     */
+    public continueWithFakeHitBk(callback ,callbackArgs = null, event = 'continue') {
+        DebugLogger.AdapterInfo("continue");
+        let arrSend = new Object();
+        arrSend["fakeBKPath"] = String(this.breakStack[0].oPath);
+        arrSend["fakeBKLine"] = String(this.breakStack[0].line);
+        arrSend["isFakeHit"] = String(true);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -80,7 +98,7 @@ export class LuaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["varName"] = String(varName);
         arrSend["stackId"] = String(frameId);
-        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -96,7 +114,7 @@ export class LuaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["Expression"] = String(expression);
         arrSend["stackId"] = String(frameId);
-        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -116,7 +134,7 @@ export class LuaDebugRuntime extends EventEmitter {
         arrSend["stackId"] = String(frameId);
         arrSend["newValue"] = String(newValue);
         arrSend["varName"] = String(name);
-        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -133,7 +151,7 @@ export class LuaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["varRef"] = String(variableRef);
         arrSend["stackId"] = String(frameId);
-        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs, 3);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs, 3);
     }
 
     /**
@@ -141,7 +159,7 @@ export class LuaDebugRuntime extends EventEmitter {
      */
     public stopRun(callback, callbackArgs, event = 'stopRun') {
         let arrSend = new Object();
-        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -150,7 +168,7 @@ export class LuaDebugRuntime extends EventEmitter {
     public step(callback, callbackArgs, event = 'stopOnStep') {
         DebugLogger.AdapterInfo("step:" + event);
         let arrSend = new Object();
-        DataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger(event, arrSend, callback, callbackArgs);
     }
 
     /**
@@ -158,7 +176,7 @@ export class LuaDebugRuntime extends EventEmitter {
      */
     public luaGarbageCollect(event = "LuaGarbageCollect") {
         let arrSend = new Object();
-        DataProcessor.commandToDebugger(event, arrSend);
+        this._dataProcessor.commandToDebugger(event, arrSend);
     }
 
     /**
@@ -173,7 +191,7 @@ export class LuaDebugRuntime extends EventEmitter {
         let arrSend = new Object();
         arrSend["path"] = path;
         arrSend["bks"] = bks;
-        DataProcessor.commandToDebugger("setBreakPoint", arrSend, callback, callbackArgs);
+        this._dataProcessor.commandToDebugger("setBreakPoint", arrSend, callback, callbackArgs);
     }
 
     /**
@@ -215,6 +233,13 @@ export class LuaDebugRuntime extends EventEmitter {
     }
 
     /**
+     * 	在调试控制台中打印日志
+     */
+    public logInDebugConsole(message: string) {
+        this.sendEvent('logInDebugConsole', message);
+    }
+    
+    /**
      * 	命中断点
      */
     public stop(stack, reason: string) {
@@ -222,7 +247,8 @@ export class LuaDebugRuntime extends EventEmitter {
             let linenum: string = element.line;
             element.line = parseInt(linenum); //转为VSCode行号(int)
             let getinfoPath : string = element.file;
-            element.file = Tools.checkFullPath(getinfoPath); 
+            let oPath = element.oPath;
+            element.file = this._pathManager.checkFullPath(getinfoPath, oPath); 
         });
         //先保存堆栈信息，再发暂停请求
         this.breakStack = stack;

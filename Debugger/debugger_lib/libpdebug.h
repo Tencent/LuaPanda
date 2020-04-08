@@ -3,7 +3,7 @@
 
 //1.使用源码编译，要打开宏USE_SOURCE_CODE.  win下要设置LUA_INTEGER和lua版本号
 #define LUA_DEBUGGER_NAME     "LuaPanda"    //debugger's name in LuaDebug.lua
-#define HOOK_LIB_VERSION      "3.0.0"       //lib version
+#define HOOK_LIB_VERSION      "3.2.0"       //lib version
 //#define USE_SOURCE_CODE                        //using source code to build
 #if !defined(USE_SOURCE_CODE) && defined(_WIN32)
 #define LUA_INTEGER         long long      //set LUA_INTEGER. In 501 is ptrdiff_t. 503 can set longlong(64bit) or int(32bit)

@@ -111,8 +111,10 @@ connection.onInitialize((initPara: InitializeParams) => {
 	Tools.setVScodeExtensionPath(path.dirname(path.dirname(path.dirname(__dirname))) );
 	Tools.initLoadedExt();
 	// 创建对应后缀的文件符号
-	CodeSymbol.createSymbolswithExt('lua', Tools.getInitPara().rootPath);
-	CodeSymbol.createSymbolswithExt('lua.bytes', Tools.getInitPara().rootPath);
+	for (const folder of Tools.getVSCodeOpenedFolders()) {
+		CodeSymbol.createSymbolswithExt('lua', folder);
+		CodeSymbol.createSymbolswithExt('lua.bytes', folder);
+	}
 	// 异步执行，建立uri -> 完整路径对应表
 	setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
 	// 分析默认位置(扩展中)的lua文件
@@ -120,7 +122,7 @@ connection.onInitialize((initPara: InitializeParams) => {
 	CodeSymbol.createLuaPreloadSymbols(resLuaPath);//更新lua预设符号文件
 	NativeCodeExportBase.loadIntelliSenseRes();//更新用户导出符号文件
 	Logger.DebugLog("init success");
-
+	
 	//读取标记文件，如果关闭了标记，那么
 	let snippetsPath = Tools.getVScodeExtensionPath() + "/res/snippets/snippets.json";
 	let snipContent = fs.readFileSync(snippetsPath);
@@ -179,11 +181,27 @@ connection.onInitialized(() => {
 	}
 	if (hasWorkspaceFolderCapability) {
 		connection.workspace.onDidChangeWorkspaceFolders(_event => {
+			// 在工程中增删文件夹的回调
 			Logger.DebugLog('Workspace folder change event received.');
+			if(_event.added.length > 0){
+				Tools.addOpenedFolder(_event.added);
+				for (const folder of Tools.getVSCodeOpenedFolders()) {
+					CodeSymbol.refreshFolderSymbols(folder);
+				}
+			}
+
+			if(_event.removed.length > 0){
+				Tools.removeOpenedFolder(_event.removed);
+			}
+			// 刷新文件名-路径索引
+			setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
+
+
+			// 给 client 发消息
+			connection.sendNotification("setRootFolders", Tools.getVSCodeOpenedFolders());
 		});
 	}
-	connection.sendNotification("setRootFolder", Tools.getInitPara().rootPath);
-
+	connection.sendNotification("setRootFolders", Tools.getVSCodeOpenedFolders());
 });
 
 
@@ -221,7 +239,7 @@ connection.onCompletion(
 		try{
 			return CodeCompletion.completionEntry(uri, pos);
 		} catch (error) {
-			Logger.InfoLog(error.stack);
+			Logger.ErrorLog("[Error] onCompletion " + error.stack);
 		}
 	}
 );
@@ -240,7 +258,7 @@ connection.onDefinition(
 		try{
 			return CodeDefinition.getSymbalDefine(handler);
 		} catch (error) {
-			Logger.InfoLog(error.stack);
+			Logger.ErrorLog("[Error] onDefinition " + error.stack);
 		}
 	}
 );
@@ -271,7 +289,7 @@ connection.onWorkspaceSymbol(
 			let userInput = handler.query;
 			return  CodeSymbol.searchSymbolinWorkSpace(userInput);
 		} catch (error) {
-			Logger.InfoLog(error.stack);
+			Logger.ErrorLog("[Error] onWorkspaceSymbol " + error.stack);
 		}
 	}
 );
@@ -280,17 +298,23 @@ connection.onWorkspaceSymbol(
 documents.onDidOpen(file => {
 	// 异步分析工程中同后缀文件
 	if (file.document.languageId == "lua") {	//本文件是lua形式
-		let uri = Tools.urlDecode(file.document.uri);
-		let luaExtname = Tools.getPathNameAndExt(uri);
-		let ext = luaExtname['ext'];
-		let loadedExt =  Tools.getLoadedExt();
-		if (loadedExt && loadedExt[ext] === true) {
-			// VSCode 会自动调用 onDidChangeContent
-			return;
-		}else{
-			// 处理新的后缀类型
-			CodeSymbol.createSymbolswithExt(ext, Tools.getInitPara().rootPath);
-			setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
+		try {
+			let uri = Tools.urlDecode(file.document.uri);
+			let luaExtname = Tools.getPathNameAndExt(uri);
+			let ext = luaExtname['ext'];
+			let loadedExt =  Tools.getLoadedExt();
+			if (loadedExt && loadedExt[ext] === true) {
+				// VSCode 会自动调用 onDidChangeContent
+				return;
+			}else{
+				// 处理新的后缀类型
+				for (const folder of Tools.getVSCodeOpenedFolders()) {
+					CodeSymbol.createSymbolswithExt(ext, folder);
+				}
+				setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
+			}
+		} catch (error) {
+			Logger.ErrorLog("[Error] onDidOpen " + error.stack);
 		}
 	}
 });
@@ -298,25 +322,29 @@ documents.onDidOpen(file => {
 // 文件内容发生改变（首次打开文件时这个方法也会被调用）
 documents.onDidChangeContent(change => {
 	if(change.document.languageId == 'lua'){
-		const uri = Tools.urlDecode(change.document.uri);
-		const text = change.document.getText();
-		CodeEditor.saveCode(uri, text); //保存代码
-
-		// 过滤掉预分析文件
-		if(!Tools.isinPreloadFolder(uri)){	
-			CodeSymbol.refreshOneDocSymbols(uri, text);
-		}else{
-			CodeSymbol.refreshOneUserPreloadDocSymbols( Tools.uriToPath(uri));
-		}
-
-		// 运行语法检查
-		getDocumentSettings(uri).then(
-			(settings) => {
-				if (settings.codeLinting.checkWhileTyping == true) {
-					validateTextDocument(change.document);
-				}
+		try {
+			const uri = Tools.urlDecode(change.document.uri);
+			const text = change.document.getText();
+			CodeEditor.saveCode(uri, text); //保存代码
+	
+			// 过滤掉预分析文件
+			if(!Tools.isinPreloadFolder(uri)){	
+				CodeSymbol.refreshOneDocSymbols(uri, text);
+			}else{
+				CodeSymbol.refreshOneUserPreloadDocSymbols( Tools.uriToPath(uri));
 			}
-		);
+	
+			// 运行语法检查
+			getDocumentSettings(uri).then(
+				(settings) => {
+					if (settings.codeLinting.checkWhileTyping == true) {
+						validateTextDocument(change.document);
+					}
+				}
+			);
+		} catch (error) {
+			Logger.ErrorLog("[Error] onDidChangeContent " + error.stack);
+		}
 	}
 });
 
@@ -332,7 +360,7 @@ documents.onDidSave(change => {
 			}
 		);
 	} catch (error) {
-		Logger.InfoLog(error.stack);
+		Logger.ErrorLog("[Error] onDidSave " + error.stack);
 	}
 });
 

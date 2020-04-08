@@ -11,7 +11,10 @@ export class NativeCodeExportBase {
     private static _LuaPandaInterfaceIntelliSenseResPath;
 	public static get LuaPandaInterfaceIntelliSenseResPath() {
 		if(!this._LuaPandaInterfaceIntelliSenseResPath){
-            this._LuaPandaInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolder() + "/.vscode/LuaPanda/IntelliSenseRes/";
+            // stuartwang TODO
+            if(Tools.getVSCodeOpenedFolders() && Tools.getVSCodeOpenedFolders().length > 0){
+                this._LuaPandaInterfaceIntelliSenseResPath = Tools.getVSCodeOpenedFolders()[0] + "/.vscode/LuaPanda/IntelliSenseRes/";
+            }
         }
         return this._LuaPandaInterfaceIntelliSenseResPath;
     }
@@ -26,7 +29,7 @@ export class NativeCodeExportBase {
 	}
     
     // 收到需要预处理的文件
-    public static processNativeCodeDir(anaPath){
+    public static async processNativeCodeDir(anaPath){
         // 判断预处理的路径是否存在
         if (!fs.existsSync(anaPath)) {
             Logger.ErrorLog("输入了不存在的路径!");
@@ -34,7 +37,7 @@ export class NativeCodeExportBase {
 		}
 
         anaPath = anaPath.trim();
-        let cppfileCount = CppCodeProcessor.processCppDir(anaPath);
+        let cppfileCount = await CppCodeProcessor.processCppDir(anaPath);
         let csfileCount = SluaCSharpProcessor.processluaCSDir(anaPath);
         let tipString = '处理完成，解析了 ';
         if(cppfileCount > 0){
