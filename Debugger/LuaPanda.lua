@@ -437,7 +437,7 @@ function this.breakpointTestInfo()
                 strTable[#strTable + 1] = "断点未被命中，原因是 FormatedPath 不是 Breakpoint 路径的子串。"
             end
         else
-            strTable[#strTable + 1] = "本文件中无断点。如果要进行断点测试，请在本文件中StopOnEntry或者BP位置打一个断点。"
+            strTable[#strTable + 1] = "未能在本文件中找到断点。如果要进行断点测试，请使用 LuaPanda.testBreakpoint()。"
         end
     end
     return table.concat(strTable)
