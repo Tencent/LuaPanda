@@ -432,7 +432,6 @@
 						"stopOnEntry": true,
 						"useCHook": true,
 						"autoPathMode": true,
-						"DistinguishSameNameFile" :false,
 						"logLevel": 1
 					},
 					{
