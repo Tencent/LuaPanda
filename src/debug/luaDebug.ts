@@ -350,7 +350,11 @@ export class LuaDebugSession extends LoggingDebugSession {
                     this._programTermianl.sendText(progaamCmdwithArgs , true);
                     this._programTermianl.show(); 
                 }else{
-                    vscode.window.showErrorMessage("[Error] launch.json 文件中 program 路径错误：program可以该指向一个二进制文件, 调试器启动时会拉起这个文件。如不需要此设置，可以设置为\"\"。 当前目标" + args.program + " 不存在，请修改后再试。" , "好的");
+                    let progError = "[Warning] 配置文件 launch.json 中的 program 路径有误: \n";
+                    progError += " + program 配置项的作用是，在调试器开始运行时拉起一个可执行文件（注意不是lua文件）。";
+                    progError += "如无需此功能，建议 program 设置为 \"\" 或从 launch.json 中删除 program 项。\n";
+                    progError += " + 当前设置的 " + args.program + " 不存在或不是一个可执行文件。";
+                    this.printLogInDebugConsole(progError);
                 }
             }
         }

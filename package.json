@@ -276,7 +276,7 @@
 							"DistinguishSameNameFile":{
 								"type": "boolean",
 								"description": "Whether distinguish breakpoint in files with same name",
-								"default": true
+								"default": false
 							},
 							"TruncatedOPath":{
 								"type": "string",
@@ -405,7 +405,7 @@
 							"DistinguishSameNameFile":{
 								"type": "boolean",
 								"description": "Whether distinguish breakpoint in files with same name",
-								"default": true
+								"default": false
 							},
 							"TruncatedOPath":{
 								"type": "string",
@@ -431,8 +431,7 @@
 						"connectionPort": 8818,
 						"stopOnEntry": true,
 						"useCHook": true,
-						"autoPathMode": true,
-						"logLevel": 1
+						"autoPathMode": true
 					},
 					{
 						"type": "lua",
@@ -444,8 +443,7 @@
 						"luaFileExtension": "",
 						"connectionPort": 8820,
 						"stopOnEntry": true,
-						"useCHook": true,
-						"logLevel": 1
+						"useCHook": true
 					}
 				]
 			}
