@@ -237,11 +237,13 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
                 config.program = '';
             }
 
+            if(config.packagePath == undefined){
+                config.packagePath = [];
+            }
             
             if(config.TruncatedOPath == undefined){
                 config.TruncatedOPath = "";
             }
-
 
             if(config.DistinguishSameNameFile == undefined){
                 config.DistinguishSameNameFile = false;

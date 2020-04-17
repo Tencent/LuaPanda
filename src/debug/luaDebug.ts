@@ -58,7 +58,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         this.setDebuggerLinesStartAt1(true);
         this.setDebuggerColumnsStartAt1(true);
         this._threadManager = new ThreadManager();  // 线程实例 调用this._threadManager.CUR_THREAD_ID可以获得当前线程号
-        this._pathManager = new PathManager();
+        this._pathManager = new PathManager(this, this.printLogInDebugConsole);
         this._runtime = new LuaDebugRuntime();  // _runtime and _dataProcessor 相互持有实例
         this._dataProcessor = new DataProcessor();
         this._dataProcessor._runtime = this._runtime;
@@ -135,9 +135,9 @@ export class LuaDebugSession extends LoggingDebugSession {
         return false;
     }
 
-    // 在调试控制台打印日志
-    public printLogInDebugConsole(message){
-        this.sendEvent(new OutputEvent(message + '\n', 'console'));
+    // 在调试控制台打印日志. 从非luaDebug.ts文件调用这个函数时，要传instance实例
+    public printLogInDebugConsole(message, instance = this){
+        instance.sendEvent(new OutputEvent(message + '\n', 'console'));
     }
 
     /**
@@ -238,7 +238,7 @@ export class LuaDebugSession extends LoggingDebugSession {
                 return;
             }
             this._pathManager.rebuildWorkspaceNamePathMap(args.cwd);
-            this._pathManager.checkSameNameFile();
+            this._pathManager.checkSameNameFile(!!args.DistinguishSameNameFile);
         }
 
         // 普通模式下才需要检查升级，单文件调试不用
