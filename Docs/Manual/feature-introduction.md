@@ -2,7 +2,7 @@
 
 [TOC]
 
-### lua代码辅助
+### lua 代码辅助
 
 经常使用VSCode做lua开发，所以花时间开发了lua代码辅助功能。
 
@@ -29,47 +29,52 @@
 
 ​    ![](../static/feature-introduction/generateComments.gif)	
 
-**以上功能只要用 VSCode 打开含有lua的文件夹即可使用，无需配置。**
+使用代码提示时注意两点，无需其他配置
+
+1. 使用 VScode 打开的包含lua文件的文件夹，而不是单个lua文件。
+
+2. VScode 文件后缀和类型关联正确，如果 lua 文件后缀是 txt 或者是 lua.txt 都要正确关联lua类型，插件才能生效。
+
+   
+
+### lua 代码调试
+
+调试器总体分为两部分，分别是[VSCode 插件]和 运行于lua进程的[调试器主体]。二者建立网络连接通过 tcp 通信，支持真机/远程调试，所以需要用户项目中包含 luasocket。
+
+调试器总体架构可以参考下图。左侧的 VSCode 是 IDE ，中间的 Debug Adapter 表示调试器的 VSCode 插件，它和IDE通信遵循DAP协议。最右侧的 debugger 是调试器运行在 lua 中的部分，也就是 luapanda.lua文件，它捕获lua 运行状态，在触发命中断点等事件时，通知 Debug Adapter。
+
+![debug-arch2](../static/feature-introduction/debug-arch2.png)
+
+*图片来源 https://code.visualstudio.com/api/extension-guides/debugger-extension*
 
 
 
-### lua代码调试
+和其他调试器不同的是 : LuaPanda 的 debugger 部分使用了 lua + C 双架构。主体使用 lua 开发（可独立运行），另外有一个高性能的C扩展库，兼顾了C的高效以及lua的灵活性。C 扩展库会根据场景自动尝试加载，即使加载不了也不会影响调试，用户可以不关注。
 
-LuaPanda 调试使用了lua + C 双架构。调试器主体使用lua开发（可独立运行），另外有一个高性能的C扩展库，兼顾了C的高效以及lua的灵活性。
-
-lua适合的场景
+lua 调试器适用的场景
 
 - 动态下发，避免游戏打包后无法调试的。适合发布后使用。
 
-C 扩展适合的场景
+C 模块适合的场景
 
 - 效率高，适合开发期调试。
 
-调试器的IDE使用VSCode，下面是调试界面。
+调试器的 IDE 使用VSCode，下面是调试界面。
 
 ![debugui](../static/feature-introduction/debugui.png)
 
 
 
-LuaPanda由两部分组成，分别是 Debugger Extension 和 debugger 调试器。架构可以参考下图
-（图片引自 https://code.visualstudio.com/api/extension-guides/debugger-extension）
-
-![debug-arch2](../static/feature-introduction/debug-arch2.png)
-
-Debugger Extension 是一个 VScode 扩展。Debugger是 Lua 实现的调试器。另外LuaPanda还提供一个可选的C调试库，运行时会自动引用，使用时不必关心。
-
-
-
 # 特性
 
-以下是支持的特性
-
-- 支持单步调试，断点调试，协程调试
-- 支持lua5.1- 5.3, 支持 win/mac 平台，支持 slua/xlua/slua-unreal 等框架
-- 在断点处可以监视和运行表达式，返回结果
-- 可以根据断点密集程度调整 hook 频率，有较好的效率
+- 支持单步调试，断点调试，条件断点，协程调试
+- 支持lua5.1 - 5.3,  win/mac 平台，支持 slua/xlua/slua-unreal 等框架
+- 支持REPL :  在断点处可以监视和运行表达式，并返回执行结果
+- 可以根据断点密集程度自动调整 hook 频率，有较好的效率
 - 支持 attach 模式，lua 运行过程中可随时建立连接
 - 使用 lua / C 双调试引擎。lua 部分可动态下发，避免打包后无法调试。C 部分效率高，适合开发期调试。
+- 支持多目标调试(multi target) ，可以同时调试多个 lua 进程。
+- 支持真机/远程调试，用户可以选择 VScode 和 lua 进程作为  C/S 端。
 
 
 
