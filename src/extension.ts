@@ -26,7 +26,7 @@ export function activate(context: ExtensionContext) {
     context.subscriptions.push(reloadWindow);
     // force garbage collect
     let LuaGarbageCollect = vscode.commands.registerCommand('luapanda.LuaGarbageCollect', function () {
-        for (var [id, instance] of LuaDebugSession.debugSessionArray) {
+        for (var [ , instance] of LuaDebugSession.debugSessionArray) {
             instance.LuaGarbageCollect();
         }
         vscode.window.showInformationMessage('Lua Garbage Collect!');

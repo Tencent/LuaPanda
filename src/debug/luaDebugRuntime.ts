@@ -4,7 +4,6 @@ import { DataProcessor } from './dataProcessor';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugLogger } from '../common/logManager';
 import { StatusBarManager } from '../common/statusBarManager';
-import { Tools } from '../common/Tools';
 import { PathManager } from '../common/PathManager';
 
 

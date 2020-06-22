@@ -1,7 +1,5 @@
 import * as vscode from 'vscode';
-import { DebugLogger } from './logManager';
 import * as fs from "fs";
-import { isArray } from 'util';
 import URI from 'vscode-uri';
 let path = require("path");
 

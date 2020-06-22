@@ -3,7 +3,7 @@ import { Tools } from './Tools';
 import { isArray } from 'util';
 
 let pathReader = require('path-reader');
-let path = require("path");
+// let path = require("path");
 
 export class PathManager {
     public fileNameToPathMap;   // 文件名-路径 Map

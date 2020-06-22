@@ -88,7 +88,6 @@ export function setToolsConnection(conn: Connection) {
 	connection = conn;
 }
 
-let rootFiles;
 let fileName_Uri_Cache; //文件名 - path cache 
 let uriToPathCache = new Object(); 	//uri - path cache 
 let pathToUriCache = new Object();
@@ -287,7 +286,7 @@ export function refresh_FileName_Uri_Cache(){
 		let rootFiles = dir.files(rootFolder, {sync:true});
 		totalFileNum += rootFiles.length
 		for(let idx = 0, len = rootFiles.length; idx < len ; idx++){
-			let currentFileIdx = idx + 1;
+			// let currentFileIdx = idx + 1;
 			let name_and_ext = getPathNameAndExt(rootFiles[idx]);
 			let trname = name_and_ext['name'];
 			let ext = name_and_ext['ext'];
