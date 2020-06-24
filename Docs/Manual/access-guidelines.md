@@ -10,14 +10,14 @@
 
 调试器需要 luasocket 使 debugger 和 VSCode 建立起通信。**目前lua框架: slua, slua-unreal, xlua 都已集成 luasocket**。
 
-**测试方法**：在项目lua中加入`require("socket.core");`，如果运行不报错，工程已经包含luasocket，测试通过。
+**测试方法**：在项目lua中加入代码`require("socket.core");`，如果运行不报错说明工程已经包含luasocket，测试通过。
 
 
 
 ### 第二步 路径说明
 
 **2.3.0 之后的版本增加了自动路径模式。用户可以不必关心路径问题。** 
-launch.json文件中配置项 `"autoPathMode": true/false` 可以设置是否使用自动路径，无此配置项时**默认开启**。
+launch.json文件中配置项 `"autoPathMode": true/false` 可以设置是否使用自动路径，此配置项**默认开启（true）**。
 
 <details>
 <summary>建议用户使用自动路径模式，可继续下一步。也可以点我查看关于路径的原理介绍</summary>
@@ -44,9 +44,7 @@ launch.json文件中配置项 `"autoPathMode": true/false` 可以设置是否使
 </details>
 
 
-
-
-# 接入工作
+# 开始接入
 
 
 ### 第一步 下载VSCode调试扩展
@@ -56,7 +54,9 @@ launch.json文件中配置项 `"autoPathMode": true/false` 可以设置是否使
 
 ### 第二步 放入debugger 文件，并引用
 
-文件：`LuaPanda.lua`  下载位置：github 项目的 `Debugger` 目录下
+文件：`LuaPanda.lua`  
+
+下载位置：github 项目的 `Debugger` 目录下
 
 把以上两个文件放在lua代码可以引用到的位置，并在用户代码中引用:
 
@@ -64,7 +64,7 @@ launch.json文件中配置项 `"autoPathMode": true/false` 可以设置是否使
 require("LuaPanda").start("127.0.0.1",8818);
 ```
 
-*8818是默认端口号，如果需要修改，请同时修改launch.json的端口设置。
+*8818是默认端口号，如果需要修改，必须同时修改launch.json的端口设置。
 
 
 
@@ -77,10 +77,11 @@ require("LuaPanda").start("127.0.0.1",8818);
 
 ### 第二步 调试配置
 切换到VSCode的**调试选项卡**，点击齿轮，在弹出框中选择 LuaPanda (若无此选项说明以前用别的插件调试过lua , 要把先前用过的调试插件禁用)。之后会自动生成launch.json文件。
-![vscode_debug_ui](../static/access_introduction/vscode_debug_ui.png)
+![vscode_debug_ui](../static/access_introduction/create-launchjson.png)
 
-launch.json 配置项中要修改的主要是luaFileExtension, 改成lua文件使用的后缀就行。（比如xlua改为lua.txt, slua是txt）。**各配置项鼠标悬停会有提示**，可根据需要更改。
-![debug_config](../static/access_introduction/debug_config.png)
+生成的 launch.json 文件的个配置项可以参考 [launch.json配置说明](launch-json-introduction.md)
+
+launch.json 配置项中的修改主要是 luaFileExtension , 改成lua文件使用的后缀。（比如xlua改为lua.txt, slua是txt）。**各配置项鼠标悬停会有提示**，可根据需要更改。
 
 
 
@@ -109,8 +110,6 @@ format是调试器拼接出的文件路径，filepath是文件真实存在的路
 ### 第三步 开始调试
 
 **先运行VSCode端，再运行Lua代码**: 点击调试选项卡左上角的绿色箭头，再运行unity/ue4工程。如果有stopOnEntry或是执行到断点处，就会自动停住。
-
-
 
 ![debug_ui](../static/access_introduction/debug_ui.png)
 
@@ -170,10 +169,12 @@ LuaPanda 在PC上调试会默认使用 c hook，它是用c重写了debugger的�
   测试断点，用于分析路径错误导致断点无法停止的情况。
 
   使用方法是 launch.json 中开启 stopOnEntry, 或者在代码中加入LuaPanda.BP()。运行调试器，当停止在 stopOnEntry 或者 LuaPanda.BP() 时在调试控制台输入 LuaPanda.testBreakpoint()，根据提示打一个断点后再次输入 LuaPanda.testBreakpoint()。此时系统会给出一些路径提示，帮助用户分析断点可能无法停止的原因。
+  
+  
 
 # 调试器设置项说明
 
-调试器有几处设置项，这里做详细说明
+调试器有两处设置项，这里做详细说明
 
 ### 1. VSCode端工程的launch.json文件
 
@@ -183,7 +184,7 @@ LuaPanda 在PC上调试会默认使用 c hook，它是用c重写了debugger的�
 
 
 
-### 2. LuaPanda.lua 文件头部
+### 2. LuaPanda.lua 文件配置
 
 ```lua
 --用户设置项
