@@ -6,7 +6,7 @@
 
 LuaPanda 是一个基于VSCode的lua代码调试器，主要由三部分组成。
 
-![](../static/debugger-principle/mode_pic.png)
+![](../Res/debugger-principle/mode_pic.png)
 
 + 调试器前端是VScode扩展，作用是通知VScode展示信息和进行数据交换。
 
@@ -58,7 +58,7 @@ hook状态分级的目标是希望减少hook次数，但是不能影响判断的
 
 lua支持三种hook状态，lcr(line , call , return)。最初的方案三种状态全都要进行hook
 
-![](../static/debugger-principle/state-pic.png)
+![](../Res/debugger-principle/state-pic.png)
 
 
 
@@ -69,7 +69,7 @@ lua支持三种hook状态，lcr(line , call , return)。最初的方案三种状
 再假如用户设置了断点，但是当前执行的函数中没有断点，那么只需要在发生函数切换时（call，return）hook, 并根据新函数中是否有断点改变hook状态.
 
 根据上面思想，我们建立了hook状态机，把hook分成以下状态
-![](../static/debugger-principle/state-table.png)
+![](../Res/debugger-principle/state-table.png)
 
 每次用户打断点，以及发生函数 call 和 return 时，都要重新检查，根据断点情况切换到对应状态，以免漏过断点。
 
@@ -94,7 +94,7 @@ debug.sethook(this.debug_hook, "r", 1000000);
 
 调试到断点处，用户可以输入变量或者表达式，观察执行结果。如下
 
-![](../static/debugger-principle/dostring-pic.png)
+![](../Res/debugger-principle/dostring-pic.png)
 
 loc_num是局部变量，用户在断点处希望查看loc_num+1的值。
 

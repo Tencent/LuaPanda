@@ -33,13 +33,13 @@ launch.json文件中配置项 `"autoPathMode": true/false` 可以设置是否使
 使用拼接路径模式接入（不推荐使用, 仅做介绍）:
 测试方法：在代码中加入`print(debug.traceback("debug test"))`, 查看打印的堆栈。
 如下打印出文件的绝对路径，可以进行下一步
-<img src="../static/access_introduction/absolute_path.png"/>
+<img src="../Res/access_introduction/absolute_path.png"/>
 打印出的信息是一个相对路径(路径前可能带有@)，这不会影响调试器工作，可进行下一步
-<img src="../static/access_introduction/relatively_path.png"/>
+<img src="../Res/access_introduction/relatively_path.png"/>
 打印出的路径包含在[string ]中，只要是符合上面的要求，是一个可以定位的路径，可进行下一步
-<img src="../static/access_introduction/string_path.png"/>
+<img src="../Res/access_introduction/string_path.png"/>
 如果仅输出了文件名，而这些文件其实不在同一个目录下，如下面的案例。此时需要调试器根据文件名定位文件路径，必须开启自动路径功能（ launch.json 中设置 autoPathMode:true ），否则无法正常工作。
-<img src="../static/access_introduction/filename_path.png"/>
+<img src="../Res/access_introduction/filename_path.png"/>
 </pre>
 </details>
 
@@ -77,7 +77,7 @@ require("LuaPanda").start("127.0.0.1",8818);
 
 ### 第二步 调试配置
 切换到VSCode的**调试选项卡**，点击齿轮，在弹出框中选择 LuaPanda (若无此选项说明以前用别的插件调试过lua , 要把先前用过的调试插件禁用)。之后会自动生成launch.json文件。
-![vscode_debug_ui](../static/access_introduction/create-launchjson.png)
+![vscode_debug_ui](../Res/access_introduction/create-launchjson.png)
 
 生成的 launch.json 文件的个配置项可以参考 [launch.json配置说明](launch-json-introduction.md)
 
@@ -93,13 +93,13 @@ launch.json 配置项中的修改主要是 luaFileExtension , 改成lua文件使
 
 如果开始调试时弹出了如下错误
 
-![cannot_find_file](../static/access_introduction/cannot_find_file.png)
+![cannot_find_file](../Res/access_introduction/cannot_find_file.png)
 
 不要停止调试，在VSCode中找到报错中提到的文件，在其中任意位置打一个断点，之后在调试控制台中输入`LuaPanda.doctor()`。这是一个帮助用户检查错误的命令，可以进行路径分析，给出建议。
 
 输出结果
 
-![doctor](../static/access_introduction/doctor.png)
+![doctor](../Res/access_introduction/doctor.png)
 
 format是调试器拼接出的文件路径，filepath是文件真实存在的路径。
 
@@ -111,7 +111,7 @@ format是调试器拼接出的文件路径，filepath是文件真实存在的路
 
 **先运行VSCode端，再运行Lua代码**: 点击调试选项卡左上角的绿色箭头，再运行unity/ue4工程。如果有stopOnEntry或是执行到断点处，就会自动停住。
 
-![debug_ui](../static/access_introduction/debug_ui.png)
+![debug_ui](../Res/access_introduction/debug_ui.png)
 
 enjoy! 
 
@@ -124,7 +124,7 @@ LuaPanda 在PC上调试会默认使用 c hook，它是用c重写了debugger的�
 
 验证方式：停在断点处后，在调试控制台输入`LuaPanda.getInfo()`， 返回信息的BaseInfo会给出提示，如果c库已加载，还会给出版本号。
 
-![getinfo](../static/access_introduction/getinfo.png)
+![getinfo](../Res/access_introduction/getinfo.png)
 
 + 如果提示c库未能正确加载，可以使用`LuaPanda.doctor()`命令查看详细信息
 
@@ -150,19 +150,19 @@ LuaPanda 在PC上调试会默认使用 c hook，它是用c重写了debugger的�
 
   Breaks Info: 断点列表
 
-  ![getinfo_complete](../static/access_introduction/getinfo_complete.png)
+  ![getinfo_complete](../Res/access_introduction/getinfo_complete.png)
 
 + LuaPanda.doctor()
 
   诊断工具，帮助用户诊断当前存在的问题。
 
-  ![doctor_complete](../static/access_introduction/doctor_complete.png)
+  ![doctor_complete](../Res/access_introduction/doctor_complete.png)
 
 + LuaPanda.getBreaks()
 
   打印所有断点信息(已包含在getInfo中)
 
-  ![get_breaks_complete](../static/access_introduction/get_breaks_complete.png)
+  ![get_breaks_complete](../Res/access_introduction/get_breaks_complete.png)
 
 + LuaPanda.testBreakpoint()
 

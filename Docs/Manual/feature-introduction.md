@@ -21,13 +21,13 @@
 
 ​    功能展示: 代码提示和定义跳转
 
-![](../static/feature-introduction/codeDefAndCompleting.gif)
+![](../Res/feature-introduction/codeDefAndCompleting.gif)
 
 
 
 ​    功能展示: 生成注释	
 
-​    ![](../static/feature-introduction/generateComments.gif)	
+​    ![](../Res/feature-introduction/generateComments.gif)	
 
 使用代码提示时注意两点，无需其他配置
 
@@ -43,7 +43,7 @@
 
 调试器总体架构可以参考下图。左侧的 VSCode 是 IDE ，中间的 Debug Adapter 表示调试器的 VSCode 插件，它和IDE通信遵循DAP协议。最右侧的 debugger 是调试器运行在 lua 中的部分，也就是 luapanda.lua文件，它捕获lua 运行状态，在触发命中断点等事件时，通知 Debug Adapter。
 
-![debug-arch2](../static/feature-introduction/debug-arch2.png)
+![debug-arch2](../Res/feature-introduction/debug-arch2.png)
 
 *图片来源 https://code.visualstudio.com/api/extension-guides/debugger-extension*
 
@@ -61,7 +61,7 @@ C 模块适合的场景
 
 调试器的 IDE 使用VSCode，下面是调试界面。
 
-![debugui](../static/feature-introduction/debugui.png)
+![debugui](../Res/feature-introduction/debugui.png)
 
 
 
@@ -81,17 +81,17 @@ C 模块适合的场景
 ### 多平台的支持
 
 Mac  console + lua 5.1
-![debugon-console](../static/feature-introduction/debugon-console.png)
+![debugon-console](../Res/feature-introduction/debugon-console.png)
 
 Win  slua-unreal + lua5.3
-![debugon-slua-ue](../static/feature-introduction/debugon-slua-ue.png)
+![debugon-slua-ue](../Res/feature-introduction/debugon-slua-ue.png)
 
 
 
 ### 展示元表 和 upvalue
 
 可以显示table的成员数目和元表，function的upvalue。
-![show-metatable](../static/feature-introduction/show-metatable.png)
+![show-metatable](../Res/feature-introduction/show-metatable.png)
 
 
 
@@ -99,11 +99,11 @@ Win  slua-unreal + lua5.3
 
 在变量监控区可以输入并监控表达式
 
-![REPL-watch](../static/feature-introduction/REPL-watch.png)
+![REPL-watch](../Res/feature-introduction/REPL-watch.png)
 
 调试控制台，可以在断点处输入表达式，执行函数，或者输入变量名观察它的值
 
-![debug-console](../static/feature-introduction/debug-console.png)
+![debug-console](../Res/feature-introduction/debug-console.png)
 
 
 
@@ -112,7 +112,7 @@ Win  slua-unreal + lua5.3
 通常的调试流程是先运行vscode端，再开始执行lua工程。
 attach模式支持先执行lua工程，在希望调试的时候运行调试器，建立连接，开始调试。
 
-![attach_mode](../static/feature-introduction/attach_mode.GIF)
+![attach_mode](../Res/feature-introduction/attach_mode.GIF)
 
 
 
@@ -120,13 +120,13 @@ attach模式支持先执行lua工程，在希望调试的时候运行调试器�
 
 在 VSCode 行号前点击鼠标右键可选择普通断点，条件断点和记录点。
 
-![add_condition_bk](../static/feature-introduction/add_condition_bk.png)
+![add_condition_bk](../Res/feature-introduction/add_condition_bk.png)
 
 若用户输入的条件是 `a == 2` , 调试器会执行表达式，并获取执行结果。注意执行结果 nil 和 false 为假，其他都为真。
 
 记录点在被执行时会打印日志。日志输出在：`DebugConsole - OUTPUT - Debugger/log` 
 
-![print_log](../static/feature-introduction/print_log.png)
+![print_log](../Res/feature-introduction/print_log.png)
 
 
 
@@ -134,7 +134,7 @@ attach模式支持先执行lua工程，在希望调试的时候运行调试器�
 
 断点处允许用户修改变量的值， 用户也可以通过调试控制台给变量赋值。
 
-![企业微信截图_84fc8535-8733-4b04-9518-64cee91b2439](https://github.com/Tencent/LuaPanda/blob/dev/Docs/static/feature-introduction/set-var-value.gif?raw=true)
+![企业微信截图_84fc8535-8733-4b04-9518-64cee91b2439](https://github.com/Tencent/LuaPanda/blob/dev/Docs/Res/feature-introduction/set-var-value.gif?raw=true)
 
 
 
@@ -142,7 +142,7 @@ attach模式支持先执行lua工程，在希望调试的时候运行调试器�
 
 使用单文件调试，可以在工程中很方便的调试单个lua文件。
 
-![debug-file](https://github.com/Tencent/LuaPanda/blob/master/Docs/static/debug-file.GIF?raw=true)
+![debug-file](https://github.com/Tencent/LuaPanda/blob/master/Docs/Res/debug-file.GIF?raw=true)
 
 详细配置请查看 [单文件调试说明](https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-file.md)
 

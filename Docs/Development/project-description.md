@@ -6,7 +6,7 @@
 
 
 
-![debug-arch](../static/debug-arch.png)
+![debug-arch](../Res/debug-arch.png)
 
 
 
@@ -94,7 +94,7 @@ adapter->vscode: debugger收到命令
 Note right of debugger :继续执行...
 ```
 
-( 若看不到流程图，请点击 [这里](../static/work-flow.png))
+( 若看不到流程图，请点击 [这里](../Res/work-flow.png))
 
 启动时，adapter把VSCode前端信息（包括初始化设置和断点）传给debugger，之后debugger会设置钩子，监控lua运行状态。lua每执行一行都会进入钩子函数中，钩子中会做断点判断，遇到断点处会暂停主线程lua的执行，并把变量信息和调用栈发给VSCode展示。
 
@@ -105,13 +105,13 @@ Note right of debugger :继续执行...
 1. 下载工程后，在工程目录下运行 `npm install` 安装 npm 依赖，此操作要连外网或设置代理。
 2. 编译: 把整个工程目录 `LuaPanda` 用 VSCode 打开， 点击菜单 terminal -> RunBuild Task， vscode会自动切换到console进行编译
 
-![run_build_task](../static/run_build_task.jpg)
+![run_build_task](../Res/run_build_task.jpg)
 
 *每次修改代码后要先编译再运行
 
 3. 打包: 点击菜单 terminal -> Run Task. 选择package, 就会在工程目录下打出VSIX包
 
-![compile_package](../static/compile_package.png)
+![compile_package](../Res/compile_package.png)
 
 4. 切换到 VSCode 的 debug 页卡，点击 run 按钮。会弹出 [扩展开发主机] 窗口。这个窗口中已经安装了编译好的插件，在[扩展开发主机]窗口中进行调试操作即可。
 
@@ -127,6 +127,6 @@ Note right of debugger :继续执行...
 
 **查看日志**：在VSCode的OUTPUT(输出)页卡中，分别展示Adapter和Debugger的日志。
 
-![debug_log](../static/debug_log.png)
+![debug_log](../Res/debug_log.png)
 
 

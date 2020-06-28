@@ -44,9 +44,9 @@ debugger 由两部分组成，分别是 lua 调试主体和 c 扩展库。使用
 2. 配置文件中有一项`logLevel` ， 它表示日志级别。默认是1，为了展示所有日志现在改为0。
 3. 正常开始lua调试流程, 点击输出(OUTPUT), 其中 Debugger/log 日志选项卡可以查看Debugger打出的日志。
 4. 如果需要在debugger中增加新日志，使用`LuaPanda.printToVSCode()`，但建立网络连接(vscode底部颜色条变为橙色)之后debugger日志才会打印在vscode中。
-5. 可以使用日志跟踪运行状态。但因为VSCode的异步打印机制，日志可能无法保证严格顺序。也可以参考`Adapter/log` ，日志信息也会在这里打印，这里的日志是严格排序的，可以对照[运行流程图](../static/work-flow.png)了解交互过程。
+5. 可以使用日志跟踪运行状态。但因为VSCode的异步打印机制，日志可能无法保证严格顺序。也可以参考`Adapter/log` ，日志信息也会在这里打印，这里的日志是严格排序的，可以对照[运行流程图](../Res/work-flow.png)了解交互过程。
 
-![debug_log](../static/debug_log.png)
+![debug_log](../Res/debug_log.png)
 
 
 

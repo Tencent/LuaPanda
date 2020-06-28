@@ -18,11 +18,11 @@ LuaPanda的文档全部集中在这个目录下，根据类型分为
 
 + 调试器开发相关
 
-  放在`Development-instructions`目录下
+  放在`Development`目录下
 
   [工程说明](./Development-instructions/project-description.md)
 
   [开发指引](./Development-instructions/how_to_join.md)
 
-`static`中放一些静态图片资源，供各文档引用
+`Res`中放一些静态图片资源，供各文档引用
 
