@@ -19,7 +19,7 @@
 		"vscode": "^1.25.0",
 		"node": "^7.9.0"
 	},
-	"icon": "images/luapanda_logo.png",
+	"icon": "res/icon/luapanda_logo.png",
 	"categories": [
 		"Debuggers",
 		"Programming Languages"
