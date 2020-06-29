@@ -1,7 +1,7 @@
 {
 	"name": "luapanda",
 	"displayName": "LuaPanda",
-	"version": "3.1.80",
+	"version": "3.1.95",
 	"publisher": "stuartwang",
 	"description": "lua debug and code tools for VS Code.",
 	"author": {
@@ -273,12 +273,12 @@
 								"description": "If adapter is client , the IP to connect. Default is '127.0.0.1'。",
 								"default": "127.0.0.1"
 							},
-							"DistinguishSameNameFile":{
+							"distinguishSameNameFile":{
 								"type": "boolean",
 								"description": "Whether distinguish breakpoint in files with same name",
 								"default": false
 							},
-							"TruncatedOPath":{
+							"truncatedOPath":{
 								"type": "string",
 								"description": " ",
 								"default": ""
@@ -402,12 +402,12 @@
 								"description": "Whether double check breakpoint hit",
 								"default": true
 							},
-							"DistinguishSameNameFile":{
+							"distinguishSameNameFile":{
 								"type": "boolean",
 								"description": "Whether distinguish breakpoint in files with same name",
 								"default": false
 							},
-							"TruncatedOPath":{
+							"truncatedOPath":{
 								"type": "string",
 								"description": " ",
 								"default": ""
@@ -416,6 +416,11 @@
 								"type": "boolean",
 								"description": "Whether enter development mode",
 								"default": false
+							},
+							"description":{
+								"type": "string",
+								"description": "当前模式的描述",
+								"default": ""
 							}
 						}
 					}
@@ -426,6 +431,7 @@
 						"request": "launch",
 						"tag": "normal",
 						"name": "LuaPanda",
+						"description":"通用模式,通常调试项目请选择此模式",
 						"cwd": "${workspaceFolder}",
 						"luaFileExtension": "",
 						"connectionPort": 8818,
@@ -437,7 +443,8 @@
 						"type": "lua",
 						"request": "launch",
 						"tag": "single_file",
-						"name": "LuaPanda-DebugFile",
+						"name": "LuaPanda-IndependentFile",
+						"description":"独立文件调试模式,使用前请参考文档",
 						"luaPath": "",
 						"packagePath": [],
 						"luaFileExtension": "",

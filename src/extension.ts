@@ -202,7 +202,7 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             else if(config.name === "LuaPanda-Attach"){
                 config.tag = "attach"
             }
-            else if(config.name === "LuaPanda-DebugFile"){
+            else if(config.name === "LuaPanda-IndependentFile"){
                 config.tag = "single_file"
             }
 
@@ -241,12 +241,12 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
                 config.packagePath = [];
             }
             
-            if(config.TruncatedOPath == undefined){
-                config.TruncatedOPath = "";
+            if(config.truncatedOPath == undefined){
+                config.truncatedOPath = "";
             }
 
-            if(config.DistinguishSameNameFile == undefined){
-                config.DistinguishSameNameFile = false;
+            if(config.distinguishSameNameFile == undefined){
+                config.distinguishSameNameFile = false;
             }
 
             if(config.dbCheckBreakpoint == undefined){

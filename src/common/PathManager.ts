@@ -81,7 +81,7 @@ export class PathManager {
     }
 
     // 检查同名文件, 如果存在，通过日志输出
-    public  checkSameNameFile(DistinguishSameNameFile){
+    public  checkSameNameFile(distinguishSameNameFile){
         let sameNameFileStr;
         for (const nameKey in this.fileNameToPathMap) {
             let completePath = this.fileNameToPathMap[nameKey]
@@ -95,12 +95,12 @@ export class PathManager {
         }
 
         if(sameNameFileStr){
-            if(DistinguishSameNameFile){
-                sameNameFileStr = sameNameFileStr + "DistinguishSameNameFile 已开启。调试器[可以区分]同名文件中的断点。\n"
+            if(distinguishSameNameFile){
+                sameNameFileStr = sameNameFileStr + "distinguishSameNameFile 已开启。调试器[可以区分]同名文件中的断点。\n"
             }else{
                 let sameNameFileTips = "[Tips] VSCode 打开目录中存在同名 lua 文件，请避免在这些文件中打断点。如需区分同名文件中的断点，可进行以下操作:\n";
                 sameNameFileTips += "+ LuaPanda启动时会索引 cwd 目录中的 lua 文件, 修改 launch.json 中的 cwd 配置路径, 过滤掉不参与运行的文件夹, 缩小索引范围来避免重复文件;\n";
-                sameNameFileTips += "+ 在 launch.json 中加入 DistinguishSameNameFile:true , 开启同名文件区分 (推荐);\n";
+                sameNameFileTips += "+ 在 launch.json 中加入 distinguishSameNameFile:true , 开启同名文件区分 (推荐);\n";
                 sameNameFileTips += "+ 同名文件信息请查看 VSCode 控制台 OUTPUT - Debugger/log 日志, 可根据日志修改文件名;\n";   
                 this.consoleLog(sameNameFileTips, this.luaDebugInstance);
             }

@@ -101,8 +101,8 @@ local OSType;                --VSCode识别出的系统类型，也可以自行�
 local clibPath;                 --chook库在VScode端的路径，也可自行设置。
 local hookLib;                  --chook库的引用实例
 local adapterVer;               --VScode传来的adapter版本号
-local TruncatedOPath;           --VScode中用户设置的用于截断opath路径的标志，注意这里可以接受lua魔法字符
-local DistinguishSameNameFile = false;  --是否区分lua同名文件中的断点，在VScode launch.json 中 DistinguishSameNameFile 控制
+local truncatedOPath;           --VScode中用户设置的用于截断opath路径的标志，注意这里可以接受lua魔法字符
+local distinguishSameNameFile = false;  --是否区分lua同名文件中的断点，在VScode launch.json 中 distinguishSameNameFile 控制
 --标记位
 local logLevel = 1;             --日志等级all/info/error. 此设置对应的是VSCode端设置的日志等级.
 local variableRefIdx = 1;       --变量索引
@@ -394,15 +394,15 @@ function this.breakpointTestInfo()
     end
     local info = debug.getinfo(ly, "S");
     local NormalizedPath =  this.formatOpath(info["source"]);
-    NormalizedPath = this.truncatedPath(NormalizedPath, TruncatedOPath);
+    NormalizedPath = this.truncatedPath(NormalizedPath, truncatedOPath);
 
     local strTable = {}
     local FormatedPath = tostring(runSource);
     strTable[#strTable + 1] = "\n- BreakPoint Test:"
     strTable[#strTable + 1] = "\nUser set lua extension:   ." .. tostring(luaFileExtension);
     strTable[#strTable + 1] = "\nAuto get lua extension:   " .. tostring(autoExt);
-    if TruncatedOPath and TruncatedOPath ~= '' then
-    strTable[#strTable + 1] = "\nUser set TruncatedOPath:  " .. TruncatedOPath;
+    if truncatedOPath and truncatedOPath ~= '' then
+    strTable[#strTable + 1] = "\nUser set truncatedOPath:  " .. truncatedOPath;
     end
     strTable[#strTable + 1] = "\nGetInfo:    ".. info["source"];
     strTable[#strTable + 1] = "\nNormalized: " .. NormalizedPath;
@@ -422,15 +422,15 @@ function this.breakpointTestInfo()
         if recordBreakPointPath and recordBreakPointPath ~= "" then
             if string.find(recordBreakPointPath , FormatedPath, (-1) * string.len(FormatedPath) , true) then
                 -- 短路径断点命中
-                if DistinguishSameNameFile == false then
+                if distinguishSameNameFile == false then
                     strTable[#strTable + 1] = "本文件中断点可正常命中。"
-                    strTable[#strTable + 1] = "同名文件中的断点识别(DistinguishSameNameFile) 未开启，请确保 VSCode 断点不要存在于同名lua文件中。";
+                    strTable[#strTable + 1] = "同名文件中的断点识别(distinguishSameNameFile) 未开启，请确保 VSCode 断点不要存在于同名lua文件中。";
                 else
-                    strTable[#strTable + 1] = "同名文件中的断点识别(DistinguishSameNameFile) 已开启。";
+                    strTable[#strTable + 1] = "同名文件中的断点识别(distinguishSameNameFile) 已开启。";
                     if string.find(recordBreakPointPath, NormalizedPath, 1, true) then
                         strTable[#strTable + 1] = "本文件中断点可被正常命中"
                     else
-                        strTable[#strTable + 1] = "断点可能无法被命中，因为 lua 虚拟机中获得的路径 Normalized 不是断点路径 Breakpoint 的子串。 如有需要，可以在 launch.json 中设置 TruncatedOPath 来去除 Normalized 部分路径。"
+                        strTable[#strTable + 1] = "断点可能无法被命中，因为 lua 虚拟机中获得的路径 Normalized 不是断点路径 Breakpoint 的子串。 如有需要，可以在 launch.json 中设置 truncatedOPath 来去除 Normalized 部分路径。"
                     end
                 end
             else
@@ -470,7 +470,7 @@ function this.getBaseInfo()
     strTable[#strTable + 1] = " | supportREPL:".. tostring(outputIsUseLoadstring);
     strTable[#strTable + 1] = " | useBase64EncodeString:".. tostring(isNeedB64EncodeStr);
     strTable[#strTable + 1] = " | codeEnv:" .. tostring(OSType) .. '\n';
-    strTable[#strTable + 1] = " | DistinguishSameNameFile:" .. tostring(DistinguishSameNameFile) .. '\n';
+    strTable[#strTable + 1] = " | distinguishSameNameFile:" .. tostring(distinguishSameNameFile) .. '\n';
 
     strTable[#strTable + 1] = moreInfoStr;
     if OSTypeErrTip ~= nil and OSTypeErrTip ~= '' then
@@ -1263,16 +1263,16 @@ function this.dataProcess( dataStr )
 
         if  dataTable.info.pathCaseSensitivity == "true" then
             pathCaseSensitivity =  true;
-            TruncatedOPath = dataTable.info.TruncatedOPath or "";
+            truncatedOPath = dataTable.info.truncatedOPath or "";
         else
             pathCaseSensitivity =  false;
-            TruncatedOPath = string.lower(dataTable.info.TruncatedOPath or "");
+            truncatedOPath = string.lower(dataTable.info.truncatedOPath or "");
         end
 
-        if  dataTable.info.DistinguishSameNameFile == "true" then
-            DistinguishSameNameFile =  true;
+        if  dataTable.info.distinguishSameNameFile == "true" then
+            distinguishSameNameFile =  true;
         else
-            DistinguishSameNameFile =  false;
+            distinguishSameNameFile =  false;
         end
 
         --OS type
@@ -1616,7 +1616,7 @@ function this.getStackTable( level )
         local ss = {};
         ss.file = this.getPath(info);
         local oPathFormated = this.formatOpath(info.source) ; --从lua虚拟机获得的原始路径, 它用于帮助定位VScode端原始lua文件的位置(存在重名文件的情况)。
-        ss.oPath = this.truncatedPath(oPathFormated, TruncatedOPath);
+        ss.oPath = this.truncatedPath(oPathFormated, truncatedOPath);
         ss.name = "文件名"; --这里要做截取
         ss.line = tostring(info.currentline);
         --使用hookLib时，堆栈有偏移量，这里统一调用栈顶编号2
@@ -1857,10 +1857,10 @@ function this.isHitBreakpoint(breakpointPath, opath, curLine)
                     -- 为了避免性能消耗，仅在行号命中时才处理 opath 到标准化路径
                     oPathFormated = this.formatOpath(opath);
                     -- 截取
-                    oPathFormated = this.truncatedPath(oPathFormated, TruncatedOPath);
+                    oPathFormated = this.truncatedPath(oPathFormated, truncatedOPath);
                 end
                 
-                if (not DistinguishSameNameFile) or (string.match(fullpath, oPathFormated ) and this.checkRealHitBreakpoint(opath, curLine)) then
+                if (not distinguishSameNameFile) or (string.match(fullpath, oPathFormated ) and this.checkRealHitBreakpoint(opath, curLine)) then
                     -- type是TS中的枚举类型，其定义在BreakPoint.tx文件中
                         -- enum BreakpointType {
                         --     conditionBreakpoint = 0,

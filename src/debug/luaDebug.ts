@@ -238,7 +238,7 @@ export class LuaDebugSession extends LoggingDebugSession {
                 return;
             }
             this._pathManager.rebuildWorkspaceNamePathMap(args.cwd);
-            this._pathManager.checkSameNameFile(!!args.DistinguishSameNameFile);
+            this._pathManager.checkSameNameFile(!!args.distinguishSameNameFile);
         }
 
         // 普通模式下才需要检查升级，单文件调试不用
@@ -263,8 +263,8 @@ export class LuaDebugSession extends LoggingDebugSession {
         sendArgs["useCHook"] = args.useCHook;
         sendArgs["adapterVersion"] = String(Tools.adapterVersion);
         sendArgs["autoPathMode"] = this._pathManager.useAutoPathMode;
-        sendArgs["DistinguishSameNameFile"] = !!args.DistinguishSameNameFile;
-        sendArgs["TruncatedOPath"] = String(args.TruncatedOPath);
+        sendArgs["distinguishSameNameFile"] = !!args.distinguishSameNameFile;
+        sendArgs["truncatedOPath"] = String(args.truncatedOPath);
         sendArgs["DevelopmentMode"] = String(args.DevelopmentMode);
         Tools.developmentMode = args.DevelopmentMode;
 

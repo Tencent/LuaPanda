@@ -94,7 +94,7 @@ export class VisualSetting {
                 else if(v["tag"] === "attach" || v["name"] === "LuaPanda-Attach"){
                     jsonObj["configs"][index]["launch.json"][v["name"]] = v;
                 }
-                else if(v["tag"] === "single_file" || v["name"] === "LuaPanda-DebugFile"){
+                else if(v["tag"] === "single_file" || v["name"] === "LuaPanda-IndependentFile"){
                     jsonObj["configs"][index]["launch.json"][v["name"]] = v;
                 }
             }
@@ -113,7 +113,7 @@ export class VisualSetting {
                         jsonObj["configs"][index]["launch.json"][v["name"]] = v;
                     }
                     
-                    if(v["tag"] === "single_file" || v["name"] === "LuaPanda-DebugFile"){
+                    if(v["tag"] === "single_file" || v["name"] === "LuaPanda-IndependentFile"){
                         jsonObj["configs"][index]["launch.json"][v["name"]] = v;
                     }
                 }

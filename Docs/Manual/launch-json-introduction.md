@@ -28,7 +28,7 @@ launch.json 指的是存在于被调试项目的 .vscode/launch.json 文件，�
 						"type": "lua",
 						"request": "launch",
 						"tag": "single_file",
-						"name": "LuaPanda-DebugFile",
+						"name": "LuaPanda-IndependentFile",
 						"luaPath": "",
 						"packagePath": [],
 						"luaFileExtension": "",
@@ -43,7 +43,7 @@ launch.json 指的是存在于被调试项目的 .vscode/launch.json 文件，�
 launch.json 包含两个模式
 
 + LuaPanda						   自适应模式
-+ LuaPanda-DebugFile        单文件调试模式
++ LuaPanda-IndependentFile       单文件调试模式
 
 我们定义的自适应模式是一种最频繁使用的模式。有些调试器分为 launch 以及 attach 模式，我们理解 lua 是一种脚本语言，常嵌入 c# ， c++ 中被调用，通常在使用 lua 调试器时，用户会手动启动 unity / unreal，调试器无需再拉起这些被调试程序。如果有启动 vscode 调试器拉起一个二进制程序的需求，可以关注下面的 program 选项。
 
@@ -72,16 +72,16 @@ launch.json 包含两个模式
 | pathCaseSensitivity     | false       | 路径大小写敏感。默认 false 可兼容 getInfo获取的路径大小写，无需修改 |
 | updateTips              | true        | 当检查到项目中的 lua 文件比较旧时，提示用户升级              |
 | logLevel                | 1           | 日志等级，开发调试器时可能会使用0级，大量日志会降低运行效率。正常使用请勿修改 |
-| DistinguishSameNameFile | false       | 调试器默认不做同名文件区分 , 请不要在同名文件中打断点（此时仅依靠文件名进行文件区分）。如需要调试器区分同名文件，可尝试设置为 true，此时会执行较为严格的路径模式。 |
-| TruncatedOPath          | ""          | 路径裁剪，**通常无需修改**。配合 DistinguishSameNameFile: true 模式使用。裁减掉 getinfo 的一部分路径，用剩余的路径进行断点匹配 |
+| distinguishSameNameFile | false       | 调试器默认不做同名文件区分 , 请不要在同名文件中打断点（此时仅依靠文件名进行文件区分）。如需要调试器区分同名文件，可尝试设置为 true，此时会执行较为严格的路径模式。 |
+| truncatedOPath          | ""          | 路径裁剪，**通常无需修改**。配合 distinguishSameNameFile: true 模式使用。裁减掉 getinfo 的一部分路径，用剩余的路径进行断点匹配 |
 | VSCodeAsClient          | false       | 反转 VScode 和 lua 进程的 C/S                                |
 | connectionIP            | "127.0.0.1" | 配合 VSCodeAsClient: true 模式使用，要连接的 lua 进程所在ip  |
 
 
 
-+ LuaPanda-DebugFile 模式的配置
++ LuaPanda-IndependentFile 模式的配置
 
-LuaPanda-DebugFile 我们称之为"单文件模式" ,  它的作用是打开一个新的终端，并 lua 命令运行当前 VSCode 活动窗口中的 lua 代码，并连接调试器，对其进行调试。
+LuaPanda-IndependentFile 我们称之为"独立文件模式" ,  它的作用是打开一个新的终端，并 lua 命令运行当前 VSCode 活动窗口中的 lua 代码，并连接调试器，对其进行调试。
 
 这个模式的目的是方便进行 lua 开发时，测试一些独立的文件 / 函数运行状况。
 
