@@ -6,26 +6,26 @@
             "request": "launch",
             "tag": "normal",
             "name": "LuaPanda",
+            "description":"通用模式,通常调试项目请选择此模式",
             "cwd": "${workspaceFolder}",
-            "luaFileExtension": "lua",
+            "luaFileExtension": "",
             "connectionPort": 8818,
             "stopOnEntry": true,
             "useCHook": true,
-            "autoPathMode": true,
-            "logLevel": 1
+            "autoPathMode": true
         },
         {
             "type": "lua",
             "request": "launch",
             "tag": "single_file",
             "name": "LuaPanda-IndependentFile",
+            "description":"独立文件调试模式,使用前请参考文档",
             "luaPath": "",
             "packagePath": [],
             "luaFileExtension": "",
             "connectionPort": 8820,
             "stopOnEntry": true,
-            "useCHook": true,
-            "logLevel": 1
+            "useCHook": true
         }
     ]
 }
