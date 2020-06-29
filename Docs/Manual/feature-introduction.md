@@ -134,7 +134,7 @@ attach模式支持先执行lua工程，在希望调试的时候运行调试器�
 
 断点处允许用户修改变量的值， 用户也可以通过调试控制台给变量赋值。
 
-![企业微信截图_84fc8535-8733-4b04-9518-64cee91b2439](https://github.com/Tencent/LuaPanda/blob/dev/Docs/Res/feature-introduction/set-var-value.gif?raw=true)
+![企业微信截图_84fc8535-8733-4b04-9518-64cee91b2439](../Res/feature-introduction/set-var-value.gif?raw=true)
 
 
 
@@ -142,7 +142,7 @@ attach模式支持先执行lua工程，在希望调试的时候运行调试器�
 
 使用单文件调试，可以在工程中很方便的调试单个lua文件。
 
-![debug-file](https://github.com/Tencent/LuaPanda/blob/master/Docs/Res/debug-file.GIF?raw=true)
+![debug-file](../Res/debug-file.GIF?raw=true)
 
 详细配置请查看 [单文件调试说明](https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-file.md)
 

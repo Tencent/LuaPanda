@@ -29,6 +29,8 @@ export class UpdateManager{
                 let updateTipSetting = VisualSetting.getLaunchjson(rootFolder , "updateTips");
                 if ( intDVer < intAVer && updateTipSetting !== false){
                 // if ( intDVer < intAVer){
+                    vscode.window.showInformationMessage('感谢升级 3.2.0 版本, 升级后首次开始调试前请重建一下 launch.json 文件, 避免产生兼容问题。launch.json 配置项目可以参考 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/launch-json-introduction.md', "好的");  
+
                     vscode.window.showInformationMessage('当前工程中 LuaPanda 文件版本较低，是否自动升级为新版本?', 'Yes', 'No', 'Never').then(value => {
                         if(value === "Yes"){
                             let confirmButton = "立刻升级";
@@ -44,7 +46,7 @@ export class UpdateManager{
                             this.setCheckUpdate(false);
                         }else if(value === "Never"){
                             // 永久不再提示升级
-                            vscode.window.showInformationMessage('本项目调试时将不会再弹出调试器升级提示，需要升级时您可以手动下载最新的调试器lua文件替换，或从配置项中打开升级提示 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md', "好的");
+                            vscode.window.showInformationMessage('本项目调试时将不会再弹出调试器升级提示，需要升级请参考 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md', "好的");
                             this.setCheckUpdate(false);
                             // 把信息标记在 launch.json上
                             VisualSetting.setLaunchjson(rootFolder, "updateTips", false);
