@@ -51,7 +51,7 @@ let documents: TextDocuments = new TextDocuments();
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
 // let hasDiagnosticRelatedInformationCapability: boolean = false;
-
+let analyzerTotalSwitch: boolean = true;
 // The settings
 export interface LuaAnalyzerSettings {
 	codeLinting: {
@@ -110,6 +110,26 @@ connection.onInitialize((initPara: InitializeParams) => {
 	// 清空loadedExt, 初始化 name - uri 对应 cache
 	Tools.setVScodeExtensionPath(path.dirname(path.dirname(path.dirname(__dirname))) );
 	Tools.initLoadedExt();
+
+	// 读取标记文件，如果关闭了标记，那么
+	let snippetsPath = Tools.getVScodeExtensionPath() + "/res/snippets/snippets.json";
+	let snipContent = fs.readFileSync(snippetsPath);
+
+	// 发送rootFolder
+	setImmediate(()=>{
+		connection.sendNotification("setRootFolders", Tools.getVSCodeOpenedFolders());
+	}, 0);
+
+	if(snipContent.toString().trim() == ''){
+		analyzerTotalSwitch = false;
+		setImmediate(()=>{
+			connection.sendNotification("showProgress", "LuaPanda");			
+		}, 0);
+		Logger.InfoLog("LuaAnalyzer closed!");
+		return {
+			capabilities: {}
+		}
+	}
 	// 创建对应后缀的文件符号
 	for (const folder of Tools.getVSCodeOpenedFolders()) {
 		CodeSymbol.createSymbolswithExt('lua', folder);
@@ -121,48 +141,39 @@ connection.onInitialize((initPara: InitializeParams) => {
 	let resLuaPath = Tools.getVScodeExtensionPath() + '/res/lua';   //安装插件后地址
 	CodeSymbol.createLuaPreloadSymbols(resLuaPath);//更新lua预设符号文件
 	NativeCodeExportBase.loadIntelliSenseRes();//更新用户导出符号文件
-	Logger.DebugLog("init success");
+	Logger.InfoLog("LuaAnalyzer init success!");
 	
-	//读取标记文件，如果关闭了标记，那么
-	let snippetsPath = Tools.getVScodeExtensionPath() + "/res/snippets/snippets.json";
-	let snipContent = fs.readFileSync(snippetsPath);
-	if(snipContent.toString().trim() == ''){
-		return {
-			capabilities: {}
+	return {
+		capabilities: {
+			//符号分析
+			documentSymbolProvider: true,
+			workspaceSymbolProvider: true,
+			//定义分析
+			definitionProvider: true,
+			//引用分析
+			referencesProvider: false,
+			//代码格式化
+			documentFormattingProvider: true,
+			documentRangeFormattingProvider: false,
+			//代码选中高亮
+			documentHighlightProvider: false,
+			//文档同步
+			textDocumentSync: documents.syncKind,
+			//自动补全
+			completionProvider: {
+				triggerCharacters:"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:".split(''),
+				resolveProvider: false
+			},
+			//重命名
+			renameProvider : false,
+			//函数签名提示
+			// signatureHelpProvider:{
+			// 	triggerCharacters: [ '(' ],
+			// },
+			//代码上色
+			colorProvider : false,
 		}
-	}else{
-		return {
-			capabilities: {
-				//符号分析
-				documentSymbolProvider: true,
-				workspaceSymbolProvider: true,
-				//定义分析
-				definitionProvider: true,
-				//引用分析
-				referencesProvider: false,
-				//代码格式化
-				documentFormattingProvider: true,
-				documentRangeFormattingProvider: false,
-				//代码选中高亮
-				documentHighlightProvider: false,
-				//文档同步
-				textDocumentSync: documents.syncKind,
-				//自动补全
-				completionProvider: {
-					triggerCharacters:"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:".split(''),
-					resolveProvider: false
-				},
-				//重命名
-				renameProvider : false,
-				//函数签名提示
-				// signatureHelpProvider:{
-				// 	triggerCharacters: [ '(' ],
-				// },
-				//代码上色
-				colorProvider : false,
-			}
-		};
-	}
+	};
 });
 
 
@@ -195,13 +206,8 @@ connection.onInitialized(() => {
 			}
 			// 刷新文件名-路径索引
 			setTimeout(Tools.refresh_FileName_Uri_Cache, 0);
-
-
-			// 给 client 发消息
-			connection.sendNotification("setRootFolders", Tools.getVSCodeOpenedFolders());
 		});
 	}
-	connection.sendNotification("setRootFolders", Tools.getVSCodeOpenedFolders());
 });
 
 
@@ -296,8 +302,9 @@ connection.onWorkspaceSymbol(
 
 // 打开单文件
 documents.onDidOpen(file => {
+	
 	// 异步分析工程中同后缀文件
-	if (file.document.languageId == "lua") {	//本文件是lua形式
+	if (file.document.languageId == "lua" && analyzerTotalSwitch) {	//本文件是lua形式
 		try {
 			let uri = Tools.urlDecode(file.document.uri);
 			let luaExtname = Tools.getPathNameAndExt(uri);
@@ -321,7 +328,7 @@ documents.onDidOpen(file => {
 
 // 文件内容发生改变（首次打开文件时这个方法也会被调用）
 documents.onDidChangeContent(change => {
-	if(change.document.languageId == 'lua'){
+	if(change.document.languageId == 'lua' && analyzerTotalSwitch){
 		try {
 			const uri = Tools.urlDecode(change.document.uri);
 			const text = change.document.getText();
@@ -350,6 +357,8 @@ documents.onDidChangeContent(change => {
 
 // 保存文件
 documents.onDidSave(change => {
+	if(!analyzerTotalSwitch) return;
+
 	try {
 		// 运行语法检查
 		getDocumentSettings(change.document.uri).then(
@@ -448,6 +457,5 @@ async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 // Make the text document manager listen on the connection
 // for open, change and close text document events
 documents.listen(connection);
-
 // Listen on the connection
 connection.listen();

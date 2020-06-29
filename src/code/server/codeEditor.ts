@@ -21,7 +21,7 @@ export class CodeEditor {
 		}else{
 			let luatxt =  Tools.getFileContent(Tools.uriToPath(uri));
 			if(!luatxt){
-				Logger.InfoLog("[Error] getCode can’t get file content. uri:" + uri);
+				Logger.InfoLog("Can’t get file content. uri:" + uri);
 				return;
 			}
 			return luatxt;
