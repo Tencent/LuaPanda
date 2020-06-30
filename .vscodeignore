@@ -1,5 +1,6 @@
 .vscode/**/*
 .gitignore
+.github
 .travis.yml
 appveyor.yml
 src/**/*

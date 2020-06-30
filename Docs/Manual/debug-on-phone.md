@@ -95,3 +95,41 @@ require("LuaPanda").start("pcIP"，8818)
 ```
 
 就可以完成路径映射，把运行环境的/data/data/com.project.test/script/test.lua映射到观察环境C:/GameProcect/Assets/script/test.lua
+
+
+
+### 反转 client - server
+
+调试器分为 vscode 插件 和 LuaPanda.lua 两部分。通常情况下VScode插件作为server端，LuaPanda.lua作为client.
+
+这种配置会造成问题，当运行vscode的pc处于内网时，client通过ip是无法连接的（上面的安卓反向代理方法不受影响）。
+
+为了解决在不使用反向代理，pc处理内网导致无法连接的的情况。调试器支持 c-s 反转，具体使用方法是
+
+1. 确认vscode插件 以及 LuaPanda.lua 都升级到3.2.0版本
+
+2. 在 launch.json 中 加入如下配置
+
+```
+"VSCodeAsClient": true,
+"connectionIP": "127.0.0.1"
+```
+
+这里的ip填写要连接的手机ip.   之后尝试在 vscode 中运行一下，会提示
+
+```
+[Connecting] 调试器 VSCode Client 已启动，正在尝试连接。  Target:LuaPanda Port:8818
+```
+
+3. 修改require调用
+
+```
+require("LuaPanda").startServer("0.0.0.0", port)
+```
+
+这里的port 要和要上面 Target:LuaPanda Port:8818 这里的port保持一致。
+
+之后正常连接开始调试即可。
+
+
+

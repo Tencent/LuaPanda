@@ -1,7 +1,7 @@
 {
 	"name": "luapanda",
 	"displayName": "LuaPanda",
-	"version": "3.1.95",
+	"version": "3.1.98",
 	"publisher": "stuartwang",
 	"description": "lua debug and code tools for VS Code.",
 	"author": {
@@ -181,7 +181,7 @@
 				"runtime": "node",
 				"configurationAttributes": {
 					"attach": {
-						"properties": {							
+						"properties": {
 							"stopOnEntry": {
 								"type": "boolean",
 								"description": "After the debugger connect, it automatically stops at the first line of code called. \n调试器启动后自动停止在调用的第一行代码处。",
@@ -222,10 +222,10 @@
 								"description": "Temporary file storage path generated during debugging, please ensure this folder exists. \n调试产生的临时文件存放路径，请确保文件夹存在。",
 								"default": "${workspaceFolder}"
 							},
-							"rootFolder":{
+							"rootFolder": {
 								"type": "string",
 								"description": "记录vscode打开的目录，不要修改它的值，需用它找到 launch.json",
-								"default": "${workspaceFolder}"	
+								"default": "${workspaceFolder}"
 							},
 							"logLevel": {
 								"type": "number",
@@ -264,26 +264,30 @@
 							},
 							"tag": {
 								"type": "string",
-								"enum": ["normal", "attach", "single_file"],
+								"enum": [
+									"normal",
+									"attach",
+									"single_file"
+								],
 								"description": "Mark run mode, don't modify it. There are three modes: normal, attach, single_file. \n标记运行方式，请勿修改。 有三种模式 normal , attach , single_file。",
 								"default": "normal"
 							},
-							"dbCheckBreakpoint":{
+							"dbCheckBreakpoint": {
 								"type": "string",
 								"description": "If adapter is client , the IP to connect. Default is '127.0.0.1'。",
 								"default": "127.0.0.1"
 							},
-							"distinguishSameNameFile":{
+							"distinguishSameNameFile": {
 								"type": "boolean",
 								"description": "Whether distinguish breakpoint in files with same name",
 								"default": false
 							},
-							"truncatedOPath":{
+							"truncatedOPath": {
 								"type": "string",
 								"description": " ",
 								"default": ""
 							},
-							"DevelopmentMode":{
+							"DevelopmentMode": {
 								"type": "boolean",
 								"description": "Whether enter development mode",
 								"default": false
@@ -337,10 +341,10 @@
 								"description": "When disconnected by the lua end, VSCode automatically waits for new reconnection. \n当被lua端断开连接时，VSCode自动等待重连。",
 								"default": true
 							},
-							"rootFolder":{
+							"rootFolder": {
 								"type": "string",
 								"description": "记录vscode打开的目录，可以利用它找到 launch.json",
-								"default": "${workspaceFolder}"	
+								"default": "${workspaceFolder}"
 							},
 							"TempFilePath": {
 								"type": "string",
@@ -387,37 +391,37 @@
 								"description": "Mark run mode, don't modify it. There are three modes: normal, attach, single_file. \n标记运行方式，请勿修改。 有三种模式 normal , attach , single_file。",
 								"default": "normal"
 							},
-							"VSCodeAsClient":{
+							"VSCodeAsClient": {
 								"type": "boolean",
 								"description": "Usually adapter as Server, lua process as Client. this mode is invert these. Please also set connectionIP。",
-								"default": false	
+								"default": false
 							},
-							"connectionIP":{
+							"connectionIP": {
 								"type": "string",
 								"description": "If adapter is client , the IP to connect. Default is '127.0.0.1'。",
 								"default": "127.0.0.1"
 							},
-							"dbCheckBreakpoint":{
+							"dbCheckBreakpoint": {
 								"type": "boolean",
 								"description": "Whether double check breakpoint hit",
 								"default": true
 							},
-							"distinguishSameNameFile":{
+							"distinguishSameNameFile": {
 								"type": "boolean",
 								"description": "Whether distinguish breakpoint in files with same name",
 								"default": false
 							},
-							"truncatedOPath":{
+							"truncatedOPath": {
 								"type": "string",
 								"description": " ",
 								"default": ""
 							},
-							"DevelopmentMode":{
+							"DevelopmentMode": {
 								"type": "boolean",
 								"description": "Whether enter development mode",
 								"default": false
 							},
-							"description":{
+							"description": {
 								"type": "string",
 								"description": "当前模式的描述",
 								"default": ""
@@ -431,7 +435,7 @@
 						"request": "launch",
 						"tag": "normal",
 						"name": "LuaPanda",
-						"description":"通用模式,通常调试项目请选择此模式 | launchVer:3.2.0",
+						"description": "通用模式,通常调试项目请选择此模式 | launchVer:3.2.0",
 						"cwd": "${workspaceFolder}",
 						"luaFileExtension": "",
 						"connectionPort": 8818,
@@ -444,7 +448,7 @@
 						"request": "launch",
 						"tag": "single_file",
 						"name": "LuaPanda-IndependentFile",
-						"description":"独立文件调试模式,使用前请参考文档",
+						"description": "独立文件调试模式,使用前请参考文档",
 						"luaPath": "",
 						"packagePath": [],
 						"luaFileExtension": "",
