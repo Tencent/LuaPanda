@@ -129,7 +129,7 @@ attach模式支持先执行lua工程，在希望调试的时候运行调试器�
 
 断点处允许用户修改变量的值， 用户也可以通过调试控制台给变量赋值。
 
-![企业微信截图_84fc8535-8733-4b04-9518-64cee91b2439](https://github.com/Tencent/LuaPanda/blob/dev/Docs/static/feature-introduction/set-var-value.gif?raw=true)
+![](https://github.com/Tencent/LuaPanda/blob/master/Docs/static/feature-introduction/set-var-value.gif?raw=true)
 
 
 
