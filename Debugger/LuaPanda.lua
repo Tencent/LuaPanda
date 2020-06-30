@@ -424,7 +424,7 @@ function this.breakpointTestInfo()
                 -- 短路径断点命中
                 if distinguishSameNameFile == false then
                     strTable[#strTable + 1] = "本文件中断点可正常命中。"
-                    strTable[#strTable + 1] = "同名文件中的断点识别(distinguishSameNameFile) 未开启，请确保 VSCode 断点不要存在于同名lua文件中。";
+                    strTable[#strTable + 1] = "同名文件中的断点识别(distinguishSameNameFile) 未开启，请确保 VSCode 断点不要存在于同名 lua 文件中。";
                 else
                     strTable[#strTable + 1] = "同名文件中的断点识别(distinguishSameNameFile) 已开启。";
                     if string.find(recordBreakPointPath, NormalizedPath, 1, true) then
@@ -469,7 +469,7 @@ function this.getBaseInfo()
 
     strTable[#strTable + 1] = " | supportREPL:".. tostring(outputIsUseLoadstring);
     strTable[#strTable + 1] = " | useBase64EncodeString:".. tostring(isNeedB64EncodeStr);
-    strTable[#strTable + 1] = " | codeEnv:" .. tostring(OSType) .. '\n';
+    strTable[#strTable + 1] = " | codeEnv:" .. tostring(OSType);
     strTable[#strTable + 1] = " | distinguishSameNameFile:" .. tostring(distinguishSameNameFile) .. '\n';
 
     strTable[#strTable + 1] = moreInfoStr;
@@ -1303,8 +1303,8 @@ function this.dataProcess( dataStr )
             isUserSetClibPath = true;
         end
 
-        --查找c++的hook库是否存在
-        if tostring(dataTable.info.useCHook) == "true" then
+        --查找c++的hook库是否存在.  当lua5.4时默认不使用c库
+        if tostring(dataTable.info.useCHook) == "true" and "Lua 5.4" ~= _VERSION then
             userSetUseClib = true;      --用户确定使用clib
             if isUserSetClibPath == true then   --如果用户自设了clib路径
                 if luapanda_chook ~= nil then
