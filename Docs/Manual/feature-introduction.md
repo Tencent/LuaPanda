@@ -124,7 +124,7 @@ attach模式支持先执行lua工程，在希望调试的时候运行调试器�
 
 若用户输入的条件是 `a == 2` , 调试器会执行表达式，并获取执行结果。注意执行结果 nil 和 false 为假，其他都为真。
 
-记录点在被执行时会打印日志。日志输出在：`DebugConsole - OUTPUT - Debugger/log` 
+记录点在被执行时会打印日志。日志输出在：`DebugConsole - OUTPUT - LuaPanda Debugger` 
 
 ![print_log](../Res/feature-introduction/print_log.png)
 

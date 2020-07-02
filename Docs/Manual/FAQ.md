@@ -26,7 +26,7 @@
 
 ## 查看调试日志
 
-- 调试器自带日志模块，方便追踪问题。使用方法是切换到console的OUTPUT(输出)页卡, 选择 Adapter/log 或者 Debugger/log 就可以查看对应的日志。
+- 调试器自带日志模块，方便追踪问题。使用方法是切换到console的OUTPUT(输出)页卡, 选择 LuaPanda Adapter 或者 LuaPanda Debugger 就可以查看对应的日志。
 - 通常看Adapter就可以展示Adapter和Debugger的交互信息。
 - 如果需要更全面的日志，可以调整launch.json中的`logLevel:0`，再查看Debugger日志，可以输出每行执行到的文件信息。因日志较多，level设置为0可能会造成卡顿（0级日志主要用于调试器开发，使用时开1级日志就可以）。
 

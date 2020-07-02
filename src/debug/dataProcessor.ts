@@ -49,7 +49,7 @@ export class DataProcessor {
         for (let index = 0; index < this.orderList.length; index++) {
             const element = this.orderList[index];
             if ( element["timeOut"] && Date.now() > element["timeOut"] ){
-                // dataProcessor._runtime.showError(element["callbackId"] + " 请求超时! 详细请求信息可在 Adapter/log 中搜索此id查看");
+                // dataProcessor._runtime.showError(element["callbackId"] + " 请求超时! 详细请求信息可在 LuaPanda Adapter 中搜索此id查看");
                 let cb = element["callback"];
                 cb(element["callbackArgs"]);
                 this.orderList.splice(index, 1);

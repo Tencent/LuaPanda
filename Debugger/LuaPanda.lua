@@ -6,7 +6,7 @@
 
 -- API:
 --     LuaPanda.printToVSCode(logStr, printLevel, type)
---         打印日志到VSCode Output下Debugger/log中
+--         打印日志到VSCode Output下 LuaPanda Debugger 中
 --         @printLevel: debug(0)/info(1)/error(2) 这里的日志等级需高于launch.json中配置等级日志才能输出 (可选参数，默认0)
 --         @type(可选参数，默认0): 0:VSCode output console  1:VSCode tip  2:VSCode debug console
 
