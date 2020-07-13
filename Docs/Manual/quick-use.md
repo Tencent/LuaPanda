@@ -81,3 +81,7 @@
 
 4. **开始调试** 在main.lua文件 `require "cocos.init"` 行之前加入代码    `require("LuaPanda").start("127.0.0.1",8818)` 。VSCode切换到调试选项卡，配置项选择`LuaPanda`， 点击 VSCode 的开始调试箭头，再运行cocos2dx工程，在加入 require 的位置后会自动停止。之后可以打断点调试。
 
+### tolua
+
+群里有同学测试了 tolua 上的调试，文档请参考这里
+https://github.com/Arthur-qi/LuaPandaTutorialForToLua/blob/master/LuaPandaTutorialForToLua-LuaFramework_UGUI.txt
