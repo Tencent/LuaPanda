@@ -100,3 +100,9 @@ format:   cwd + getinfo
 - 手机和pc处于同一网段
 - 手机端App集成luasocket
 - 路径问题：真机中回传lua路径和pc是不同的，这时候需要lua在手机中的路径结构和pc中一致。以便调试器可以用cwd(工程文件夹) + getinfo(文件相对路径)找到对应文件。
+
+
+
+## 使用 xlua Demo 测试时断点不会停
+
+使用 xlua 时，如果修改 launch.json 中的文件后缀，要重启 unity 。以避免修改的配置无法加载导致的断点不停。

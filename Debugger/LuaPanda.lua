@@ -19,8 +19,10 @@
 --         返回获取调试器信息。包括版本号，是否使用lib库，系统是否支持loadstring(load方法)。返回值类型string, 推荐在调试控制台中使用。
 
 --     LuaPanda.testBreakpoint()
---         测试断点，用于分析路径错误导致断点无法停止的情况。
---         使用方法是 launch.json 中开启 stopOnEntry, 或者在代码中加入LuaPanda.BP()。运行调试器，当停止在 stopOnEntry 或者 LuaPanda.BP() 时在调试控制台输入 LuaPanda.testBreakpoint()，根据提示打一个断点后再次输入 LuaPanda.testBreakpoint()。此时系统会给出一些路径提示，帮助用户分析断点可能无法停止的原因。
+--         测试断点，用于分析路径错误导致断点无法停止的情况。测试方法是
+--         1. launch.json 中开启 stopOnEntry, 或者在代码中加入LuaPanda.BP()。
+--         2. 运行调试器，当停止在 stopOnEntry 或者 LuaPanda.BP() 时在调试控制台输入 LuaPanda.testBreakpoint()
+--         3. 根据提示更新断点后再次输入 LuaPanda.testBreakpoint()。此时系统会输出一些提示，帮助用户分析断点可能无法停止的原因。
 
 --     LuaPanda.doctor()
 --         返回对当前环境的诊断信息，提示可能存在的问题。返回值类型string, 推荐在调试控制台中使用。
