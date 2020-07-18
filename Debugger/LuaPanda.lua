@@ -234,7 +234,7 @@ function this.start(host, port)
     recordPort = port;
 
     sock:settimeout(connectTimeoutSec);
-    local connectSuccess = sock and sock:connect(recordHost, recordPort);
+    local connectSuccess = this.sockConnect(sock);
 
     if connectSuccess then
         this.printToConsole("First connect success!");
@@ -243,6 +243,17 @@ function this.start(host, port)
         this.printToConsole("First connect failed!");
         this.changeHookState(hookState.DISCONNECT_HOOK);
     end
+end
+
+function this.sockConnect(sock)
+    if sock then
+        local connectSuccess, status = sock:connect(recordHost, recordPort);
+        if status == "connection refused" then
+            this.reGetSock();
+        end
+        return connectSuccess;
+    end
+    return nil;
 end
 
 -- 连接成功，开始初始化
@@ -961,7 +972,7 @@ function this.reConnect()
             connectSuccess = sock;
         else
             sock:settimeout(connectTimeoutSec);
-            connectSuccess = sock and sock:connect(recordHost, recordPort);
+            connectSuccess = this.sockConnect(sock);
         end
 
         if connectSuccess then
