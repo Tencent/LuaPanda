@@ -58,6 +58,25 @@ export class CodeLinting {
 		return luacheck;
 	}
 
+	private static mergeIgnoreGlobals(globalsInSetting: string[], globalVariables: string[]): string[] {
+		let globalsMap = new Map<string, boolean>();
+		for (let g of globalsInSetting) {
+			globalsMap[g] = true;
+		}
+		for (let g of globalVariables) {
+			if (globalsMap[g]) continue;
+
+			let arr:string[] = g.split('.');
+			globalsMap[arr[0]] = true;
+		}
+
+		let ret: string[] = [];
+		for (let key in globalsMap) {
+			ret.push(key)
+		}
+		return ret;
+	}
+
 	private static getLuacheckArgs(settings: LuaAnalyzerSettings, fileName: string, globalVariables: string[]): string[] {
 		let luacheckArgs: string[] = [];
 
@@ -75,7 +94,7 @@ export class CodeLinting {
 			default:
 		}
 		let userIgnoreGlobals: string[] = settings.codeLinting.ignoreGlobal.split(";");
-		let ignoreGlobals: string[] = userIgnoreGlobals.concat(globalVariables);
+		let ignoreGlobals: string[] = this.mergeIgnoreGlobals(userIgnoreGlobals, globalVariables);
 		if (ignoreGlobals.length > 0) {
 			luacheckArgs.push("--globals", ...ignoreGlobals);
 		}
