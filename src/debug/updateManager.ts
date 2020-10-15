@@ -29,9 +29,9 @@ export class UpdateManager{
                 let updateTipSetting = VisualSetting.getLaunchjson(rootFolder , "updateTips");
                 if ( intDVer < intAVer && updateTipSetting !== false){
                 // if ( intDVer < intAVer){
-                    vscode.window.showInformationMessage('感谢升级 3.2.0 版本, 升级后首次开始调试前请重建一下 launch.json 文件, 避免产生兼容问题。launch.json 配置项目可以参考 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/launch-json-introduction.md', "好的");  
+                    vscode.window.showInformationMessage('LuaPanda VSCode 插件已升级 3.2.0 版本, 建议同时升级 LuaPanda.lua 文件。首次开始调试前请重建一下 launch.json 文件, 避免产生兼容问题。launch.json 配置项目参考 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/launch-json-introduction.md', "好的");  
 
-                    vscode.window.showInformationMessage('当前工程中 LuaPanda 文件版本较低，是否自动升级为新版本?', 'Yes', 'No', 'Never').then(value => {
+                    vscode.window.showInformationMessage('当前工程中的 LuaPanda.lua 文件版本较低，是否自动替换为最新版本?', 'Yes', 'No', 'Never').then(value => {
                         if(value === "Yes"){
                             let confirmButton = "立刻升级";
                             vscode.window.showInformationMessage('已准备好更新 ' + LuaPandaPath+ '。如用户对此文件有修改, 建议备份后再升级, 避免修改内容被覆盖', confirmButton, '稍后再试').then(value => {

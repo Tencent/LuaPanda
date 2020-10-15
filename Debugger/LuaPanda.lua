@@ -385,8 +385,8 @@ function this.testBreakpoint()
     else
         local strTable = {};
         strTable[#strTable + 1] = "正在准备进行断点测试，请按照如下步骤操作\n"
-        strTable[#strTable + 1] = "1. 请[清除]当前项目中所有断点;\n"
-        strTable[#strTable + 1] = "2. 在当前调用栈顶层的停止位置打一个断点;\n"
+        strTable[#strTable + 1] = "1. 请[删除]当前项目中所有断点;\n"
+        strTable[#strTable + 1] = "2. 在当前停止行打一个断点;\n"
         strTable[#strTable + 1] = "3. 再次运行 'LuaPanda.testBreakpoint()'"
         testBreakpointFlag = true;
         
@@ -447,7 +447,7 @@ function this.breakpointTestInfo()
                     end
                 end
             else
-                strTable[#strTable + 1] = "断点未被命中，原因是 FormatedPath 不是 Breakpoint 路径的子串。"
+                strTable[#strTable + 1] = "断点未被命中，原因是 Formated 不是 Breakpoint 路径的子串，或者 Formated 和 Breakpoint 文件后缀不一致"
             end
         else
             strTable[#strTable + 1] = "如果要进行断点测试，请使用 LuaPanda.testBreakpoint()。"
