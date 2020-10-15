@@ -202,14 +202,15 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             else if(config.name === "LuaPanda-Attach"){
                 config.tag = "attach"
             }
-            else if(config.name === "LuaPanda-IndependentFile"){
-                config.tag = "single_file"
+            // config.name === "LuaPanda-DebugFile" 是对 3.1.0 版本的兼容
+            else if(config.name === "LuaPanda-IndependentFile" || config.name === "LuaPanda-DebugFile" ){
+                config.tag = "independent_file"
             }
 
         }
 
         // 关于打开调试控制台的自动设置
-        if(config.tag === "single_file"){
+        if(config.tag === "independent_file"){
             if(!config.internalConsoleOptions){
                 config.internalConsoleOptions = "neverOpen";
             }

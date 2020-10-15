@@ -27,7 +27,7 @@ launch.json 指的是存在于被调试项目的 .vscode/launch.json 文件，�
 					{
 						"type": "lua",
 						"request": "launch",
-						"tag": "single_file",
+						"tag": "independent_file",
 						"name": "LuaPanda-IndependentFile",
 						"luaPath": "",
 						"packagePath": [],

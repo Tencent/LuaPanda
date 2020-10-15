@@ -267,9 +267,9 @@
 								"enum": [
 									"normal",
 									"attach",
-									"single_file"
+									"independent_file"
 								],
-								"description": "Mark run mode, don't modify it. There are three modes: normal, attach, single_file. \n标记运行方式，请勿修改。 有三种模式 normal , attach , single_file。",
+								"description": "Mark run mode, don't modify it. There are three modes: normal, attach, independent_file. \n标记运行方式，请勿修改。 有三种模式 normal , attach , independent_file",
 								"default": "normal"
 							},
 							"dbCheckBreakpoint": {
@@ -388,7 +388,7 @@
 							},
 							"tag": {
 								"type": "string",
-								"description": "Mark run mode, don't modify it. There are three modes: normal, attach, single_file. \n标记运行方式，请勿修改。 有三种模式 normal , attach , single_file。",
+								"description": "Mark run mode, don't modify it. There are three modes: normal, attach, independent_file. \n标记运行方式，请勿修改。 有三种模式 normal , attach , independent_file",
 								"default": "normal"
 							},
 							"VSCodeAsClient": {
@@ -446,7 +446,7 @@
 					{
 						"type": "lua",
 						"request": "launch",
-						"tag": "single_file",
+						"tag": "independent_file",
 						"name": "LuaPanda-IndependentFile",
 						"description": "独立文件调试模式,使用前请参考文档",
 						"luaPath": "",

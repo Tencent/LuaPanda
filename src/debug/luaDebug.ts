@@ -242,7 +242,7 @@ export class LuaDebugSession extends LoggingDebugSession {
         }
 
         // 普通模式下才需要检查升级，单文件调试不用
-        if(args.tag != "single_file"){
+        if(args.tag != "independent_file"){
             try {
                 new UpdateManager().checkIfLuaPandaNeedUpdate(this._pathManager.LuaPandaPath, args.cwd);
             } catch (error) {
@@ -289,8 +289,8 @@ export class LuaDebugSession extends LoggingDebugSession {
         this.breakpointsArray = new Array();
         this.sendEvent(new InitializedEvent()); //收到返回后，执行setbreakpoint
         
-        //单文件调试模式
-        if( args.tag === "single_file" ){       
+        //单文件调试模式。
+        if( args.tag === "independent_file" ){       
             // 获取活跃窗口
             let retObject = Tools.getVSCodeAvtiveFilePath();
             if( retObject["retCode"] !== 0 ){

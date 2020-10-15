@@ -17,7 +17,7 @@
         {
             "type": "lua",
             "request": "launch",
-            "tag": "single_file",
+            "tag": "independent_file",
             "name": "LuaPanda-IndependentFile",
             "description": "独立文件调试模式,使用前请参考文档",
             "luaPath": "",
