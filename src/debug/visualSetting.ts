@@ -8,11 +8,11 @@ export class VisualSetting {
     private static ADBRevTerminal;
 
     // 修改launch.json中的一项
-    public static setLaunchjson(rootFolder, key, value, tag = "normal"){
+    public static setLaunchjson(rootFolder, key, value, tag = ''){
         let settings = this.readLaunchjson(rootFolder);
         for (const keyLaunch in settings.configurations) {
             let valueLaunch = settings.configurations[keyLaunch]
-            if(valueLaunch["tag"] === tag){
+            if(tag === '' ||  valueLaunch["tag"] === tag){
                 valueLaunch[key] = value;
             }
         }
@@ -23,11 +23,11 @@ export class VisualSetting {
     }
 
     // 获取launch.json中的一项
-    public static getLaunchjson(rootFolder, key, tag = "normal"){
+    public static getLaunchjson(rootFolder, key, tag = ''){
         let settings = this.readLaunchjson(rootFolder);
         for (const keyLaunch in settings.configurations) {
             let valueLaunch = settings.configurations[keyLaunch]
-            if(valueLaunch["tag"] === tag){
+            if(tag === '' || valueLaunch["tag"] === tag){
                 return valueLaunch[key];
             }
         }

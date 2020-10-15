@@ -5,15 +5,15 @@ import * as vscode from 'vscode';
 import * as fs from "fs";
 
 export class UpdateManager{
-    private checkUpdate = true;
+    private static checkUpdate = true;
 
     public setCheckUpdate(state){
-        this.checkUpdate = state;
+        UpdateManager.checkUpdate = state;
     }
 
     // 获取调试器lua文件的版本号，并提示用户升级
     public checkIfLuaPandaNeedUpdate(LuaPandaPath, rootFolder){
-        if(!this.checkUpdate || !LuaPandaPath){
+        if(!UpdateManager.checkUpdate || !LuaPandaPath){
             return;
         }
 
