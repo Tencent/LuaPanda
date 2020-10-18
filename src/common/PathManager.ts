@@ -1,6 +1,7 @@
 import { DebugLogger } from './logManager';
 import { Tools } from './Tools';
 import { isArray } from 'util';
+import * as vscode from 'vscode';
 
 let pathReader = require('path-reader');
 // let path = require("path");
@@ -72,7 +73,7 @@ export class PathManager {
         let endMS = Tools.getCurrentMS();//文件分析结束时毫秒数
         DebugLogger.AdapterInfo("文件Map刷新完毕，使用了" +  (endMS - beginMS) + "毫秒。检索了"+ workspaceFileCount +"个文件， 其中" + processFilNum + "个lua类型文件");
         if(processFilNum <= 0){
-            DebugLogger.showTips("没有在工程中检索到lua文件。请检查launch.json文件中lua后缀是否配置正确, 以及VSCode打开的工程是否正确",2)
+            vscode.window.showErrorMessage("没有在工程中检索到lua文件。请检查launch.json文件中lua后缀(luaFileExtension)是否配置正确, 以及VSCode打开的工程是否正确", "确定")
             let noLuaFileTip = "[!] 没有在VSCode打开的工程中检索到lua文件，请进行如下检查\n 1. VSCode打开的文件夹是否正确 \n 2. launch.json 文件中 luaFileExtension 选项配置是否正确"
             DebugLogger.DebuggerInfo(noLuaFileTip);
             DebugLogger.AdapterInfo(noLuaFileTip);

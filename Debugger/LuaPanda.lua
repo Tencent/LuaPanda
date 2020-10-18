@@ -272,8 +272,7 @@ function this.connectSuccess()
         local info = debug.getinfo(1, "S")
         for k,v in pairs(info) do
             if k == "source" then
-                DebuggerFileName = v;
-                this.printToVSCode("DebuggerFileName:" .. tostring(DebuggerFileName));
+                DebuggerFileName = tostring(v);
                 -- 从代码中去后缀
                 autoExt = DebuggerFileName:gsub('.*LuaPanda', '');
 
@@ -637,7 +636,7 @@ function this.getInfo()
 
     strTable[#strTable + 1] = "\n\n- Path Info: \n";
     strTable[#strTable + 1] = "clibPath: " .. tostring(clibPath) .. '\n';
-    strTable[#strTable + 1] = "debugger: " .. this.getPath(DebuggerFileName) .. '\n';
+    strTable[#strTable + 1] = "debugger: " .. DebuggerFileName .. " | " .. this.getPath(DebuggerFileName) .. '\n';
     strTable[#strTable + 1] = "cwd     : " .. cwd .. '\n';
     strTable[#strTable + 1] = this.breakpointTestInfo();
 

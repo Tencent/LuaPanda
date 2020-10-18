@@ -279,10 +279,10 @@ export class LuaDebugSession extends LoggingDebugSession {
         StatusBarManager.reset();
         if(this.VSCodeAsClient){
             // VSCode = Client ; Debugger = Server
-            this.printLogInDebugConsole("[Connecting] 调试器 VSCode Client 已启动，正在尝试连接。  Target:" + args.name  + " Port:" + args.connectionPort );
+            this.printLogInDebugConsole("[Connecting] 调试器 VSCode Client 已启动，正在尝试连接。  TargetName:" + args.name  + " Port:" + args.connectionPort );
             this.startClient(sendArgs);
         }else{
-            this.printLogInDebugConsole("[Listening] 调试器 VSCode Server 已启动，正在等待连接。  Target:" + args.name  + " Port:" + args.connectionPort );
+            this.printLogInDebugConsole("[Listening] 调试器 VSCode Server 已启动，正在等待连接。  TargetName:" + args.name  + " Port:" + args.connectionPort );
             this.startServer(sendArgs);
         }
 

@@ -118,7 +118,7 @@ require("LuaPanda").start("pcIP"，8818)
 这里的ip填写要连接的手机ip.   之后尝试在 vscode 中运行一下，会提示
 
 ```
-[Connecting] 调试器 VSCode Client 已启动，正在尝试连接。  Target:LuaPanda Port:8818
+[Connecting] 调试器 VSCode Client 已启动，正在尝试连接。  TargetName:LuaPanda Port:8818
 ```
 
 3. 修改require调用
@@ -127,7 +127,7 @@ require("LuaPanda").start("pcIP"，8818)
 require("LuaPanda").startServer("0.0.0.0", port)
 ```
 
-这里的port 要和要上面 Target:LuaPanda Port:8818 这里的port保持一致。
+这里的port 要和要上面 TargetName:LuaPanda Port:8818 这里的 Port 保持一致。
 
 之后正常连接开始调试即可。
 
