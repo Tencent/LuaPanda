@@ -274,7 +274,7 @@ function this.connectSuccess()
             if k == "source" then
                 DebuggerFileName = tostring(v);
                 -- 从代码中去后缀
-                autoExt = DebuggerFileName:gsub('.*LuaPanda', '');
+                autoExt = DebuggerFileName:gsub('.*[Ll][Uu][Aa][Pp][Aa][Nn][Dd][Aa]', '');
 
                 if hookLib ~= nil then
                     hookLib.sync_debugger_path(DebuggerFileName);
