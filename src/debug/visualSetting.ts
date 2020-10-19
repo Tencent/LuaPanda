@@ -59,7 +59,7 @@ export class VisualSetting {
         }
 
         //去除注释行
-        let reg = /(\/\/.*)|(\/\*[\s\S]*?\*\/)/g;// 正则表达式
+        let reg = /[^:]((\/\/.*)|(\/\*[\s\S]*?\*\/))/g;// 正则表达式
         jsonStr = jsonStr.replace(reg, '');
         let launchSettings = JSON.parse(jsonStr);
         return launchSettings;
