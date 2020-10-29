@@ -38,7 +38,7 @@ export function getVScodeExtensionPath(){
 // VSCode 打开的所有文件夹
 let VSCodeOpenedFolders = []
 export function getVSCodeOpenedFolders(){
-	if(VSCodeOpenedFolders.length === 0){
+	if(VSCodeOpenedFolders.length === 0 && initParameter && initParameter.workspaceFolders){
 		for (const rootFold of initParameter.workspaceFolders ) {
 			VSCodeOpenedFolders.push(uriToPath(rootFold.uri));
 		}
