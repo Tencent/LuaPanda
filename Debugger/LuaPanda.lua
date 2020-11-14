@@ -36,11 +36,11 @@
 --     LuaPanda.stopAttach()
 --         断开连接，停止attach，本次被调试程序运行过程无法再次进行attach连接。
 
---     其他说明：
+-- 其他说明：
 --     关于真机调试，首次使用真机调试时要注意下方"用户设置项"中的配置
---     1. 确定 attach 开关打开: openAttachMode = true; 这样可以避免先启动手机app之后启动调试器无法连接。
---     2. 把连接时间放长: connectTimeoutSec 设置为 0.5 或者 1。首次尝试真机调试时这个值可以设置大一点，之后再根据自己的网络状况向下调整。
---     调试方法可以参考 github 文档
+--         1. 确定 attach 开关打开: openAttachMode = true; 这样可以避免先启动手机app之后启动调试器无法连接。
+--         2. 把连接时间放长: connectTimeoutSec 设置为 0.5 或者 1。首次尝试真机调试时这个值可以设置大一点，之后再根据自己的网络状况向下调整。
+--         调试方法可以参考 github 文档
 
 --用户设置项
 local openAttachMode = true;            --是否开启attach模式。attach模式开启后可以在任意时刻启动vscode连接调试。缺点是没有连接调试时也会略降低lua执行效率(会不断进行attach请求)

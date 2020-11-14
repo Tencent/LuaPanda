@@ -1,7 +1,7 @@
 {
 	"name": "luapanda",
 	"displayName": "LuaPanda",
-	"version": "3.1.98",
+	"version": "3.2.0",
 	"publisher": "stuartwang",
 	"description": "lua debug and code tools for VS Code.",
 	"author": {
@@ -13,7 +13,9 @@
 		"lua",
 		"debug",
 		"analyzer",
-		"luaanalyzer"
+		"luaanalyzer",
+		"luadebug",
+		"lua debug"
 	],
 	"engines": {
 		"vscode": "^1.25.0",
