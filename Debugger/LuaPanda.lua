@@ -793,7 +793,7 @@ function this.printToVSCode(str, printLevel, type)
         sendTab["cmd"] =  "debug_console";
     end
     sendTab["info"] = {};
-    sendTab["info"]["logInfo"] = tostring(str);
+    sendTab["info"]["logInfo"] = isNeedB64EncodeStr and tools.base64encode(tostring(str)) or tostring(str);
     this.sendMsg(sendTab);
 end
 
@@ -999,8 +999,9 @@ end
 function this.sendMsg( sendTab )
     if isNeedB64EncodeStr and sendTab["info"] ~= nil then
         for _, v in ipairs(sendTab["info"]) do
+            v["name"] = tools.base64encode(v["name"]);
             if v["type"] == "string" then
-                v["value"] = tools.base64encode(v["value"])
+                v["value"] = tools.base64encode(v["value"]);
             end
         end
     end
@@ -1256,12 +1257,6 @@ function this.dataProcess( dataStr )
         end
     elseif dataTable.cmd == "initSuccess" then
         --初始化会传过来一些变量，这里记录这些变量
-        --Base64
-        if dataTable.info.isNeedB64EncodeStr == "true" then
-            isNeedB64EncodeStr = true;
-        else
-            isNeedB64EncodeStr = false;
-        end
         --path
         luaFileExtension = dataTable.info.luaFileExtension;
         local TempFilePath = dataTable.info.TempFilePath;
@@ -1385,6 +1380,12 @@ function this.dataProcess( dataStr )
             if(pcall(debugger_loadString("return 0"))) then
                 isUseLoadstring = 1;
             end
+        end
+        --Base64 isNeedB64EncodeStr决定了日志是否编码，过早赋值会造成lua端编码，但是Vscode端不解析的情况
+        if dataTable.info.isNeedB64EncodeStr == "true" then
+            isNeedB64EncodeStr = true;
+        else
+            isNeedB64EncodeStr = false;
         end
         local tab = { debuggerVer = tostring(debuggerVer) , UseHookLib = tostring(isUseHookLib) , UseLoadstring = tostring(isUseLoadstring), isNeedB64EncodeStr = tostring(isNeedB64EncodeStr) };
         msgTab.info  = tab;
