@@ -21,7 +21,7 @@
 --     LuaPanda.testBreakpoint()
 --         测试断点，用于分析路径错误导致断点无法停止的情况。测试方法是
 --         1. launch.json 中开启 stopOnEntry, 或者在代码中加入LuaPanda.BP()。
---         2. 运行调试器，当停止在 stopOnEntry 或者 LuaPanda.BP() 时在调试控制台输入 LuaPanda.testBreakpoint()
+--         2. 运行调试器和 lua 进程，当停止在 stopOnEntry 或者 LuaPanda.BP() 时在调试控制台输入 LuaPanda.testBreakpoint()
 --         3. 根据提示更新断点后再次输入 LuaPanda.testBreakpoint()。此时系统会输出一些提示，帮助用户分析断点可能无法停止的原因。
 
 --     LuaPanda.doctor()
@@ -36,6 +36,12 @@
 --     LuaPanda.stopAttach()
 --         断开连接，停止attach，本次被调试程序运行过程无法再次进行attach连接。
 
+--     其他说明：
+--     关于真机调试，首次使用真机调试时要注意下方"用户设置项"中的配置
+--     1. 确定 attach 开关打开: openAttachMode = true; 这样可以避免先启动手机app之后启动调试器无法连接。
+--     2. 把连接时间放长: connectTimeoutSec 设置为 0.5 或者 1。首次尝试真机调试时这个值可以设置大一点，之后再根据自己的网络状况向下调整。
+--     调试方法可以参考 github 文档
+
 --用户设置项
 local openAttachMode = true;            --是否开启attach模式。attach模式开启后可以在任意时刻启动vscode连接调试。缺点是没有连接调试时也会略降低lua执行效率(会不断进行attach请求)
 local attachInterval = 1;               --attach间隔时间(s)
@@ -43,7 +49,7 @@ local customGetSocketInstance = nil;    --支持用户实现一个自定义调�
 local consoleLogLevel = 2;           --打印在控制台(print)的日志等级 0 : all/ 1: info/ 2: error.
 local connectTimeoutSec = 0.005;       --lua进程作为Client时, 连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
 local listeningTimeoutSec = 0.5;       -- lua进程作为Server时,连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.1 - 1
-local userDotInRequire = true;         --兼容require中使用 require(a.b) 和 require(a/b) 的形式引用文件夹中的文件
+local userDotInRequire = true;         --兼容require中使用 require(a.b) 和 require(a/b) 的形式引用文件夹中的文件，默认无需修改
 local traversalUserData = false;        --如果可以的话(取决于userdata原表中的__pairs)，展示userdata中的元素。 如果在调试器中展开userdata时有错误，请关闭此项.
 --用户设置项END
 
