@@ -1,5 +1,7 @@
 # 升级和版本说明
 
+如果希望使用某一旧版本而不进行升级，可以参考 FAQ 文档。
+
 ### 自动升级
 
 **VSCode 插件升级** ：当出现如下升级提示时，点击 update 即可把插件升级到最新版本。
@@ -10,11 +12,11 @@
 
 **LuaPanda 文件升级**：当在 vscode 中启动调试器时，会检测当前打开项目中的 Luapanda.lua 版本，并自动弹出以下提示。如果用户自己修改过 Luapanda.lua 文件，请做好备份，以免文件被覆盖。
 
-![luapanda-file-update](/Users/stuartwang/LuaPanda/Docs/Res/Manual/update/luapanda-file-update.png)
+![luapanda-file-update](../Res/Manual/update/luapanda-file-update.png)
 
 **重建 launch.json**: 升级后如果调试出现问题，建议重建 launch.json 文件。具体方法是删除 工程下 .vsode/launch.json ，再按如下步骤重建。
 
-![create-launchjson](/Users/stuartwang/LuaPanda/Docs/Res/access_introduction/create-launchjson.png)
+![create-launchjson](../Res/access_introduction/create-launchjson.png)
 
 ### 手动升级
 

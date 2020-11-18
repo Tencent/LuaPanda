@@ -106,3 +106,28 @@ format:   cwd + getinfo
 ## 使用 xlua Demo 测试时断点不会停
 
 使用 xlua 时，如果修改 launch.json 中的文件后缀，要重启 unity 。以避免修改的配置无法加载导致的断点不停。
+
+## 版本说明和升级建议
+
+  3.0.0 之后加入了 LuaPanda.lua 文件的自动更新提示，帮助把此文件保持到最新。升级原理是检测 VScode 打开工程中是否包含 LuaPanda 文件，并匹配文件中的版本号，如果落后于当前插件版本，则用插件中附带的最新版覆盖。升级过程无需网络，也不会对外发送和接收数据。
+
+  ![updateTips](https://github.com/Tencent/LuaPanda/blob/master/Docs/static/updateTips.png?raw=true)
+
+  另外加入了配置页面，点击状态栏的LuaPanda图标即可打开。其中提供了一些常用配置方便用户修改。配置页面打开时读取 launch.json 中的对应数据，并在配置完成后把数据写回launch.json, 如果不想使用配置页面，直接修改 launch.json 中的项目可以达到同样的效果。
+
+  
+
+## 关于找不到`libpdebug`模块报错
+
+  `libpdebug.so(dll)` 是放置在VSCode插件中的调试器C扩展，会在调试器运行时自动加载，作用是加速调试。此模块未能加载时，调试器功能不会受到影响，仍可正常使用。
+
+  xlua允许用户重写文件加载函数`CustomLoader`，sluaunreal也提供类似方法`setLoadFileDelegate`。
+
+  发生此问题的原因之一是用户重写的加载函数中没有加入对so/dll的处理，加载so/dll时会报找不到文件错误，但随后执行lua原生loader能够正确加载libpdebug。
+
+  查看libpdebug.so是否加载的方式是在控制台输入`LuaPanda.getInfo()`, 返回信息中有 hookLib Ver 说明libpdebug已经加载。此时可以忽略报错或在文件加载函数函数中正确处理.so/dll。
+
+
+## 我仍想使用LuaPanda旧版本, 不希望自动升级
+
+    可以从项目github `/vsix` 目录中下载到调试器历史版本插件，配合 Tag 中对应版本的 LuaPanda.lua 文件即可

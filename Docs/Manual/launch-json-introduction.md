@@ -53,9 +53,9 @@ launch.json 包含两个模式
 | ---------------- | -------------------- | ------------------------------------------------------------ |
 | type             | "lua"                | 插件适用于lua语言，**请勿修改**                              |
 | request          | "launch"             | 因为我们使用自适应模式，保持launch不必修改                   |
-| tag              | "normal"             | 内部标记，**请勿修改**                                       |
+| tag              | "normal"             | 可以选择normal(通用模式)，attach(附加模式)，区别是启动时是否自动拉起program配置指向的程序。**不建议修改**                                       |
 | name             | "LuaPanda"           | 展示在VScode运行按钮旁的目标名，3.2.0 后可根据需要自行修改   |
-| cwd              | "${workspaceFolder}" | 被调试的包含lua目录，${workspaceFolder} 指 VScode 打开的目录，通常不用修改。即使要修改，也请用 "\${workspaceFolder}/fold1" 这样的相对路径 |
+| cwd              | "${workspaceFolder}" | 被调试的包含lua目录，${workspaceFolder} 指 VScode 打开的目录，通常不用修改。即使要修改，也请用 "\${workspaceFolder}/path" 这样的相对路径 |
 | luaFileExtension | ""                   | **重要设置：** 用户设置的lua文件的后缀，如 txt ,  lua.txt 等 |
 | connectionPort   | 8818                 | 默认端口号，如果连接无问题，可以不用修改。如果改了这里，请同步修改`require("LuaPanda").start(ip, port)`中的端口号 |
 | stopOnEntry      | true                 | 调试器建立连接后立刻停止。接入调试器时建议设置true, 稳定使用后可根据用户需要设置成 false |
