@@ -36,7 +36,7 @@ LuaPanda 的立项源于潘多拉项目中大量的lua调试需求。`潘多拉`
 
   3.0.0 版本中加入了 LuaPanda.lua 文件的自动更新提示，帮助把版本保持到最新。升级原理是检测VScode打开工程中是否包含 LuaPanda 文件，并匹配文件中的版本号，如果落后于当前插件版本，则用插件中附带的最新版覆盖。升级过程无需网络，也不会对外发送和接收数据。
 
-  ![updateTips](https://github.com/Tencent/LuaPanda/blob/dev/Docs/static/updateTips.png?raw=true)
+  ![updateTips](https://github.com/Tencent/LuaPanda/blob/master/Docs/static/updateTips.png?raw=true)
 
   另外加入了配置页面，点击状态栏的LuaPanda图标即可打开。其中提供了一些常用配置方便用户修改。配置页面打开时读取launch.json中的对应数据，并在配置完成后把数据写回launch.json, 如果不想使用配置页面，直接修改launch.json中的项目可以达到同样的效果。
 
