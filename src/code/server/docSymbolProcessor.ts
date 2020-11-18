@@ -1438,6 +1438,15 @@ export class DocSymbolProcessor {
 					}
 				}
 
+				if (idxNode['type'] === 'TableValue') {
+					if (idxNode['value']['type'] === 'TableConstructorExpression') {
+						let recBaseName = baseInfo.name;
+						this.processTableConstructorExpression(idxNode['value'], type, deepLayer, prefix, baseInfo);
+						if (this.posSearchRet && this.posSearchRet.isFindout) return;
+						baseInfo.name = recBaseName;
+				   }
+				}
+
 			}
 
 			if (type === travelMode.FIND_REFS) {
