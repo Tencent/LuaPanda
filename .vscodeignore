@@ -9,3 +9,6 @@ out/tests/**/*
 Debugger/debugger_lib/*.h
 Debugger/debugger_lib/*.cpp
 Docs/**/*
+luasocketBin/**/*
+lua504Test/**/*
+vsix/**/*
