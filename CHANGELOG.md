@@ -1,3 +1,12 @@
+## 3.2.0
+
++ 代码提示支持大小写不敏感，无论输入大小写都能提示对应的符号。
++ 支持多端调试(multi target)， 在一个VSCode面板中可以启动多个不同port的调试端，连接多个lua进程。
++ 支持反转client-server。目前 vscode 插件作为 server , lua 进程作为 client。支持通过设置反转，方便真机调试。
++ 支持require 路径中含有 . , 目前只支持require("A/B"), 后续支持require("A.B")的形式，无需设置
++ 在autoPath模式支持同名文件
++ 重新测试和优化真机调试，修复真机调试socket连接可能存在的问题
+
 ## 3.1.0
 
 + 新增了导出 slua 符号用于代码提示。

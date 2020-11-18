@@ -68,7 +68,7 @@ C 模块适合的场景
 # 特性
 
 - 支持单步调试，断点调试，条件断点，协程调试
-- 支持lua5.1 - 5.3,  win/mac 平台，支持 slua/xlua/slua-unreal 等框架
+- 支持lua5.1 - 5.4,  win/mac 平台，支持 slua/xlua/slua-unreal 等框架
 - 支持REPL :  在断点处可以监视和运行表达式，并返回执行结果
 - 可以根据断点密集程度自动调整 hook 频率，有较好的效率
 - 支持 attach 模式，lua 运行过程中可随时建立连接
