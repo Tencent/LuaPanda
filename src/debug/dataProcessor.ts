@@ -6,7 +6,7 @@ import { DebugLogger } from '../common/logManager';
 export class DataProcessor {
     public _runtime: LuaDebugRuntime;							//RunTime句柄
     public _socket: Socket;
-    public isNeedB64EncodeStr: boolean = false;             //这里和luapanda.lua统一设置为false
+    public isNeedB64EncodeStr: boolean = true;
     private orderList: Array<Object> = new Array();			//记录随机数和它对应的回调
     private recvMsgQueue: Array<string> = new Array();   //记录粘包的多条指令
     private cutoffString: string = "";
@@ -80,14 +80,9 @@ export class DataProcessor {
             }
             cmdInfo = JSON.parse(data);
             if (this.isNeedB64EncodeStr && cmdInfo.info !== undefined) {
-                if(cmdInfo.info.logInfo !== undefined){
-                    cmdInfo.info.logInfo = Buffer.from(cmdInfo.info.logInfo, 'base64').toString();
-                }else{
-                    for (let i = 0, len = cmdInfo.info.length || 0; i < len; i++) {
-                        cmdInfo.info[i].name = Buffer.from(cmdInfo.info[i].name, 'base64').toString();
-                        if (cmdInfo.info[i].type === "string") {
-                            cmdInfo.info[i].value = Buffer.from(cmdInfo.info[i].value, 'base64').toString();
-                        }
+                for (let i = 0, len = cmdInfo.info.length; i < len; i++) {
+                    if (cmdInfo.info[i].type === "string") {
+                        cmdInfo.info[i].value = Buffer.from(cmdInfo.info[i].value, 'base64').toString()
                     }
                 }
             }
