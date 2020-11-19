@@ -15,7 +15,8 @@
 		"analyzer",
 		"luaanalyzer",
 		"luadebug",
-		"lua debug"
+		"lua debug",
+		"lua panda"
 	],
 	"engines": {
 		"vscode": "^1.25.0",
