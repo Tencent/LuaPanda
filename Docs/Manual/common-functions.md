@@ -66,7 +66,7 @@ lua a.lua
 
 注意：此模式下无需加入require("LuaPanda"), 调试器会自动引用。
 
-![config_select](file:///Users/stuartwang/LuaPanda2020/Docs/Res/config-select.png?lastModify=1605749769)
+![config_select](../Res/config-select.png?lastModify=1605749769)
 
 把调试选项切换至`LuaPanda-DebugIndependentFile`,  **代码编辑窗口切换到待调试文件**，点击下图绿色箭头或按F5运行。
 
@@ -76,7 +76,7 @@ lua a.lua
 
 VSCode 会启动一个新终端，调用 lua 命令来执行当前打开的lua代码。
 
-![nodebug](file:///Users/stuartwang/LuaPanda2020/Docs/Res/nodebug.png?lastModify=1605749769)
+![nodebug](../Res/nodebug.png?lastModify=1605749769)
 
 把代码编辑窗口切换到待执行文件（让待执行文件的窗口处于激活状态），然后如下图操作。
 

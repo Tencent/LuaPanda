@@ -60,13 +60,13 @@ LuaPanda 是一个基于 VS Code 的 lua 代码工具，设计目标是简单易
 
 + V3.1.0
   
-  + 新增了导出 slua 符号用于代码提示。  [使用说明](https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/lua-intellisense.md)
+  + 新增了导出 slua 符号用于代码提示。  [使用说明](./Docs/Manual/lua-intellisense.md)
   + 重构了定义跳转和代码提示框架，提升了分析效率。自测修复了 #49 大量lua工程下无法工作的问题。
   + 修复了 #47 table 成员展示问题。
   + 修复了 #46 配置 program 后 , attach 启动拉起新进程的问题。增加了一个attach启动项。
   + 实现了 #44 提出的 terminal 复用的建议。
   
-+ [更多更新记录](https://github.com/Tencent/LuaPanda/blob/master/CHANGELOG.md)
++ [更多更新记录](./CHANGELOG.md)
 
 
 
