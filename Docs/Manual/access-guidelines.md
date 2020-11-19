@@ -219,5 +219,5 @@ local traversalUserData = false;        --如果可以的话(取决于userdata�
 
 通常VSCode插件版本是向下兼容的，只更新VSCode插件也可正常使用，但无法体验最新特性。
 
-更新方法参阅文档 [升级和版本说明](https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/update.md)
+更新方法参阅文档 [升级和版本说明](./update.md)
 

@@ -133,5 +133,4 @@ attach模式支持先执行lua工程，在希望调试的时候运行调试器�
 
 ![debug-file](../Res/debug-file.GIF?raw=true)
 
-详细配置请查看 [单文件调试说明](https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/debug-file.md)
 
