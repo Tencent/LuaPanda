@@ -2,7 +2,7 @@
 
 LuaPanda 是一个基于 VS Code 的 lua 代码工具，设计目标是简单易用。它支持多种开发框架，主要提供以下功能：
 
-- 自动补全（auto completion）
+- 代码补全（code completion）
 - 代码片段（snippet completion）
 - 定义跳转（definition）
 - 生成注释（comment generation）
@@ -11,31 +11,41 @@ LuaPanda 是一个基于 VS Code 的 lua 代码工具，设计目标是简单易
 - 代码诊断（linting）：依赖 [luacheck](https://github.com/mpeterv/luacheck)
 - 调试器（debugger）
 
-功能详情可以参考[项目介绍](./Docs/Manual/feature-introduction.md)。LuaPanda 支持 lua5.1- 5.4，调试器运行环境需要包含 LuaSocket。
+功能详情可以参考[项目介绍](./Docs/Manual/feature-introduction.md)。LuaPanda 支持 lua5.1- 5.4，**调试器运行环境需要包含 luasocket**。
 
 
 # 文档
 
 接入和使用文档
 
-[项目介绍](./Docs/Manual/feature-introduction.md)	| [快速试用指引](./Docs/Manual/quick-use.md) | [调试器接入指引](./Docs/Manual/access-guidelines.md) |  [真机调试](./Docs/Manual/debug-on-phone.md)  | [单文件调试和运行](./Docs/Manual/debug-file.md) | [升级说明](./Docs/Manual/update.md) | [FAQ](./Docs/Manual/FAQ.md)
+[项目介绍](./Docs/Manual/feature-introduction.md)	| [快速试用指引](./Docs/Manual/quick-use.md) | [调试器接入指引](./Docs/Manual/access-guidelines.md) |  [真机调试](./Docs/Manual/debug-on-phone.md)  | [其他调试能力](./Docs/Manual/common-functions.md) | [升级说明](./Docs/Manual/update.md) | [FAQ](./Docs/Manual/FAQ.md)
 
-调试器开发文档
+更多文档
 
-[工程说明](./Docs/Development-instructions/project-description.md) 	|  [调试器开发指引](./Docs/Development-instructions/how_to_join.md) |  [特性简述](./Docs/Development-instructions/debugger-principle.md) 
+[全部文档](./Docs) 
+
+
 
 
 # 特性
 
 + 支持常用的代码补全，代码片段，定义跳转，生成注释，符号列表等功能
-+ 支持单步调试，条件断点，协程调试，支持调试时变量赋值。
-+ 支持lua5.1- 5.4, 支持 slua/xlua/slua-unreal 等框架
-+ 在断点处可以监视和运行表达式，返回结果
-+ 可以根据断点密集程度调整 hook 频率, 有较高的效率
-+ 支持 attach 模式，lua 运行过程中可随时建立连接
-+ 使用 lua / C 双调试引擎。lua 部分可动态下发，避免打包后无法调试。C 部分效率高，适合开发期调试
 
-+ 可以提供代码补全，代码片段，定义跳转，生成注释，符号列表等功能
++ 支持单步调试，断点调试，条件断点，协程调试
+
++ 支持lua5.1 - 5.4,  win/mac 平台，支持 slua/xlua/slua-unreal 等框架
+
++ 支持REPL :  在断点处可以监视和运行表达式，并返回执行结果
+
++ 可以根据断点密集程度自动调整 hook 频率，有较好的效率
+
++ 支持 attach 模式，lua 运行过程中可随时建立连接
+
++ 使用 lua / C 双调试引擎。lua 部分可动态下发，避免打包后无法调试。C 部分效率高，适合开发期调试。
+
++ 支持多目标调试(multi target) ，可以同时调试多个 lua 进程。
+
+  
 
 
 # 近期更新
@@ -56,12 +66,13 @@ LuaPanda 是一个基于 VS Code 的 lua 代码工具，设计目标是简单易
   + 修复了 #46 配置 program 后 , attach 启动拉起新进程的问题。增加了一个attach启动项。
   + 实现了 #44 提出的 terminal 复用的建议。
   
-  
 + [更多更新记录](https://github.com/Tencent/LuaPanda/blob/master/CHANGELOG.md)
+
+
 
 # 依赖和适用性
 
-调试器功能依赖 LuaSocket , 可运行于 slua，slua-unreal ，xlua 等已集成 LuaSocket 的 lua 环境，也可以在 console 中调试。lua 版本支持 5.1- 5.3。
+调试器功能依赖 luasocket , 可运行于 slua，slua-unreal ，xlua 等已集成 luasocket 的开发环境，在其他环境（如 console）中运行时，需要用户自行保证 luasocket 可用 。
 
 其他依赖项目（插件中已包含，无需用户手动安装）：
 

@@ -67,8 +67,34 @@ require("LuaPanda").start("pcIP"，8818)
   ```
 
   mac上无此现象。
+  
++ 超时时间设置
 
+  之前经常有同学咨询一种情况：本机调试可以成功连接，但是真机调试无法建立起连接。这里有两种可能：
 
+  1. 手机apk中是否集成了luasocket
+
+  2. 超时时间太短
+
+  这里解释下第二点：
+
+  luasocket 是同步连接，lua attach 使用轮询机制查询是否可以建立连接，如果每次等待连接比较久，会卡游戏进程。
+
+  LuaPanda.lua 文件中有三个设置项
+
+  ```lua
+  local attachInterval = 1;               --attach间隔时间(s)
+  local connectTimeoutSec = 0.005;       --lua进程作为Client时, 连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.005 - 0.05
+  local listeningTimeoutSec = 0.5;       -- lua进程作为Server时,连接超时时间, 单位s. 时间过长等待attach时会造成卡顿，时间过短可能无法连接。建议值0.1 - 1
+  ```
+
+  分别表示 lua 部分每次查询 attach 连接的时间间隔，查询连接的超时时间。
+
+  在localhost本机调试的时候，不存在网络延迟，所以超时时间被设置的非常短，减少对游戏帧数的影响。
+
+  但是在网络调试的时候，过短的超时时间可能无法建立起连接。首次使用时可以尝试调大一些，后续再根据网络状况缩小，比如把connectTimeoutSec调整到0.5。
+
+  
 
 ### 真机调试时的路径说明
 
@@ -100,13 +126,13 @@ require("LuaPanda").start("pcIP"，8818)
 
 ### 反转 client - server
 
-调试器分为 vscode 插件 和 LuaPanda.lua 两部分。通常情况下VScode插件作为server端，LuaPanda.lua作为client.
+调试器分为 vscode 插件 和 LuaPanda.lua 两部分。通常情况下 VScode 插件作为 server 端，lua 进程作为 client.
 
-这种配置会造成问题，当运行vscode的pc处于内网时，client通过ip是无法连接的（上面的安卓反向代理方法不受影响）。
+这种配置会造成问题，当运行 VScode 的 pc 处于内网时，client 通过 ip 是无法连接的（上面的安卓反向代理方法不受影响）。
 
-为了解决在不使用反向代理，pc处理内网导致无法连接的的情况。调试器支持 c-s 反转，具体使用方法是
+为了解决以上情况。调试器支持 c-s 反转，具体使用方法是
 
-1. 确认vscode插件 以及 LuaPanda.lua 都升级到3.2.0版本
+1. 确认 VScode 插件 以及 LuaPanda.lua 都升级到3.2.0版本
 
 2. 在 launch.json 中 加入如下配置
 
@@ -115,21 +141,19 @@ require("LuaPanda").start("pcIP"，8818)
 "connectionIP": "127.0.0.1"
 ```
 
-这里的ip填写要连接的手机ip.   之后尝试在 vscode 中运行一下，会提示
+这里的 ip 填写要连接的手机 ip.   之后尝试在 VScode 中运行，会提示
 
 ```
 [Connecting] 调试器 VSCode Client 已启动，正在尝试连接。  TargetName:LuaPanda Port:8818
 ```
 
-3. 修改require调用
+3. 修改 lua 代码的 require 调用
 
 ```
 require("LuaPanda").startServer("0.0.0.0", port)
 ```
 
-这里的port 要和要上面 TargetName:LuaPanda Port:8818 这里的 Port 保持一致。
-
-之后正常连接开始调试即可。
+这里的port 要和要上面  TargetName:LuaPanda Port:8818 这里的 Port 保持一致，之后若连接正常即可调试
 
 
 

@@ -130,4 +130,4 @@ format:   cwd + getinfo
 
 ## 我仍想使用LuaPanda旧版本, 不希望自动升级
 
-    可以从项目github `/vsix` 目录中下载到调试器历史版本插件，配合 Tag 中对应版本的 LuaPanda.lua 文件即可
+参见 `升级说明` 文档中继续使用旧版本的方法
