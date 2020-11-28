@@ -77,21 +77,39 @@ format:   cwd + getinfo
 
 ## 执行到断点处无法停止
 
-通常遇到的情况是stop on entry时可以停止，但是后续或者子文件的断点无法停止。
+通常遇到的情况是 stop on entry 或者 LuaPanda.BP() 时可以停止，但是后续或者子文件的断点无法停止。
 
 这种情况是**断点路径**和**当前文件format路径**对比不一致导致的，因为用户环境多样，可使用下面方法定位问题：
 
+首先确定在launch.json配置文件中正确配置了lua后缀。
+
+![](../Res/Manual/luaext.png)
+
+
+
+如果用户设置的断点依然无法命中，可以按如下操作
+
 1. 打开launch.json的stopOnEntry
 2. 在断点未停的位置，保持断点并在源码中加入一行代码`LuaPanda.BP()`.
-3. 再次运行项目，让项目运行并停止在`LuaPanda.BP()` (此处也可能会报错找不到文件，不要停止调试，进行下一步)。
-4. 在控制台输入`LuaPanda.doctor()`, 查看给出的路径建议中 filepath和getinfo是否一致，根据具体情况调整直到二者一致即可。
+3. 再次运行项目，让项目运行并停止在`LuaPanda.BP()` (此处也可能会报错找不到文件，不要停止调试器直接，进行下一步)。
+4. 在控制台输入`LuaPanda.doctor()`, 查看给出的路径建议中 Formated和Breakpoint是否一致，并根据提示进行调整。
+5. 如果 LuaPanda.lua 文件版本为3.2.0 ,在控制台输入`LuaPanda.testBreakpoint()`,  根据提示进行操作，最终确保 Formated 路径是 Breakpoint 路径的子集。
+
+![](../Res/Manual/testbk.png)
+
+
 
 
 
 ## VSCode端无法和lua建立连接
 
-- 在无自定义主题的情况下，建立连接前VSCode下端状态栏为`蓝色`，建立连接后变为`橙色`
-- 检查`require("LuaPanda").start("127.0.0.1",8818);`和`launch.json`中工程配置的端口号是否一致，并尝试重启VSCode。
++ 可以看下调试控制台，第一行表示调试器的VScode插件正常启动，蓝框中的 [Connected] 部分表示成功建立了连接。可以依据此判断是否建立连接。
+
+![](../Res/Manual/connected.png)
+
+
+
+- 如果无法建立连接，可以检查`require("LuaPanda").start("127.0.0.1",8818);`和`launch.json`中工程配置的端口号是否一致，并尝试重启VSCode。
 
 
 

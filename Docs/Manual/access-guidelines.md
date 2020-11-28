@@ -81,7 +81,7 @@ require("LuaPanda").start("127.0.0.1",8818);
 
 生成的 launch.json 文件的个配置项可以参考 [launch.json配置说明](launch-json-introduction.md)
 
-launch.json 配置项中的修改主要是 luaFileExtension , 改成lua文件使用的后缀。（比如xlua改为lua.txt, slua是txt）。**各配置项鼠标悬停会有提示**，可根据需要更改。
+**【非常重要】launch.json 配置项中的修改主要是 luaFileExtension , 改成lua文件使用的后缀。**（比如xlua改为lua.txt, slua是txt）。**各配置项鼠标悬停会有提示**，可根据需要更改。
 
 
 
