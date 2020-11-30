@@ -63,3 +63,6 @@
   tag 保存位置 https://github.com/Tencent/LuaPanda/releases
 
   下载对应版本的包，并把其中的 `Debugger/LuaPanda.lua` 放置在项目中
+  
++ 重新配置一下 launch.json , 主要注意其中的 "luaFileExtension": "lua.txt" 按实际情况配置好后缀
++ 最后不要忘记在代码中引用 `require("LuaPanda").start()`
