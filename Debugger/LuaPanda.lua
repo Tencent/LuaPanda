@@ -1857,7 +1857,7 @@ function this.isHitBreakpoint(breakpointPath, opath, curLine)
         local oPathFormated;
         for fullpath, fullpathNode in pairs(breaks[breakpointPath]) do
             recordBreakPointPath = fullpath; --这里是为了兼容用户断点行号没有打对的情况
-            local line_hit = false, cur_node;
+            local line_hit,cur_node = false,{};
             for _, node in ipairs(fullpathNode) do
                 if tonumber(node["line"]) == tonumber(curLine) then 
                     line_hit = true;    -- fullpath 文件中 有行号命中
