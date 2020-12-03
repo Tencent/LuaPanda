@@ -1625,39 +1625,40 @@ function this.getStackTable( level )
     end
     local stackTab = {};
     local userFuncSteakLevel = 0; --用户函数的steaklevel
+    local clevel = 0
     repeat
         local info = debug.getinfo(functionLevel, "SlLnf")
         if info == nil then
             break;
         end
-        if info.source == "=[C]" then
-            break;
-        end
+        if info.source ~= "=[C]" then
+            local ss = {};
+            ss.file = this.getPath(info);
+            local oPathFormated = this.formatOpath(info.source) ; --从lua虚拟机获得的原始路径, 它用于帮助定位VScode端原始lua文件的位置(存在重名文件的情况)。
+            ss.oPath = this.truncatedPath(oPathFormated, truncatedOPath);
+            ss.name = "文件名"; --这里要做截取
+            ss.line = tostring(info.currentline);
+            --使用hookLib时，堆栈有偏移量，这里统一调用栈顶编号2
+            local ssindex = functionLevel - 3 + clevel;
+            if hookLib ~= nil then
+                ssindex = ssindex + 2;
+            end
+            ss.index = tostring(ssindex);
+            table.insert(stackTab,ss);
+            --把数据存入currentCallStack
+            local callStackInfo = {};
+            callStackInfo.name = ss.file;
+            callStackInfo.line = ss.line;
+            callStackInfo.func = info.func;     --保存的function
+            callStackInfo.realLy = functionLevel;              --真实堆栈层functionLevel(仅debug时用)
+            table.insert(currentCallStack, callStackInfo);
 
-        local ss = {};
-        ss.file = this.getPath(info);
-        local oPathFormated = this.formatOpath(info.source) ; --从lua虚拟机获得的原始路径, 它用于帮助定位VScode端原始lua文件的位置(存在重名文件的情况)。
-        ss.oPath = this.truncatedPath(oPathFormated, truncatedOPath);
-        ss.name = "文件名"; --这里要做截取
-        ss.line = tostring(info.currentline);
-        --使用hookLib时，堆栈有偏移量，这里统一调用栈顶编号2
-        local ssindex = functionLevel - 3;
-        if hookLib ~= nil then
-            ssindex = ssindex + 2;
-        end
-        ss.index = tostring(ssindex);
-        table.insert(stackTab,ss);
-        --把数据存入currentCallStack
-        local callStackInfo = {};
-        callStackInfo.name = ss.file;
-        callStackInfo.line = ss.line;
-        callStackInfo.func = info.func;     --保存的function
-        callStackInfo.realLy = functionLevel;              --真实堆栈层functionLevel(仅debug时用)
-        table.insert(currentCallStack, callStackInfo);
-
-        --level赋值
-        if userFuncSteakLevel == 0 then
-            userFuncSteakLevel = functionLevel;
+            --level赋值
+            if userFuncSteakLevel == 0 then
+                userFuncSteakLevel = functionLevel;
+            end
+        else
+            clevel = clevel + 1
         end
         functionLevel = functionLevel + 1;
     until info == nil
