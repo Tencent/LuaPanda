@@ -118,7 +118,7 @@ local variableRefTab = {};      --变量记录table
 local lastRunFilePath = "";     --最后执行的文件路径
 local pathCaseSensitivity = true;  --路径是否发大小写敏感，这个选项接收VScode设置，请勿在此处更改
 local recvMsgQueue = {};        --接收的消息队列
-local coroutinePool = {};       --保存用户协程的队列
+local coroutinePool = setmetatable({}, {__mode = "v"});       --保存用户协程的队列
 local winDiskSymbolUpper = false;--设置win下盘符的大小写。以此确保从VSCode中传入的断点路径,cwd和从lua虚拟机获得的文件路径盘符大小写一致
 local isNeedB64EncodeStr = false;-- 记录是否使用base64编码字符串
 local loadclibErrReason = 'launch.json文件的配置项useCHook被设置为false.';
@@ -304,20 +304,7 @@ function this.connectSuccess()
     this.changeHookState(hookState.ALL_HOOK);
     if hookLib == nil then
         --协程调试
-        if coroutineCreate == nil and type(coroutine.create) == "function" then
-            this.printToConsole("change coroutine.create");
-            coroutineCreate = coroutine.create;
-            coroutine.create = function(...)
-                local co =  coroutineCreate(...)
-                table.insert(coroutinePool,  co);
-                --运行状态下，创建协程即启动hook
-                this.changeCoroutineHookState();
-                return co;
-            end
-        else
-            this.printToConsole("restart coroutine");
-            this.changeCoroutineHookState();
-        end
+        this.changeCoroutinesHookState();
     end
 
 end
@@ -372,6 +359,22 @@ function this.disconnect()
     end
 
     this.reGetSock();
+end
+
+function this.replaceCoroutineFuncs()
+    if hookLib == nil then
+        if coroutineCreate == nil and type(coroutine.create) == "function" then
+            this.printToConsole("change coroutine.create");
+            coroutineCreate = coroutine.create;
+            coroutine.create = function(...)
+                local co =  coroutineCreate(...)
+                table.insert(coroutinePool,  co);
+                --运行状态下，创建协程即启动hook
+                this.changeCoroutineHookState(co, currentHookState);
+                return co;
+            end
+        end
+    end
 end
 
 -----------------------------------------------------------------------------
@@ -2311,7 +2314,7 @@ function this.changeHookState( s )
     end
     --coroutine
     if hookLib == nil then
-        this.changeCoroutineHookState();
+        this.changeCoroutinesHookState();
     end
 end
 
@@ -2344,24 +2347,31 @@ end
 
 -- 修改协程状态
 -- @s hook标志位
-function this.changeCoroutineHookState(s)
+function this.changeCoroutinesHookState(s)
     s = s or currentHookState;
     this.printToConsole("change [Coroutine] HookState: "..tostring(s));
     for k ,co in pairs(coroutinePool) do
         if coroutine.status(co) == "dead" then
-            table.remove(coroutinePool, k)
+            coroutinePool[k] = nil
         else
-            if s == hookState.DISCONNECT_HOOK then
-                if openAttachMode == true then
-                    debug.sethook(co, this.debug_hook, "r", 1000000);
-                else
-                    debug.sethook(co, this.debug_hook, "");
-                end
-            elseif s == hookState.LITE_HOOK then debug.sethook(co , this.debug_hook, "r");
-            elseif s == hookState.MID_HOOK then debug.sethook(co , this.debug_hook, "rc");
-            elseif s == hookState.ALL_HOOK then debug.sethook(co , this.debug_hook, "lrc");
-            end
+            this.changeCoroutineHookState(co, s)
         end
+    end
+end
+
+function this.changeCoroutineHookState(co, s)
+    if s == hookState.DISCONNECT_HOOK then
+        if openAttachMode == true then
+            debug.sethook(co, this.debug_hook, "r", 1000000);
+        else
+            debug.sethook(co, this.debug_hook, "");
+        end
+    elseif s == hookState.LITE_HOOK then
+        debug.sethook(co , this.debug_hook, "r");
+    elseif s == hookState.MID_HOOK then
+        debug.sethook(co , this.debug_hook, "rc");
+    elseif s == hookState.ALL_HOOK then
+        debug.sethook(co , this.debug_hook, "lrc");
     end
 end
 -------------------------变量处理相关-----------------------------
@@ -3584,4 +3594,5 @@ end
 -- tools变量
 json = tools.createJson(); --json处理
 this.printToConsole("load LuaPanda success", 1);
+this.replaceCoroutineFuncs()
 return this;
