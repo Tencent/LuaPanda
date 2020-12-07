@@ -254,10 +254,11 @@ end
 function this.sockConnect(sock)
     if sock then
         local connectSuccess, status = sock:connect(recordHost, recordPort);
-        if status == "connection refused" then
+        if status == "connection refused" or (not connectSuccess and status == "already connected") then
             this.reGetSock();
         end
-        return connectSuccess;
+
+        return connectSuccess
     end
     return nil;
 end
