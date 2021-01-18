@@ -1640,7 +1640,7 @@ function this.getStackTable( level )
             ss.name = "文件名"; --这里要做截取
             ss.line = tostring(info.currentline);
             --使用hookLib时，堆栈有偏移量，这里统一调用栈顶编号2
-            local ssindex = functionLevel - 3 + clevel;
+            local ssindex = functionLevel - 3;
             if hookLib ~= nil then
                 ssindex = ssindex + 2;
             end
@@ -1650,8 +1650,8 @@ function this.getStackTable( level )
             local callStackInfo = {};
             callStackInfo.name = ss.file;
             callStackInfo.line = ss.line;
-            callStackInfo.func = info.func;     --保存的function
-            callStackInfo.realLy = functionLevel;              --真实堆栈层functionLevel(仅debug时用)
+            callStackInfo.func = info.func;                     --保存的function
+            callStackInfo.realLy = functionLevel;               --真实堆栈层functionLevel(仅debug时用)
             table.insert(currentCallStack, callStackInfo);
 
             --level赋值
@@ -1659,6 +1659,12 @@ function this.getStackTable( level )
                 userFuncSteakLevel = functionLevel;
             end
         else
+            local callStackInfo = {};
+            callStackInfo.name = info.source;
+            callStackInfo.line = info.currentline;              --C函数行号
+            callStackInfo.func = info.func;                     --保存的function
+            callStackInfo.realLy = functionLevel;               --真实堆栈层functionLevel(仅debug时用)
+            table.insert(currentCallStack, callStackInfo);
             clevel = clevel + 1
         end
         functionLevel = functionLevel + 1;
