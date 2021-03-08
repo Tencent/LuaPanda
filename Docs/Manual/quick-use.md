@@ -8,7 +8,7 @@
 2. VScode 文件后缀和类型关联正确，如果 lua 文件后缀是 txt 或者是 lua.txt 都要正确关联lua类型，插件才能生效。
 3. 本文件 lua 代码中不要有 lua error, 会影响符号的生成。
 
-完成以上配置后， 打开 VSCode 文件列表(explorer)页签 ，展开左下角的大纲(outline)，如果有信息说明是可以进行提示的。
+完成以上配置后， 打开 VSCode 文件列表(explorer)页签 ，展开左下角的大纲(outline)，如果有信息说明是可以进行调试的。
 
 
 
