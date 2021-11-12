@@ -1546,7 +1546,7 @@ function this.receiveMessage( timeoutSec )
         this.printToConsole("[debugger error]接收信息失败  |  reason: socket == nil", 2);
         return;
     end
-    local response, err = sock:receive();
+    local response, err = sock:receive("*l");
     if response == nil then
         if err == "closed" then
             this.printToConsole("[debugger error]接收信息失败  |  reason:"..err, 2);
