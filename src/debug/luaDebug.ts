@@ -341,8 +341,12 @@ export class LuaDebugSession extends LoggingDebugSession {
                         name: "Run Program File (LuaPanda)",
                         env: {}, 
                     });
+
+                    let progaamCmdwithArgs = '"' + args.program + '"';
+                    if (os.type() === "Windows_NT") {
+                        progaamCmdwithArgs = '& ' + progaamCmdwithArgs;
+                    }
     
-                    let progaamCmdwithArgs = args.program;
                     for (const arg of args.args) {
                         progaamCmdwithArgs = progaamCmdwithArgs + " " + arg;
                     }
