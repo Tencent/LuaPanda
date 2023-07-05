@@ -38,7 +38,7 @@ struct breakpoint;
 // 路径缓存队列 getinfo -> format
 std::list<path_transfer_node*> getinfo_to_format_cache;
 // 存放断点map，key为source
-std::map<std::string, std::map<int, breakpoint>> all_breakpoint_map;
+std::map<std::string, std::map<int, breakpoint> > all_breakpoint_map;
 
 enum run_state
 {
@@ -117,7 +117,7 @@ void print_all_breakpoint_map(lua_State *L, int print_level = 0) {
     if (print_level < logLevel) {
         return;
     }
-    std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
+    std::map<std::string, std::map<int, breakpoint> >::iterator iter1;
     std::map<int, breakpoint>::iterator iter2;
     std::string log_message = "[breakpoints in chook:]\n";
     for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
@@ -556,7 +556,7 @@ int debug_ishit_bk(lua_State *L, const char * curPath, int current_line) {
     // 获取标准路径[文件名.后缀]
     const char *standardPath = getPath(L, curPath);
     // 判断是否存在同名文件
-    std::map<std::string, std::map<int, struct breakpoint>>::const_iterator const_iter1 = all_breakpoint_map.find(std::string(standardPath));
+    std::map<std::string, std::map<int, struct breakpoint> >::const_iterator const_iter1 = all_breakpoint_map.find(std::string(standardPath));
     if (const_iter1 == all_breakpoint_map.end()) {
         return 0;
     }
@@ -771,7 +771,7 @@ int checkHasBreakpoint(lua_State *L, const char * src1, int current_line, int sl
         return LITE_HOOK;
     }
 
-    std::map<std::string, std::map<int, breakpoint>>::iterator iter1;
+    std::map<std::string, std::map<int, breakpoint> >::iterator iter1;
     for (iter1 = all_breakpoint_map.begin(); iter1 != all_breakpoint_map.end(); ++iter1) {
         if (iter1->first == std::string(src)) {
             // compare()
