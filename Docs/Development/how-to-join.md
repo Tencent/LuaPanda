@@ -50,9 +50,27 @@ debugger 由两部分组成，分别是 lua 调试主体和 c 扩展库。使用
 
 
 
+## 编译相关库
 
+lua：
 
+```
+make macosx
+sudo make install
+```
 
+luasocket:
 
+```
+//LUAV指定版本 
+//LUAINC指定头文件位置
+make LUAV=5.4 LUAINC=-I/usr/local/include macosx
+sudo make install
+```
 
+libpdebug:
+
+```
+g++ -shared -o libpdebug.so libpdebug.cpp -I/usr/local/include -L/usr/local/lib -llua
+```
 
