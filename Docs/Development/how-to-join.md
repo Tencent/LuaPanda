@@ -52,6 +52,8 @@ debugger 由两部分组成，分别是 lua 调试主体和 c 扩展库。使用
 
 ## 编译相关库
 
++ mac
+
 lua：
 
 ```
@@ -73,4 +75,28 @@ libpdebug:
 ```
 g++ -shared -o libpdebug.so libpdebug.cpp -I/usr/local/include -L/usr/local/lib -llua
 ```
+
+
+
++ win
+
+mingw：https://nuwen.net/mingw.html
+
+lua:
+
+```
+make mingw
+```
+
+luasocket:
+
+修改 src/makefile 文件中的 lua 版本，mingw_base 及编译头文件，lua库的引用位置
+
+```
+make mingw
+```
+
+libpdebug:
+
+使用 vs 编译，创建动态库项目
 
