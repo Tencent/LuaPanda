@@ -59,8 +59,8 @@
 		"@types/vscode": "^1.25.0",
 		"mocha": "10.2.0",
 		"tslint": "5.9.1",
-        "typescript": "^5.2.2",
-		"vsce": "1.37.5",
+		"typescript": "^5.2.2",
+		"vsce": "^2.15.0",
 		"vscode-debugadapter-testsupport": "1.27.0"
 	},
 	"main": "./out/extension",
