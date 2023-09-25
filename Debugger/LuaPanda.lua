@@ -53,7 +53,7 @@ local customGetSocketInstance = nil;    --支持用户实现一个自定义调�
 local consoleLogLevel = 2;           --打印在控制台(print)的日志等级 0 : all/ 1: info/ 2: error.
 --用户设置项END
 
-local debuggerVer = "3.3.0";                 --debugger版本号
+local debuggerVer = "3.3.1";                 --debugger版本号
 LuaPanda = {};
 local this = LuaPanda;
 local tools = {};     --引用的开源工具，包括json解析和table展开工具等

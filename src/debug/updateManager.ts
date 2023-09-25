@@ -29,7 +29,7 @@ export class UpdateManager{
                 let updateTipSetting = VisualSetting.getLaunchjson(rootFolder , "updateTips");
                 if ( intDVer < intAVer && updateTipSetting !== false){
                 // if ( intDVer < intAVer){
-                    vscode.window.showInformationMessage('LuaPanda VSCode 插件已升级 3.2.0 版本, 建议同时升级 LuaPanda.lua 文件。首次开始调试前请重建一下 launch.json 文件, 避免产生兼容问题。launch.json 配置项目参考 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/launch-json-introduction.md', "好的");  
+                    vscode.window.showInformationMessage('LuaPanda VSCode 插件已升级 ' + Tools.adapterVersion + ' 版本, 建议同时升级 LuaPanda.lua 文件。首次开始调试前请重建一下 launch.json 文件, 避免产生兼容问题。launch.json 配置项目参考 https://github.com/Tencent/LuaPanda/blob/master/Docs/Manual/launch-json-introduction.md', "好的");  
 
                     vscode.window.showInformationMessage('当前工程中的 LuaPanda.lua 文件版本较低，是否自动替换为最新版本?', 'Yes', 'No', 'Never').then(value => {
                         if(value === "Yes"){
