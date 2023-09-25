@@ -17,11 +17,11 @@ import * as Net from 'net';
 import { DataProcessor } from './dataProcessor';
 import { DebugLogger } from '../common/logManager';
 import { StatusBarManager } from '../common/statusBarManager';
-import { LineBreakpoint, ConditionBreakpoint, LogPoint } from './breakpoint';
-import { Tools } from '../common/Tools';
+import { LineBreakpoint, ConditionBreakpoint, LogPoint } from './breakPoint';
+import { Tools } from '../common/tools';
 import { UpdateManager } from './updateManager';
-import { ThreadManager } from '../common/ThreadManager';
-import { PathManager } from '../common/PathManager';
+import { ThreadManager } from '../common/threadManager';
+import { PathManager } from '../common/pathManager';
 import { VisualSetting } from './visualSetting'
 const { Subject } = require('await-notify');
 let fs = require('fs');

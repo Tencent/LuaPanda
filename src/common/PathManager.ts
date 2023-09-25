@@ -1,5 +1,5 @@
 import { DebugLogger } from './logManager';
-import { Tools } from './Tools';
+import { Tools } from './tools';
 import { isArray } from 'util';
 import * as vscode from 'vscode';
 
@@ -145,7 +145,9 @@ export class PathManager {
                 }else{
                     // 如果lua文件没有更新，没有传过来oPath，则打开第一个文件
                     for (const element of fullPath) {
+                        // @ts-ignore
                         if(element.indexOf(shortPath)){
+                            // @ts-ignore
                             return element; // 这里固定返回第一个元素
                         }
                     }

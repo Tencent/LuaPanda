@@ -1,5 +1,5 @@
 // 可视化配置部分
-import { Tools } from '../common/Tools';
+import { Tools } from '../common/tools';
 import * as fs from "fs";
 import * as vscode from 'vscode';
 import { DebugLogger } from '../common/logManager';

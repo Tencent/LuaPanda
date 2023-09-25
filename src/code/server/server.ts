@@ -118,13 +118,13 @@ connection.onInitialize((initPara: InitializeParams) => {
 	// 发送rootFolder
 	setImmediate(()=>{
 		connection.sendNotification("setRootFolders", Tools.getVSCodeOpenedFolders());
-	}, 0);
+	});
 
 	if(snipContent.toString().trim() == ''){
 		analyzerTotalSwitch = false;
 		setImmediate(()=>{
 			connection.sendNotification("showProgress", "LuaPanda");			
-		}, 0);
+		});
 		Logger.InfoLog("LuaAnalyzer closed!");
 		return {
 			capabilities: {}

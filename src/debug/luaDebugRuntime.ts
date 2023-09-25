@@ -4,7 +4,7 @@ import { DataProcessor } from './dataProcessor';
 import { DebugProtocol } from 'vscode-debugprotocol';
 import { DebugLogger } from '../common/logManager';
 import { StatusBarManager } from '../common/statusBarManager';
-import { PathManager } from '../common/PathManager';
+import { PathManager } from '../common/pathManager';
 
 
 export interface LuaBreakpoint {

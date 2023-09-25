@@ -5,7 +5,7 @@ import * as path from 'path';
 import { LuaDebugSession } from './debug/luaDebug';
 import { DebugLogger } from './common/logManager';
 import { StatusBarManager } from './common/statusBarManager';
-import { Tools } from './common/Tools';
+import { Tools } from './common/tools';
 import {
 	LanguageClient,
 	LanguageClientOptions,
@@ -14,7 +14,7 @@ import {
 } from 'vscode-languageclient';
 import { workspace, ExtensionContext } from 'vscode';
 import { VisualSetting } from './debug/visualSetting'
-import { PathManager } from './common/PathManager';
+import { PathManager } from './common/pathManager';
 
 let client: LanguageClient;
 
@@ -326,7 +326,7 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             }).listen(0);
         }
         // make VS Code connect to debug server instead of launching debug adapter
-        config.debugServer = this._server.address().port;
+        config.debugServer = this._server.address()['port'];
         return config;
     }
 

@@ -1,4 +1,4 @@
-import { Tools } from '../common/Tools';
+import { Tools } from '../common/tools';
 import { DebugLogger } from '../common/logManager';
 import { VisualSetting } from './visualSetting';
 import * as vscode from 'vscode';

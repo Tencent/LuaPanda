@@ -32,10 +32,11 @@ export class CodeLinting {
 				reject(checkResult.output.join('\n'));
 			}
 			else if (checkResult.status == 0) {
+				//@ts-ignore
 				resolve();
 			}
 			else {
-				// error log
+				//@ts-ignore
 				resolve();
 			}
 		});

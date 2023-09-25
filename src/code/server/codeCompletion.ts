@@ -131,17 +131,17 @@ export class CodeCompletion {
 		let completingArray = [];
 		for (let idx = 0; idx < retSymb.length; idx++) {
 		
-			let finalInsertText = retSymb[idx].searchName;
+			let finalInsertText = retSymb[idx]['searchName'];
 			if(onlyKeepPostfix){
 				let userInputSplitArr = this.splitStringwithTrigger(finalInsertText);
 				finalInsertText = userInputSplitArr.pop();	
 			}
 			let completeKind : CompletionItemKind
 			let labelTxt = finalInsertText;
-			switch(retSymb[idx].kind){
+			switch(retSymb[idx]['kind']){
 				case 12:
 					completeKind = CompletionItemKind.Function;
-					finalInsertText = finalInsertText + this.fmtParamToSnippet(retSymb[idx].funcParamArray);
+					finalInsertText = finalInsertText + this.fmtParamToSnippet(retSymb[idx]['funcParamArray']);
 					break;
 				default:
 					completeKind = CompletionItemKind.Text;
@@ -151,7 +151,7 @@ export class CodeCompletion {
 				label: labelTxt,
 				kind: completeKind,
 				insertText: finalInsertText,
-				detail : retSymb[idx].name,
+				detail : retSymb[idx]['name'],
 				insertTextFormat: InsertTextFormat.Snippet
 			}
 			if(completeItem.label == undefined){
