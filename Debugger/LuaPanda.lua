@@ -1326,7 +1326,7 @@ function this.dataProcess( dataStr )
         end
 
         --查找c++的hook库是否存在.  当lua5.4时默认不使用c库
-        if tostring(dataTable.info.useCHook) == "true" and "Lua 5.4" ~= _VERSION then
+        if tostring(dataTable.info.useCHook) == "true" then
             userSetUseClib = true;      --用户确定使用clib
             if isUserSetClibPath == true then   --如果用户自设了clib路径
                 if luapanda_chook ~= nil then
