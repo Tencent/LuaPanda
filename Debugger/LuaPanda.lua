@@ -531,11 +531,23 @@ function this.doctor()
                 local lua_ver;
                 if _VERSION == "Lua 5.1" then
                     lua_ver = "501";
+                elseif _VERSION == "Lua 5.4" then
+                    lua_ver = "504";
                 else
                     lua_ver = "503";
                 end
                 local x86Path = clibPath .. platform .."/x86/".. lua_ver .. clibExt;
                 local x64Path = clibPath .. platform .."/x86_64/".. lua_ver .. clibExt;
+                local armPath = clibPath .. platform .."/arm_64/".. lua_ver .. clibExt;
+
+                if platform == "mac" then
+                    -- mac下先检测arm库
+                    strTable[#strTable + 1] = "尝试引用arm库: ".. armPath;
+                    if this.tryRequireClib("libpdebug", armPath) then
+                        strTable[#strTable + 1] = "\n引用成功";
+                        return;
+                    end
+                end
 
                 strTable[#strTable + 1] = "尝试引用x64库: ".. x64Path;
                 if this.tryRequireClib("libpdebug", x64Path) then
@@ -1345,6 +1357,8 @@ function this.dataProcess( dataStr )
                 local lua_ver;
                 if _VERSION == "Lua 5.1" then
                     lua_ver = "501";
+                elseif _VERSION == "Lua 5.4" then
+                    lua_ver = "504";
                 else
                     lua_ver = "503";
                 end
