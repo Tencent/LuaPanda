@@ -14,6 +14,7 @@ LuaPanda 是一个基于 VS Code 的 lua 代码工具，设计目标是简单易
 功能详情可以参考[项目介绍](./Docs/Manual/feature-introduction.md)。LuaPanda 支持 lua5.1- 5.4，**调试器运行环境需要包含 luasocket**。
 
 
+
 # 文档
 
 接入和使用文档
@@ -47,8 +48,25 @@ LuaPanda 是一个基于 VS Code 的 lua 代码工具，设计目标是简单易
 
   
 
-
 # 近期更新
+
+​	   3.2.0 版本因依赖库太旧，无法在 VSCode 1.82 上运行，可更新 3.3.0 解决此问题，详见 #171
+
+
+
++ V3.3.0
+
+  + 修复了 VSCode 1.82 下插件执行错误的问题
+  + lua 504 下 mac arm / win x64 已支持 chook，其他平台没有机器测试，所以未出 libpdebug 库。有需要大家可以自行打包 plibdebug 库，也可提 mr。
+  + 更新了版本间的 mr
+    + #108  调试启动比较晚时，已经创建的协程无法调试 / 调试堆栈碰到c函数被打断
+    + #114 修复调试栈中有C函数时，监听的变量获取错误的bug
+    + #109 无法动态attach到debug
+    + #139 做了 5.4.3 下 luasocket sock:receive() 默认行为不一致导致的错误
+    + #152 launch.json 启动参数 program 路径带有空格则启动失败
+  + 因依赖库版本太旧无法兼容新版本 VSCode，删除了导出符号用于代码提示功能
+
+  
 
 + V3.2.0
   + 代码提示支持大小写不敏感，无论输入大小写都能提示对应的符号。
@@ -58,14 +76,6 @@ LuaPanda 是一个基于 VS Code 的 lua 代码工具，设计目标是简单易
   + 在autoPath模式支持同名文件
   + 重新测试和优化真机调试，修复真机调试socket连接可能存在的问题
 
-+ V3.1.0
-  
-  + 新增了导出 slua 符号用于代码提示。  [使用说明](./Docs/Manual/lua-intellisense.md)
-  + 重构了定义跳转和代码提示框架，提升了分析效率。自测修复了 #49 大量lua工程下无法工作的问题。
-  + 修复了 #47 table 成员展示问题。
-  + 修复了 #46 配置 program 后 , attach 启动拉起新进程的问题。增加了一个attach启动项。
-  + 实现了 #44 提出的 terminal 复用的建议。
-  
 + [更多更新记录](./CHANGELOG.md)
 
 
