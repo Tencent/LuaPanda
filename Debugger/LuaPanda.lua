@@ -2888,7 +2888,7 @@ function this.getVariable( checkLayer, isFormatVariable , offset)
         end
 
         --(*temporary)是系统变量，过滤掉。这里假设(*temporary)仅出现在最后
-        if "(*temporary)" ~= tostring(n) then
+        if "(*temporary)" ~= tostring(n) and "(temporary)" ~= tostring(n) then
             local var = {};
             var.name = n;
             var.type = tostring(type(v));
