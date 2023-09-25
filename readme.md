@@ -110,7 +110,5 @@ LuaPanda 是一个基于 VS Code 的 lua 代码工具，设计目标是简单易
 
 # 技术支持
 
-如有问题可以先参阅 [文档](./Docs)， 或使用 [issues](https://github.com/Tencent/LuaPanda/issues) ，我们会关注和回复。
-
-QQ群：974257225
+如有问题可以先参阅 [文档](./Docs)， 可以使用 [issues](https://github.com/Tencent/LuaPanda/issues) ，我会关注和回复。
 
