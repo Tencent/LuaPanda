@@ -1365,11 +1365,17 @@ function this.dataProcess( dataStr )
 
                 local x86Path = clibPath.. platform .."/x86/".. lua_ver .. clibExt;
                 local x64Path = clibPath.. platform .."/x86_64/".. lua_ver .. clibExt;
+                local armPath = clibPath .. platform .."/arm_64/".. lua_ver .. clibExt;
 
                 if luapanda_chook ~= nil then
                     hookLib = luapanda_chook;
                 else
-                    if not(this.tryRequireClib("libpdebug", x64Path) or this.tryRequireClib("libpdebug", x86Path)) then
+                    local requireCLibSuccess = false;
+                    if platform == "mac" then
+                        requireCLibSuccess = this.tryRequireClib("libpdebug", armPath)
+                    end
+
+                    if not requireCLibSuccess and not(this.tryRequireClib("libpdebug", x64Path) or this.tryRequireClib("libpdebug", x86Path)) then
                         this.printToVSCode("Require clib failed, use Lua to continue debug, use LuaPanda.doctor() for more information.", 1);
                     end
                 end
