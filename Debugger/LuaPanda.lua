@@ -1243,7 +1243,8 @@ function this.dataProcess( dataStr )
                         this.printToVSCode(str, 2);
                         msgTab.info = {};
                     else
-                        local stackId = this.getSpecificFunctionStackLevel(currentCallStack[this.curStackId - 1].func); --去除偏移量
+                        local hookOffset = this.getHookOffset(); --去除偏移量
+                        local stackId = this.curStackId - 1 + hookOffset;
                         local varTable = this.getVariable(stackId, true);
                         msgTab.info = varTable;
                     end
@@ -1657,7 +1658,7 @@ function this.getStackTable( level )
             ss.file = this.getPath(info);
             local oPathFormated = this.formatOpath(info.source) ; --从lua虚拟机获得的原始路径, 它用于帮助定位VScode端原始lua文件的位置(存在重名文件的情况)。
             ss.oPath = this.truncatedPath(oPathFormated, truncatedOPath);
-            ss.name = "文件名"; --这里要做截取
+            ss.name = info.name or "<anonymous>";
             ss.line = tostring(info.currentline);
             --使用hookLib时，堆栈有偏移量，这里统一调用栈顶编号2
             local ssindex = functionLevel - 3;
@@ -1824,8 +1825,28 @@ function this.getCurrentFunctionStackLevel()
     return 0;
 end
 
---获取指定函数的堆栈层级
---通常用来获取最后一个用户函数的层级，用法是从currentCallStack取用户点击的栈，再使用本函数取对应层级。
+-- 获取 hook 函数的栈帧，参考 https://github.com/Tencent/LuaPanda/issues/177
+-- @return 从栈顶(top)到目标栈帧的偏移
+function this.getHookOffset()
+    local targetFunc = this.debug_hook;
+	if hookLib ~= nil then
+        targetFunc = this.SendMsgWithStack;
+    end
+
+	local funclayer = 2;
+	repeat
+		local info = debug.getinfo(funclayer, "SlLnf");
+		if info ~= nil and info.func == targetFunc then
+			return (funclayer - 1); -- funclayer 给到外部使用时, getHookOffset栈帧已经销毁了，故-1
+		end
+		funclayer = funclayer + 1;
+	until not info
+	return 0;
+end
+
+-- 获取指定函数的堆栈层级
+-- 代码中用来获取最后一个用户函数的层级  this.getSpecificFunctionStackLevel(lastRunFunction.func)
+-- 注意：如果一个函数在堆栈中多次出现，那么获取到的是离栈顶最近的层级
 -- @func 被获取层级的function
 function this.getSpecificFunctionStackLevel( func )
     local funclayer = 2;
@@ -2638,8 +2659,8 @@ function this.getWatchedVariable( varName , stackId , isFormatVariable )
     end
     --用来返回，带有查到变量的table
     local varTab = {};
-    local ly = this.getSpecificFunctionStackLevel(currentCallStack[stackId - 1].func);
-
+    local hookOffset = this.getHookOffset(stackId);
+    local ly = stackId - 1 + hookOffset;
     local layerVarTab = this.getVariable(ly, isFormatVariable);
     local upTable = this.getUpValueVariable(currentCallStack[stackId - 1 ].func, isFormatVariable);
     local travelTab = {};
