@@ -326,7 +326,15 @@ export class LuaDebugSession extends LoggingDebugSession {
             }else{
                 LuaCMD = "lua -e ";
             }
-            this._debugFileTermianl.sendText( LuaCMD + runCMD , true);
+
+            let luaArgs = "";
+            if(args.luaArgs){
+                for (const arg of args.luaArgs) {
+                    luaArgs = luaArgs + " " + arg;
+                }
+            }
+
+            this._debugFileTermianl.sendText( LuaCMD + runCMD + luaArgs, true);
             this._debugFileTermianl.show();
         }
         else{

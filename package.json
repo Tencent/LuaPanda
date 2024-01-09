@@ -250,6 +250,11 @@
 								"description": "Lua command path and file name such as C:/lua5.3/lua.exe. \nlua命令的路径和文件名. 如 C:/lua5.3/lua.exe。 ",
 								"default": ""
 							},
+							"luaArgs": {
+								"type": "array",
+								"description": "Lua 运行参数列表，例如填 [\"-a\", \"-b\"] 最终输出时会格式化成 -a -b",
+								"default": []
+							},
 							"docPathReplace": {
 								"type": "array",
 								"description": "被调试文件和VSCode中加载文件路径不一致时，通过此项设置，完成路径替换。输入格式[\"被替换掉的路径\", \"新路径\"]。",
@@ -374,6 +379,11 @@
 								"description": "Lua command path and file name such as C:/lua5.3/lua.exe. \nlua命令的路径和文件名. 如 C:/lua5.3/lua.exe。 ",
 								"default": ""
 							},
+							"luaArgs": {
+								"type": "array",
+								"description": "Lua 运行参数列表，例如填 [\"-a\", \"-b\"] 最终输出时会格式化成 -a -b",
+								"default": []
+							},
 							"docPathReplace": {
 								"type": "array",
 								"description": "被调试文件和VSCode中加载文件路径不一致时，通过此项设置，完成路径替换。输入格式[\"被替换掉的路径\", \"新路径\"]。",
@@ -453,6 +463,7 @@
 						"name": "LuaPanda-IndependentFile",
 						"description": "独立文件调试模式,使用前请参考文档",
 						"luaPath": "",
+						"luaArgs": [],
 						"packagePath": [],
 						"luaFileExtension": "",
 						"connectionPort": 8820,

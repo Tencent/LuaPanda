@@ -82,7 +82,7 @@ LuaPanda 是一个基于 VS Code 的 lua 代码工具，设计目标是简单易
 
 # 依赖和适用性
 
-调试器功能依赖 luasocket , 可运行于 slua，slua-unreal ，xlua 等已集成 luasocket 的开发环境，在其他环境（如 console）中运行时，需要用户自行保证 luasocket 可用 。
+调试器功能依赖 [**luasocket**](https://github.com/lunarmodules/luasocket) , 可运行于 slua，slua-unreal ，xlua 等已集成 luasocket 的开发环境，在其他环境（如 console）中运行时，需要用户自行保证 luasocket 可用 ((luasocket编译)[./docs/]) 。
 
 其他依赖项目（插件中已包含，无需用户手动安装）：
 

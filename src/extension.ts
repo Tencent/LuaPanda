@@ -176,7 +176,9 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             let pathArr = Tools.VSCodeExtensionPath.split( path.sep );
             let stdPath = pathArr.join('/');
             pathCMD = pathCMD + stdPath + "/Debugger/?.lua;"
-            pathCMD = pathCMD + config.packagePath.join(';')
+            if(Array.isArray(config.packagePath)){
+                pathCMD = pathCMD + config.packagePath.join(';')
+            }
             pathCMD = pathCMD + "'";
             //拼接命令
             pathCMD = " \"package.path = " + pathCMD + ".. package.path;\" ";
@@ -189,7 +191,15 @@ class LuaConfigurationProvider implements vscode.DebugConfigurationProvider {
             }else{
                 LuaCMD = "lua -e ";
             }
-            LuaConfigurationProvider.RunFileTerminal.sendText( LuaCMD + runCMD , true);
+
+            let luaArgs = "";
+            if(config.luaArgs){
+                for (const arg of config.luaArgs) {
+                    luaArgs = luaArgs + " " + arg;
+                }
+            }
+   
+            LuaConfigurationProvider.RunFileTerminal.sendText( LuaCMD + runCMD + luaArgs, true);
             LuaConfigurationProvider.RunFileTerminal.show();
             return ;
         }
