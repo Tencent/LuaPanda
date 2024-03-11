@@ -1699,6 +1699,11 @@ function this.changePotToSep(filePath, ext)
     local idx = filePath:find(ext, (-1) * ext:len() , true)
     if idx then 
         local tmp = filePath:sub(1, idx - 1):gsub("%.", "/");
+        -- 如果最后的后缀是/，代表luafileExtention不包含分隔符号，将其转换为.
+        if string.sub(tmp, -1) == "/" then
+            -- delete the last "/"
+            tmp = tmp:sub(1, -2) .. ".";
+        end
         filePath = tmp .. ext;
     end
     return filePath;
